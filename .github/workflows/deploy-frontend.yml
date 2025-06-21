@@ -23,19 +23,39 @@ jobs:
             cd /root/AppData/village-mitai/Frontend
             git pull origin main
 
+            echo "🔧 Installing Node.js v16.20.2 manually"
+            cd /tmp
+            curl -O https://nodejs.org/dist/v16.20.2/node-v16.20.2-linux-x64.tar.xz
+            tar -xf node-v16.20.2-linux-x64.tar.xz
+            sudo mv node-v16.20.2-linux-x64 /usr/local/nodejs
+
+            export PATH=/usr/local/nodejs/bin:$PATH
+            echo 'export PATH=/usr/local/nodejs/bin:$PATH' >> ~/.zshrc
+
+            echo "📦 Node & npm versions:"
+            node -v
+            npm -v
+
+            echo "📦 Installing pnpm globally"
+            npm install -g pnpm
+            pnpm -v
+
             echo "🛠 Installing dependencies"
             pnpm install
 
-            echo "🔨 Building React app to temp folder"
-            rm -rf build_temp
+            echo "🔨 Building React app"
+            rm -rf build
             pnpm run build
+
+            echo "🚚 Moving build to temp"
+            rm -rf build_temp
             mv build build_temp
 
-            echo "🔁 Swapping new build atomically"
+            echo "🔁 Swapping build to live"
             rm -rf live_build
             mv build_temp live_build
 
             echo "🔃 Reloading NGINX"
             sudo systemctl reload nginx
 
-            echo "✅ Deployed with zero downtime"
+            echo "✅ Deployment complete"
