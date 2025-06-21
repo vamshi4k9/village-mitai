@@ -12,17 +12,21 @@ jobs:
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v3
-        
+
       - name: 🛠 Install pnpm
         run: |
           corepack enable
           corepack prepare pnpm@latest --activate
 
-      - name: 📥 Install Dependencies
-        run: pnpm install
+      - name: 📥 Install Dependencies in Frontend
+        run: |
+          cd Frontend
+          pnpm install
 
       - name: 🔨 Build React App
-        run: pnpm run build
+        run: |
+          cd Frontend
+          pnpm run build
 
       - name: 🚀 Deploy to VPS via SCP
         uses: appleboy/scp-action@v0.1.3
@@ -30,5 +34,5 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "build/*"
+          source: "Frontend/build/*"
           target: "/root/AppData/village-mitai/Frontend/build"
