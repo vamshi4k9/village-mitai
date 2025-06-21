@@ -1,0 +1,41 @@
+name: 🚀 Deploy Frontend (Atomic Swap - Zero Downtime)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔁 SSH into VPS and deploy frontend
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "📦 Pulling latest code"
+            cd /root/AppData/village-mitai/Frontend
+            git pull origin main
+
+            echo "🛠 Installing dependencies"
+            pnpm install
+
+            echo "🔨 Building React app to temp folder"
+            rm -rf build_temp
+            pnpm run build
+            mv build build_temp
+
+            echo "🔁 Swapping new build atomically"
+            rm -rf live_build
+            mv build_temp live_build
+
+            echo "🔃 Reloading NGINX"
+            sudo systemctl reload nginx
+
+            echo "✅ Deployed with zero downtime"
