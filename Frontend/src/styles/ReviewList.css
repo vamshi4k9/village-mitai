@@ -1,0 +1,58 @@
+.review-list {
+    margin-top: 40px;
+    width: 100%;
+    padding: 20px;
+    border-top: 1px solid #693d16;
+  }
+  
+  .review-list h3 {
+    color: #3f230b;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+  }
+  
+  .review-card {
+    border-bottom: 1px solid #ccc;
+    padding: 15px 0;
+  }
+  
+  .review-header {
+    display: flex;
+    justify-content: space-between;
+    color: #4b2a0d;
+    font-weight: bold;
+  }
+  
+  .review-rating {
+    color: #e67e22;
+  }
+  
+  .review-comment {
+    margin-top: 5px;
+    color: #3f230b;
+    font-size: 0.9rem;
+  }
+  
+  /* Review Form */
+  .review-form {
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #693d16;
+    background: #f4f2f1;
+  }
+  
+  .review-form textarea {
+    width: 100%;
+    height: 80px;
+    resize: none;
+  }
+  
+  .review-form button {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #4b2a0d;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  

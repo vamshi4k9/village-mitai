@@ -1,0 +1,96 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+*.pyd
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+pip-wheel-metadata/
+*.manifest
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+.idea/
+.vscode/
+
+# Django stuff:
+*.log
+*.pot
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.sqlite
+
+# Media and static files
+/media/
+staticfiles/
+static_root/
+static/
+media/
+
+# Django migrations
+**/migrations/*.py
+!**/migrations/__init__.py
+
+# Environment variable files
+.env
+.env.*
+
+# Local settings
+settings_local.py
+
+# Testing
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter
+.ipynb_checkpoints
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
+
+# Docker
+docker-compose.override.yml
+Dockerfile*
+*.dockerfile
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+/venv
+venv/
