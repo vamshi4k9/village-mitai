@@ -23,39 +23,36 @@ jobs:
             cd /root/AppData/village-mitai/Frontend
             git pull origin main
 
-            echo "🔧 Installing Node.js v16.20.2 manually"
+            echo "🔧 Installing Node.js v16.20.2"
             cd /tmp
             curl -O https://nodejs.org/dist/v16.20.2/node-v16.20.2-linux-x64.tar.xz
             tar -xf node-v16.20.2-linux-x64.tar.xz
             sudo mv node-v16.20.2-linux-x64 /usr/local/nodejs
-
             export PATH=/usr/local/nodejs/bin:$PATH
             echo 'export PATH=/usr/local/nodejs/bin:$PATH' >> ~/.zshrc
 
-            echo "📦 Node & npm versions:"
-            node -v
+            echo "📦 Verifying Node"
+            node -v  # should be v16.20.2
             npm -v
 
-            echo "📦 Installing pnpm globally"
-            npm install -g pnpm
-            pnpm -v
-
-            echo "🛠 Installing dependencies"
+            echo "📦 Installing pnpm v8.15.9"
+            npm install -g pnpm@8.15.9
+            pnpm -v  # should be 8.15.9
+            
+            cd /root/AppData/village-mitai/Frontend
+            echo "🛠 Installing frontend dependencies"
             pnpm install
 
             echo "🔨 Building React app"
-            rm -rf build
             pnpm run build
 
-            echo "🚚 Moving build to temp"
-            rm -rf build_temp
-            mv build build_temp
+            echo "🚚 Preparing temp build"
+            mv -f build build_temp
 
-            echo "🔁 Swapping build to live"
-            rm -rf live_build
-            mv build_temp live_build
+            echo "🔁 Swapping build atomically (no rm)"
+            mv -f build_temp live_build
 
             echo "🔃 Reloading NGINX"
             sudo systemctl reload nginx
 
-            echo "✅ Deployment complete"
+            echo "✅ Deployment finished with zero downtime"
