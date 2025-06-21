@@ -12,6 +12,11 @@ jobs:
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v3
+        
+      - name: 🛠 Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: 📥 Install Dependencies
         run: pnpm install
