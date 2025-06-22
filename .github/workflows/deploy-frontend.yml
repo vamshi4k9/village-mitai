@@ -31,28 +31,32 @@ jobs:
             export PATH=/usr/local/nodejs/bin:$PATH
             echo 'export PATH=/usr/local/nodejs/bin:$PATH' >> ~/.zshrc
 
-            echo "📦 Verifying Node"
-            node -v  # should be v16.20.2
+            echo "📦 Verifying Node and npm"
+            node -v
             npm -v
 
             echo "📦 Installing pnpm v8.15.9"
             npm install -g pnpm@8.15.9
-            pnpm -v  # should be 8.15.9
-            
-            cd /root/AppData/village-mitai/Frontend
+            pnpm -v
+
             echo "🛠 Installing frontend dependencies"
+            cd /root/AppData/village-mitai/Frontend
             pnpm install
 
             echo "🔨 Building React app"
             pnpm run build
 
-            echo "🚚 Preparing temp build"
-            mv -f build build_temp
+            echo "🚚 Moving build to temp directory"
+            mv -f build /build_temp
 
-            echo "🔁 Swapping build atomically (no rm)"
-            mv -f build_temp live_build
+            echo "📂 Swapping into live NGINX directory"
+            sudo mv -f /build_temp /var/www/village-mitai/live_build
+
+            echo "🔒 Setting permissions for NGINX"
+            sudo chown -R www-data:www-data /var/www/village-mitai/live_build
+            sudo chmod -R 755 /var/www/village-mitai/live_build
 
             echo "🔃 Reloading NGINX"
             sudo systemctl reload nginx
 
-            echo "✅ Deployment finished with zero downtime"
+            echo "✅ Frontend deployed successfully with zero downtime"
