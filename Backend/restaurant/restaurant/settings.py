@@ -25,12 +25,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-ova&4c+$bet%-f0av8+1xf4sm_y6#4-xhr%bk^pq+w_r8qb&@7'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -145,7 +139,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Your React app origin
+    "http://localhost:3000",  
 ]
 # settings.py
 PHONEPE_MERCHANT_ID = 'PGTESTPAYUAT' # Replace with your actual Merchant ID
@@ -153,4 +147,9 @@ PHONEPE_MERCHANT_KEY = '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399'  # Replace with yo
 PHONEPE_UAT_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL (your backend to handle payment response)
 SALT_INDEX = 1
+
+DEBUG = False
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
+STATIC_ROOT = BASE_DIR / 'static/'
+
 
