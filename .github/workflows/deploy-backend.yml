@@ -25,8 +25,6 @@ jobs:
 
             echo "🐍 Activating virtualenv"
             source venv/bin/activate
-
-            cd /root/AppData/village-mitai/Backend/restaurant
             
             echo "📦 Installing dependencies"
             pip install -r requirements.txt
