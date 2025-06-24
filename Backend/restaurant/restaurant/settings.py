@@ -150,6 +150,8 @@ SALT_INDEX = 1
 
 DEBUG = False
 ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
-STATIC_ROOT = BASE_DIR / 'static/'
+# STATIC_ROOT = BASE_DIR / 'static/'
+STATIC_ROOT = '/var/www/village-mitai/static/'
+
 
 
