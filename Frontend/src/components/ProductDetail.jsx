@@ -5,6 +5,7 @@ import { CartContext } from "./CartContext";
 import ReviewSection from "./ProductPage/ReviewSection";
 import ReviewList from "./ProductPage/ReviewList";
 
+import { API_BASE_URL} from '../constants'; 
 
 import '../styles/ProductDetail.css'
 
@@ -20,7 +21,7 @@ const ProductDetail = ({ productId }) => {
 
 
   useEffect(() => {
-    axios.get(`http://127.0.0.1:8000/items/${id}/`)
+    axios.get(`${API_BASE_URL}/items/${id}/`)
       .then((response) => setProduct(response.data))
       .catch((error) => console.log("Error fetching product:", error));
   }, [id]);
@@ -54,7 +55,7 @@ const ProductDetail = ({ productId }) => {
         console.log(cartItem)
         const updatedQuantity = cartItem.quantity + quantity;
         const token = localStorage.getItem('access_token');
-        await axios.patch(`http://127.0.0.1:8000/cart/${cartItem.id}/`, { quantity: updatedQuantity }, {
+        await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity }, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -66,7 +67,7 @@ const ProductDetail = ({ productId }) => {
         // If item is not in cart, add it
         const payload = { item: product.id, quantity: quantity };
         const token = localStorage.getItem('access_token');
-        const res = await axios.post("http://127.0.0.1:8000/cart/", payload, {
+        const res = await axios.post(`${API_BASE_URL}/cart/`, payload, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

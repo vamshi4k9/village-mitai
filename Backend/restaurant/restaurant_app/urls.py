@@ -13,12 +13,12 @@ router.register(r'cart', CartViewSet, basename='cart')
 
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('category/<str:category_name>/', ItemsByCategoryAPIView.as_view(), name='items_by_category_api'),
-    path('bestsellers/', BestsellerItemsAPIView.as_view(), name='bestsellers_api'),
+    path('api/', include(router.urls)),
+    path('api/category/<str:category_name>', ItemsByCategoryAPIView.as_view(), name='items_by_category_api'),
+    path('api/bestsellers/', BestsellerItemsAPIView.as_view(), name='bestsellers_api'),
     path("api/upload-image/", upload_image, name="upload-image"),
-    path('search/', search_items, name='search-items'),
-    path('create-order/', create_order, name='create_order'),
+    path('api/search/', search_items, name='search-items'),
+    path('api/create-order/', create_order, name='create_order'),
     path('api/send-otp/', SendOTPView.as_view()),
     path('api/verify-otp/', VerifyOTPView.as_view()),
     path('api/addresses/', AddressView.as_view()),

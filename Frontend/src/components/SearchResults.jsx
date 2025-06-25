@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import ProductCard from "./ProductCard";
+import { API_BASE_URL} from '../constants'; 
 
 export default function SearchResults() {
   const [results, setResults] = useState([]);
@@ -11,7 +12,7 @@ export default function SearchResults() {
   useEffect(() => {
     const fetchResults = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/search/?q=${query}`);
+        const res = await axios.get(`${API_BASE_URL}/search/?q=${query}`);
         setResults(res.data);
       } catch (error) {
         console.log("Error fetching search results:", error);
@@ -24,7 +25,7 @@ export default function SearchResults() {
   }, [query]);
 
   return (
-    <div className="container" style={{marginTop: '170px'}}>
+    <div className="container" style={{ marginTop: '170px' }}>
       <h5>Search Results for: <span className="text-primary">{query}</span></h5>
       <div className="flex-grid mt-3">
         {results.length > 0 ? (

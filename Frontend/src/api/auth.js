@@ -1,7 +1,8 @@
 import axios from "axios";
+import { API_BASE_URL} from '../constants'; 
 
 const API = axios.create({
-  baseURL: "http://localhost:8000/api/",
+  baseURL: `${API_BASE_URL}/api/`,
 });
 
 export const sendOTP = (phone) => API.post("send-otp/", { phone });

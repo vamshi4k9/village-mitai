@@ -4,6 +4,8 @@ import axios from "axios";
 import "../styles/ProductCard.css"; 
 import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
+import { API_BASE_URL} from '../constants'; 
+
 
 
 const ProductCard = ({ item, smallImage = false }) => {
@@ -21,7 +23,7 @@ const ProductCard = ({ item, smallImage = false }) => {
     try {
       const payload = { item: item.id, quantity: 1 };
       const token = localStorage.getItem('access_token');
-      const res = await axios.post("http://127.0.0.1:8000/cart/", payload, {
+      const res = await axios.post(`${API_BASE_URL}/cart/`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

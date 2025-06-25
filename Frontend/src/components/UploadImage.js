@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL} from '../constants'; 
 
 const UploadImage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -14,7 +15,7 @@ const UploadImage = () => {
     const formData = new FormData();
     formData.append("image", selectedFile);
 
-    const response = await fetch("http://localhost:8000/api/upload-image/", {
+    const response = await fetch(`${API_BASE_URL}/api/upload-image/`, {
       method: "POST",
       body: formData,
     });
@@ -22,7 +23,7 @@ const UploadImage = () => {
     const data = await response.json();
     if (response.ok) {
       setImageUrl(`http://localhost:3000${data.image}`);
-      console.log('Image uploaded')
+      console.log("Image uploaded");
     } else {
       alert("Upload failed");
     }

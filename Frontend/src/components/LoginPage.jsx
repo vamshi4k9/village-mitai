@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css';
+import { API_BASE_URL} from '../constants'; 
+
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -10,7 +12,7 @@ function LoginPage() {
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://localhost:8000/api/login/', {
+      const res = await axios.post(`${API_BASE_URL}/api/login/`, {
         username,
         password,
       });

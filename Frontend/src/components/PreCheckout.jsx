@@ -2,6 +2,8 @@ import React, { useContext, useState, useEffect } from "react";
 import { CartContext } from "./CartContext";
 import axios from "axios";
 import "../styles/PreCheckout.css";
+import { API_BASE_URL} from '../constants'; 
+
 
 export default function PreCheckout() {
   const { cart, total, totalItems } = useContext(CartContext);
@@ -16,7 +18,7 @@ export default function PreCheckout() {
       const token = localStorage.getItem("access_token");
       if (token) {
         try {
-          const res = await axios.get("http://localhost:8000/api/addresses/", {
+          const res = await axios.get(`${API_BASE_URL}/api/addresses/`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setAddresses(res.data);
@@ -72,7 +74,7 @@ export default function PreCheckout() {
 
       try {
         const response = await axios.post(
-          "http://localhost:8000/api/create-order/",
+          `${API_BASE_URL}/api/create-order/`,
           payload,
           {
             headers: { Authorization: `Bearer ${token}` },

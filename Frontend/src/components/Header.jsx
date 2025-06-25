@@ -4,6 +4,7 @@ import useAgentId from "./useAgentId";
 import "../styles/HeaderFooter.css";
 import { useNavigate } from "react-router-dom"; // ⬅️ Added useNavigate
 
+import { API_BASE_URL} from '../constants'; 
 
 export default function Header({ toggleCart }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function Header({ toggleCart }) {
 
 
   useEffect(() => {
-    fetch("http://localhost:8000/categories/")
+    fetch(`${API_BASE_URL}/categories/`)
       .then((response) => {
         if (!response.ok) throw new Error("Failed to fetch categories");
         return response.json();
