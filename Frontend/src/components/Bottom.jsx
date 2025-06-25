@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL} from '../constants'; 
 
 export default function Bottom() {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/categories/") 
+    fetch(`${API_BASE_URL}/categories/`) 
       .then((response) => response.json())
       .then((data) => setCategories(data.slice(0, 4))) 
       .catch((error) => console.error("Error fetching categories:", error));

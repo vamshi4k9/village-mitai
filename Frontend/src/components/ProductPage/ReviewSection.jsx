@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "../../styles/ReviewSection.css";
+import { API_BASE_URL} from '../../constants'; 
+
 
 const ReviewSection = ({ itemId, token, triggerToast }) => {
   const [reviews, setReviews] = useState([]);
@@ -12,7 +14,7 @@ const ReviewSection = ({ itemId, token, triggerToast }) => {
 
   const fetchReviews = async () => {
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/reviews/?item=${itemId}`);
+      const res = await axios.get(`${API_BASE_URL}/reviews/?item=${itemId}`);
       setReviews(res.data);
     } catch (err) {
       console.log("Review fetch error", err);
@@ -21,7 +23,7 @@ const ReviewSection = ({ itemId, token, triggerToast }) => {
 
   const submitReview = async () => {
     try {
-      await axios.post(`http://127.0.0.1:8000/reviews/`, {
+      await axios.post(`${API_BASE_URL}/reviews/`, {
         item: itemId,
         rating: newReview.rating,
         comment: newReview.comment,

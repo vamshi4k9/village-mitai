@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Profile.css';
+import { API_BASE_URL} from '../constants'; 
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -23,7 +24,7 @@ function Profile() {
       }
 
       try {
-        const res = await axios.get('http://localhost:8000/api/profile/', {
+        const res = await axios.get(`${API_BASE_URL}/api/profile/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -43,7 +44,7 @@ function Profile() {
     const fetchOrders = async () => {
       const token = localStorage.getItem('access_token');
       try {
-        const res = await axios.get("http://localhost:8000/api/past-orders/", {
+        const res = await axios.get(`${API_BASE_URL}/api/past-orders/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(res.data.orders);
@@ -61,7 +62,7 @@ function Profile() {
     setDetailsLoading(true);
     const token = localStorage.getItem('access_token');
     try {
-      const res = await axios.get(`http://localhost:8000/api/order-detail/${invoiceId}/`, {
+      const res = await axios.get(`${API_BASE_URL}/api/order-detail/${invoiceId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -145,7 +146,7 @@ function Profile() {
                             {(orderDetailsMap[order.id] || []).map((item, idx) => (
                               <div key={idx} className="order-detail-card">
                                 <img
-                                  src={`http://localhost:8000${item.item.image}`}
+                                  src={`${API_BASE_URL}${item.item.image}`}
                                   alt={item.item.name}
                                   className="order-item-img"
                                 />
@@ -192,7 +193,7 @@ function Profile() {
                                         const token = localStorage.getItem("access_token");
                                         try {
                                           await axios.post(
-                                            "http://localhost:8000/api/submit-rating/",
+                                            "${API_BASE_URL}/api/submit-rating/",
                                             {
                                               item: item.item.id,
                                               transaction: item.id,

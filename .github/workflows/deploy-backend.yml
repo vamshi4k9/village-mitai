@@ -30,7 +30,6 @@ jobs:
             pip install -r requirements.txt
             cd /root/AppData/village-mitai/Backend/restaurant
 
-            cd /root/AppData/village-mitai/Backend/restaurant
 
             echo "📂 Running migrations"
             python manage.py migrate

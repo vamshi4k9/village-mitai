@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+import { API_BASE_URL} from '../constants'; 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
@@ -15,7 +16,7 @@ export const CartProvider = ({ children }) => {
     const fetchCart = async () => {
       try {
         const token = localStorage.getItem('access_token');
-        const cartRes = await axios.get('http://localhost:8000/cart/', {
+        const cartRes = await axios.get(`${API_BASE_URL}/cart/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -47,7 +48,7 @@ export const CartProvider = ({ children }) => {
     try {
       const newQuantity = cartItem.quantity + 1;
       const token = localStorage.getItem('access_token');
-      const res = await axios.patch(`http://localhost:8000/cart/${cartItem.id}/`, { quantity: newQuantity }, {
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -65,7 +66,7 @@ export const CartProvider = ({ children }) => {
     if (cartItem.quantity === 1) {
         try {
           const token = localStorage.getItem('access_token');
-          await axios.delete(`http://localhost:8000/cart/${cartItem.id}/`, {
+          await axios.delete(`${API_BASE_URL}cart/${cartItem.id}/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -79,7 +80,7 @@ export const CartProvider = ({ children }) => {
     try {
       const newQuantity = cartItem.quantity - 1;
       const token = localStorage.getItem('access_token');
-      const res = await axios.patch(`http://localhost:8000/cart/${cartItem.id}/`, { quantity: newQuantity }, {
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -93,7 +94,7 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (cartItem) => {
     try {
       const token = localStorage.getItem('access_token');
-      await axios.delete(`http://localhost:8000/cart/${cartItem.id}/`, {
+      await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
