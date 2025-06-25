@@ -23,20 +23,28 @@ jobs:
             cd /root/AppData/village-mitai/Frontend
             git pull origin main
 
-            echo "🔧 Installing Node.js v16.20.2"
-            cd /tmp
-            curl -O https://nodejs.org/dist/v16.20.2/node-v16.20.2-linux-x64.tar.xz
-            tar -xf node-v16.20.2-linux-x64.tar.xz
-            sudo mv node-v16.20.2-linux-x64 /usr/local/nodejs
+            echo "🔧 Setting up Node.js environment"
             export PATH=/usr/local/nodejs/bin:$PATH
-            echo 'export PATH=/usr/local/nodejs/bin:$PATH' >> ~/.zshrc
+            
+            # Only install Node.js if not already present
+            if ! command -v node &> /dev/null; then
+              echo "Installing Node.js v16.20.2"
+              cd /tmp
+              curl -O https://nodejs.org/dist/v16.20.2/node-v16.20.2-linux-x64.tar.xz
+              tar -xf node-v16.20.2-linux-x64.tar.xz
+              sudo mv node-v16.20.2-linux-x64 /usr/local/nodejs
+              echo 'export PATH=/usr/local/nodejs/bin:$PATH' >> ~/.zshrc
+            fi
 
             echo "📦 Verifying Node and npm"
             node -v
             npm -v
 
-            echo "📦 Installing pnpm v8.15.9"
-            npm install -g pnpm@8.15.9
+            # Only install pnpm if not already present
+            if ! command -v pnpm &> /dev/null; then
+              echo "📦 Installing pnpm v8.15.9"
+              npm install -g pnpm@8.15.9
+            fi
             pnpm -v
 
             echo "🛠 Installing frontend dependencies"
@@ -46,15 +54,22 @@ jobs:
             echo "🔨 Building React app"
             pnpm run build
 
-            echo "🚚 Moving build to temp directory"
-            mv -f build /build_temp
+            # Create timestamped build directory
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            BUILD_DIR="/var/www/village-mitai/build_$TIMESTAMP"
 
-            echo "📂 Swapping into live NGINX directory"
-            sudo mv -f /build_temp /var/www/village-mitai/live_build
+            echo "🚚 Moving build to timestamped directory"
+            sudo mv build "$BUILD_DIR"
 
-            echo "🔒 Setting permissions for NGINX"
-            sudo chown -R www-data:www-data /var/www/village-mitai/live_build
-            sudo chmod -R 755 /var/www/village-mitai/live_build
+            echo "🔒 Setting permissions for new build"
+            sudo chown -R www-data:www-data "$BUILD_DIR"
+            sudo chmod -R 755 "$BUILD_DIR"
+
+            echo "📂 Atomic symlink swap (zero downtime)"
+            sudo ln -sfn "$BUILD_DIR" /var/www/village-mitai/live_build
+
+            echo "🧹 Cleaning up old builds (keeping last 3)"
+            sudo find /var/www/village-mitai/ -name "build_*" -type d | sort -r | tail -n +4 | sudo xargs rm -rf
 
             echo "🔃 Reloading NGINX"
             sudo systemctl reload nginx
