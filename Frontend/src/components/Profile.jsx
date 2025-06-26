@@ -24,7 +24,7 @@ function Profile() {
       }
 
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/profile/`, {
+        const res = await axios.get(`${API_BASE_URL}/profile/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -44,7 +44,7 @@ function Profile() {
     const fetchOrders = async () => {
       const token = localStorage.getItem('access_token');
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/past-orders/`, {
+        const res = await axios.get(`${API_BASE_URL}/past-orders/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(res.data.orders);
@@ -62,7 +62,7 @@ function Profile() {
     setDetailsLoading(true);
     const token = localStorage.getItem('access_token');
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/order-detail/${invoiceId}/`, {
+      const res = await axios.get(`${API_BASE_URL}/order-detail/${invoiceId}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -193,7 +193,7 @@ function Profile() {
                                         const token = localStorage.getItem("access_token");
                                         try {
                                           await axios.post(
-                                            "${API_BASE_URL}/api/submit-rating/",
+                                            `${API_BASE_URL}/submit-rating/`,
                                             {
                                               item: item.item.id,
                                               transaction: item.id,
