@@ -9,7 +9,7 @@ function Register() {
 
   const handleRegister = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/api/register/`, formData);
+      await axios.post(`${API_BASE_URL}/register/`, formData);
       navigate('/login');
     } catch (err) {
       alert('Registration failed');
