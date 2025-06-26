@@ -145,13 +145,13 @@ PHONEPE_UAT_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL (your backend to handle payment response)
 SALT_INDEX = 1
 
-DEBUG = True
-ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org', 'localhost','127.0.0.1']
+DEBUG = False
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
 
 STATIC_ROOT = '/var/www/village-mitai/static/'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = 'var/www/village-mitai/media'
+MEDIA_ROOT = '/var/www/village-mitai/media'
 
 
 
