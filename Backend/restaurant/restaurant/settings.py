@@ -79,9 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'restaurant.wsgi.application'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -148,10 +145,13 @@ PHONEPE_UAT_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox"
 PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL (your backend to handle payment response)
 SALT_INDEX = 1
 
-DEBUG = False
-ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
+DEBUG = True
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org', 'localhost','127.0.0.1']
 
 STATIC_ROOT = '/var/www/village-mitai/static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = 'var/www/village-mitai/media'
 
 
 
