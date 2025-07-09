@@ -12,6 +12,12 @@ export default function PreCheckout() {
   const [paymentMode, setPaymentMode] = useState("");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [newAddress, setNewAddress] = useState({
+    name: "",
+    address1: "",
+    address2: "",
+    phone_number: "",
+  });
 
   useEffect(() => {
     const fetchAddresses = async () => {
@@ -37,6 +43,26 @@ export default function PreCheckout() {
       alert("Coupon applied! 10% discount.");
     } else {
       alert("Invalid coupon code");
+    }
+  };
+
+  const handleAddAddress = async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("Please log in to add an address.");
+      return;
+    }
+  
+    try {
+      const response = await axios.post(`${API_BASE_URL}/create-address/`, newAddress, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setAddresses((prev) => [...prev, response.data]); // Update the addresses list with the new address
+      setNewAddress({ name: "", address1: "", address2: "", phone_number: "" }); // Reset the form
+      alert("Address added successfully!");
+    } catch (error) {
+      console.error("Failed to create address", error);
+      alert("Failed to create address. Please try again.");
     }
   };
 
@@ -155,7 +181,55 @@ export default function PreCheckout() {
             ))}
           </div>
         ) : (
-          <p className="no-address">No saved addresses found.</p>
+          <div className="no-address">
+            <p className="no-address-message">No saved addresses found.</p>
+            <div className="add-address-form">
+              <h3 className="form-title">Add New Address</h3>
+              <div className="form-group">
+                <label htmlFor="name">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  placeholder="Enter your name"
+                  value={newAddress.name}
+                  onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="address1">Address Line 1</label>
+                <input
+                  id="address1"
+                  type="text"
+                  placeholder="Enter address line 1"
+                  value={newAddress.address1}
+                  onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="address2">Address Line 2</label>
+                <input
+                  id="address2"
+                  type="text"
+                  placeholder="Enter address line 2"
+                  value={newAddress.address2}
+                  onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="phone_number">Phone Number</label>
+                <input
+                  id="phone_number"
+                  type="text"
+                  placeholder="Enter phone number"
+                  value={newAddress.phone_number}
+                  onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
+                />
+              </div>
+              <button className="add-address-button" onClick={handleAddAddress}>
+                Add Address
+              </button>
+            </div>
+          </div>
         )}
 
         <hr />

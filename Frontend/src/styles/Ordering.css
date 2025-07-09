@@ -1,0 +1,107 @@
+/* .ag-theme-alpine {
+  margin: 20px auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+} */
+
+.table-view-container {
+  margin: 20px auto;
+  width: 90%;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Base theme */
+.ag-theme-alpine {
+  margin-top : 6rem;
+  background-color: #FFFFFF; /* White background */
+  font-family: "Open Sans", sans-serif; /* Custom font */
+  color: #333; /* Text color */
+}
+
+/* Header styles */
+.ag-header-cell {
+  background-color: #f5f5f5; /* Light gray background */
+  font-size: 14px; /* Custom font size */
+  font-weight: bold; /* Bold text */
+  border-bottom: 1px solid #ccc; /* Border */
+}
+
+/* Row styles */
+.ag-row {
+  font-size: 13px; /* Custom font size for rows */
+  color:rgb(15, 15, 15); /* Text color */
+  margin-top: 5px; /* Space between rows */
+}
+
+.ag-row:hover {
+  background-color: #f0f8ff; /* Light blue hover effect */
+}
+
+/* Pagination styles */
+.ag-paging-panel {
+  background-color: #f5f5f5; /* Light gray background */
+  border-top: 1px solid #ccc; /* Border */
+}
+
+.invoice-table,
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-table th,
+.transaction-table th {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.invoice-table td,
+.transaction-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.item-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+}
+
+button {
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.arrow-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.arrow-button:hover {
+  color: #007bff;
+}

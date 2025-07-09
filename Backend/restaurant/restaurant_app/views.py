@@ -248,6 +248,13 @@ class AddressView(APIView):
         addresses = Address.objects.filter(user=request.user)
         serializer = AddressSerializer(addresses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = AddressSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Ensure the address is linked to the logged-in user
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class CreateOrderView(APIView):
     permission_classes = [IsAuthenticated]
@@ -339,9 +346,12 @@ class PastOrdersView(APIView):
         })
     
 class InvoiceDetailView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [JWTAuthentication]  # applies for all methods
 
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]  # enforce permission only on GET
+        return []
     def get(self, request, invoice_id):
         try:
             invoice = Invoice.objects.get(id=invoice_id, user=request.user)
@@ -350,6 +360,22 @@ class InvoiceDetailView(APIView):
 
         serializer = InvoiceDetailSerializer(invoice)
         return Response(serializer.data)
+    
+    def patch(self, request, invoice_id):
+        try:
+            invoice = Invoice.objects.get(id=invoice_id)
+        except Invoice.DoesNotExist:
+            return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({"error": "Status is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        invoice.status = new_status
+        invoice.save()
+
+        serializer = InvoiceDetailSerializer(invoice)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class SubmitRatingView(generics.CreateAPIView):
     serializer_class = RatingSerializer
@@ -358,3 +384,10 @@ class SubmitRatingView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+@api_view(['GET'])
+def get_all_transactions_and_invoices(request):
+    invoices = Invoice.objects.prefetch_related('transactions', 'transactions__item').all()
+    print(invoices)
+    serializer = InvoiceDetailSerializer(invoices, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

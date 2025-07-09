@@ -1,0 +1,150 @@
+/* TableView.css */
+.invoice-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.invoice-container h2 {
+  text-align: center;
+  color: #1e293b;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.invoice-table {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.invoice-table-header,
+.invoice-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 1fr 1fr 1fr;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+  align-items: center;
+}
+
+.invoice-table-header {
+  font-weight: 600;
+  color: #475569;
+  background-color: #f1f5f9;
+}
+
+.invoice-row {
+  background-color: white;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.invoice-row.expanded {
+  background-color: #f9fafb;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-select {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  cursor: pointer;
+}
+
+.status-badge.ordered {
+  color: #8b5cf6;
+  background-color: #ede9fe;
+}
+
+.status-badge.in-progress {
+  color: #f59e0b;
+  background-color: #fef3c7;
+}
+
+.status-badge.shipping {
+  color: #3b82f6;
+  background-color: #dbeafe;
+}
+
+.status-badge.delivered {
+  color: #10b981;
+  background-color: #d1fae5;
+}
+
+.invoice-details {
+  background-color: #f1f5f9;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.invoice-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.transaction-list {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.transaction-header {
+  display: grid;
+  grid-template-columns: 80px 2fr 1fr 1fr;
+  padding: 0.75rem 1rem;
+  background-color: #f3f4f6;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.transaction-row {
+  display: grid;
+  grid-template-columns: 80px 2fr 1fr 1fr;
+  padding: 0.75rem 1rem;
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.transaction-row img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}

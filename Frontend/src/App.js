@@ -1,6 +1,6 @@
 import './App.css';
 import Home from './components/Home';
-import { Routes, Route, useLocation, Navigate} from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import Category from './components/Category';
 import { CartProvider } from './components/CartContext';
 import Header from './components/Header';
@@ -19,29 +19,28 @@ import LoginPage from "./components/LoginPage";
 import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
 import Profile from './components/Profile';
-
-
-
-
-
+import Ordering from './components/Ordering';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { getUrlWithAgentId } = useAgentId();
-
+  const location = useLocation();
 
   const toggleCart = () => {
     setIsCartOpen(!isCartOpen);
   };
 
+  // Define routes where header/footer should be hidden
+  const hideLayoutRoutes = ['/order-status'];
 
-
+  const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 
   return (
     <CartProvider>
       <div className="App">
-        <Header toggleCart={toggleCart} />
-        <CartPopup isOpen={isCartOpen} toggleCart={toggleCart} />
+        {!shouldHideLayout && <Header toggleCart={toggleCart} />}
+        {!shouldHideLayout && <CartPopup isOpen={isCartOpen} toggleCart={toggleCart} />}
+
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path="/collections/:categorySlug" element={<Category />} />
@@ -53,24 +52,15 @@ function App() {
           <Route path="/search" element={<SearchResults />} />
           <Route path="/precheckout" element={<PreCheckout />} />
           <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<Profile />} />
-
-
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/order-status" element={<Ordering />} />
         </Routes>
-        <Footer />
+
+        {!shouldHideLayout && <Footer />}
       </div>
     </CartProvider>
   );
 }
 
 export default App;
-
-
-
-
-
-
-
-
-
