@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .views import CategoryViewSet, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, PastOrdersView, SubmitRatingView,upload_image, search_items, create_order
 from rest_framework.routers import DefaultRouter
-from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details
+from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
@@ -32,4 +32,6 @@ urlpatterns = [
     path('api/past-orders/', PastOrdersView.as_view(), name='past-orders'),
     path('api/order-detail/<int:invoice_id>/', InvoiceDetailView.as_view(), name='invoice-detail'),
     path('api/submit-rating/', SubmitRatingView.as_view(), name='submit-rating'),
+    path('api/create-address/', AddressView.as_view(), name='create-address'),
+    path('api/all-transactions-invoices/', get_all_transactions_and_invoices, name='all-transactions-invoices'),
 ]
