@@ -1,5 +1,23 @@
 from django.db import models
-from django.contrib.auth.models import User  # or your custom user model
+from django.contrib.auth.models import User 
+from django.db import models
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('maker', 'Maker'),
+        ('delivery', 'Delivery'),
+        ('agent', 'Agent'),
+        ('user', 'User'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+    phone = models.CharField(max_length=15, blank=True, null=True)  # Add this line
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user} - {self.role}"
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -39,42 +57,24 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.phone} - {self.otp}"
-
-# # Category Model
-# class Category(models.Model):
-#     name = models.CharField(max_length=150, unique=True)
-#     image_url = models.CharField(max_length=500, blank=True, null=True)
-
-#     def __str__(self):
-#         return self.name
-
-# # Item Model
-# class Item(models.Model):
-#     name = models.CharField(max_length=250, unique=True)
-#     image_url = models.CharField(max_length=500, blank=True, null=True)    
-#     category = models.ManyToManyField(Category)
-#     price = models.IntegerField()
-#     category_id = models.IntegerField()
-#     bestseller = models.BooleanField(default=False)
-
-#     def __str__(self):
-#         return self.name
-
-# Cart Model
-# class Cart(models.Model):
-#     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-#     quantity = models.PositiveIntegerField(default=1)
-
-#     def __str__(self):
-#         return f"{self.item.name} - {self.quantity}"
+    
 class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items',default=1)
+    session_key = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items',null=True, blank=True)
     item = models.ForeignKey('Item', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     weight = models.CharField(max_length=50, blank=True, null=True)
+    class Meta:
+        unique_together = ('session_key', 'item')
 
     def __str__(self):
-        return f"{self.user.username} - {self.quantity} x {self.item.name} ({self.weight})"
+        return f"{self.user} - {self.quantity} x {self.item.name} ({self.weight})"
+    
+    @property
+    def total_price(self):
+        return self.quantity * self.item.price
 
 
 class Order(models.Model):
@@ -108,11 +108,11 @@ class Invoice(models.Model):
         ('UPI', 'UPI'),
         ('ONLINE', 'Online'),
     ]
-
     order_date = models.DateTimeField(auto_now_add=True)
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     delivery_time = models.IntegerField() 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    session_key = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
     net_amount = models.DecimalField(max_digits=10, decimal_places=2)
     cgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     sgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
@@ -126,11 +126,12 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
     def __str__(self):
-        return f"Invoice #{self.id} - {self.user.username}"
+        return f"Invoice #{self.id} - {self.user}"
 
 
 class Transaction(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    session_key = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='transactions')
     item_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -143,7 +144,8 @@ class Transaction(models.Model):
     
 
 class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses')
+    session_key = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses',null=True, blank=True)
     name = models.CharField(max_length=100)  # e.g., "Home", "Office", or contact person's name
     address1 = models.TextField()
     address2 = models.TextField(blank=True, null=True)
@@ -152,16 +154,16 @@ class Address(models.Model):
     latitude = models.FloatField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} - {self.user.username}"
+        return f"{self.name} - {self.user}"
     
 class Rating(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE)
     transaction = models.ForeignKey('Transaction', on_delete=models.SET_NULL, null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
     rating = models.PositiveSmallIntegerField()  # typically 1 to 5
     comment = models.TextField(blank=True, null=True)
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
     date_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.rating}★ by {self.user.username} on {self.item.name}"
+        return f"{self.rating}★ by {self.user} on {self.item.name}"

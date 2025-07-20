@@ -4,12 +4,14 @@ from .serializers import CategorySerializer, ItemSerializer, CartSerializer, Rat
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from rest_framework import generics
+from rest_framework.decorators import action
+
 
 from .models import Category, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from decimal import Decimal
 
 import os
@@ -18,7 +20,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 import os
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 import json
 
@@ -32,8 +33,18 @@ import random
 from .utils.send_sms import generate_otp, send_otp_sms
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
+from django.contrib.auth import authenticate
+from .models import UserProfile 
+from .serializers import UserSerializer
+
 
 user_otp_map = {}  # Store phone -> OTP temporarily (in prod use DB or cache)
+class OptionalJWTAuthentication(JWTAuthentication):
+    def authenticate(self, request):
+        header = self.get_header(request)
+        if header is None:
+            return None
+        return super().authenticate(request)
 
 class SendOTPView(APIView):
     def post(self, request):
@@ -190,25 +201,32 @@ class BestsellerItemsAPIView(APIView):
 
 class CartViewSet(ModelViewSet):
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]  # Add this line
+    queryset = Cart.objects.all()
+
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]  # Add this line
 
     def get_queryset(self):
-        # Only return cart items for the logged-in user
-        print(self.request.data,"HELLO")
-        return Cart.objects.filter(user=self.request.user)
+        session_key = self.request.headers.get("x-session-key")
+        if not session_key:
+            self.request.session.create()
+            session_key = self.request.session.session_key
+        return super().get_queryset().filter(session_key=session_key)
 
     def create(self, request, *args, **kwargs):
-        user = request.user
+        session_key = request.headers.get("x-session-key")
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
         item_id = request.data.get('item')
         quantity = int(request.data.get('quantity', 1))
-        weight = request.data.get('weight', None)
+        weight = request.data.get('weight', 1)
 
-        # get_or_create based on user, item, and weight (weight optional)
         cart_item, created = Cart.objects.get_or_create(
-            user=user,
+            session_key=session_key,
             item_id=item_id,
-            weight=weight
+            weight=weight,
+            defaults={'quantity': quantity}
         )
 
         if not created:
@@ -218,19 +236,13 @@ class CartViewSet(ModelViewSet):
         serializer = self.get_serializer(cart_item)
         return Response(serializer.data, status=201 if created else 200)
 
-
 class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 class ProfileView(APIView):
@@ -242,30 +254,42 @@ class ProfileView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 class AddressView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+    authentication_classes = [OptionalJWTAuthentication]
     def get(self, request):
-        addresses = Address.objects.filter(user=request.user)
+        if request.user.is_authenticated:
+            addresses = Address.objects.filter(user=request.user)
+        else:
+            session_key = request.headers.get("x-session-key")
+            addresses = Address.objects.filter(session_key=session_key)
         serializer = AddressSerializer(addresses, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = AddressSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)  # Ensure the address is linked to the logged-in user
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        session_key = request.headers.get("x-session-key")
+        if request.user.is_authenticated:
+            serializer = AddressSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(user=request.user,session_key=session_key)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = AddressSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(session_key=session_key)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 class CreateOrderView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    permission_classes = [AllowAny]
+    authentication_classes = [OptionalJWTAuthentication]
 
     def post(self, request):
-        user = request.user
         data = request.data
-
+        session_key = request.headers.get("x-session-key")
         payment_mode = data.get("payment_mode")
-        delivery_time = data.get("delivery_time", 1)  # example: 1 day delivery
+        delivery_time = data.get("delivery_time", 1)
         net_amount = Decimal(data.get("net_amount", 0))
         cgst = Decimal(data.get("cgst", 0))
         sgst = Decimal(data.get("sgst", 0))
@@ -275,35 +299,57 @@ class CreateOrderView(APIView):
         if not payment_mode or not cart_items:
             return Response({"error": "Payment mode and cart items are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create Invoice
-        invoice = Invoice.objects.create(
-            user=user,
-            payment_mode=payment_mode,
-            delivery_time=delivery_time,
-            net_amount=net_amount,
-            cgst=cgst,
-            sgst=sgst,
-            discount=discount,
-            status='ORDERED'
-        )
+        if request.user.is_authenticated:
+            invoice = Invoice.objects.create(
+                user=request.user,
+                session_key=session_key,
+                payment_mode=payment_mode,
+                delivery_time=delivery_time,
+                net_amount=net_amount,
+                cgst=cgst,
+                sgst=sgst,
+                discount=discount,
+                status='ORDERED'
+            )
+        else:
+            invoice = Invoice.objects.create(
+                session_key=session_key,
+                payment_mode=payment_mode,
+                delivery_time=delivery_time,
+                net_amount=net_amount,
+                cgst=cgst,
+                sgst=sgst,
+                discount=discount,
+                status='ORDERED'
+            )
 
         # Create Transactions for each cart item
         for item_data in cart_items:
             try:
                 item = Item.objects.get(id=item_data["id"])
-                Transaction.objects.create(
-                    user=user,
-                    item=item,
-                    invoice=invoice,
-                    item_amount=Decimal(item_data["price"]),
-                    quantity=int(item_data["quantity"]),
-                    weight=item_data.get("weight", ""),
-                    discounted=Decimal(item_data.get("discounted", 0))
-                )
+                if request.user.is_authenticated:
+                    Transaction.objects.create(
+                        user=request.user,
+                        session_key=session_key,
+                        item=item,
+                        invoice=invoice,
+                        item_amount=Decimal(item_data["price"]),
+                        quantity=int(item_data["quantity"]),
+                        weight=item_data.get("weight", ""),
+                        discounted=Decimal(item_data.get("discounted", 0))
+                    )
+                else:
+                    Transaction.objects.create(
+                        session_key=session_key,
+                        item=item,
+                        invoice=invoice,
+                        item_amount=Decimal(item_data["price"]),
+                        quantity=int(item_data["quantity"]),
+                        weight=item_data.get("weight", ""),
+                        discounted=Decimal(item_data.get("discounted", 0))
+                    )
             except Item.DoesNotExist:
-                # Optional: handle missing item
                 continue
-
         return Response({"message": "Order created successfully", "invoice_id": invoice.id}, status=status.HTTP_201_CREATED)
 
 
@@ -388,6 +434,85 @@ class SubmitRatingView(generics.CreateAPIView):
 @api_view(['GET'])
 def get_all_transactions_and_invoices(request):
     invoices = Invoice.objects.prefetch_related('transactions', 'transactions__item').all()
-    print(invoices)
     serializer = InvoiceDetailSerializer(invoices, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def admin_login(request):
+    """
+    Admin login endpoint using existing User model
+    """
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        role = request.data.get('role', 'admin')
+
+        if not username or not password:
+            return Response({
+                'error': 'Username and password are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Authenticate user
+        user = authenticate(username=username, password=password)
+        
+        if not user:
+            return Response({
+                'error': 'Invalid credentials'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if user is staff
+        if not user.is_staff:
+            return Response({
+                'error': 'Access denied - Staff access required'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Validate role (optional)
+        allowed_roles = ['admin', 'staff']
+        if role not in allowed_roles:
+            return Response({
+                'error': f'Invalid role. Allowed roles are: {", ".join(allowed_roles)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle UserProfile
+        try:
+            profile = UserProfile.objects.get(user=user)
+            user_role = profile.role
+        except UserProfile.DoesNotExist:
+            # Create profile if it doesn't exist
+            # profile = UserProfile.objects.create(user=user, role=role)
+            # user_role = role
+            return Response({
+                'error': f'User Doesnt Have adminaccess '
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = refresh.access_token
+
+        # Add role to token
+        access_token['role'] = user_role
+        access_token['user_id'] = user.id
+
+        return Response({
+            'access': str(access_token),
+            'refresh': str(refresh),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user_role
+            },
+            'message': f'Successfully logged in as {user_role}'
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # Log the error internally (optional)
+        print(f"Login error: {e}")
+        return Response({
+            'error': 'Login failed',
+            'message': 'An unexpected error occurred. Please try again later.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

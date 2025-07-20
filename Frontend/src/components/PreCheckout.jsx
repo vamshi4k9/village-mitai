@@ -2,8 +2,7 @@ import React, { useContext, useState, useEffect } from "react";
 import { CartContext } from "./CartContext";
 import axios from "axios";
 import "../styles/PreCheckout.css";
-import { API_BASE_URL} from '../constants'; 
-
+import { API_BASE_URL, SESSION_KEY,SESSION_TOKEN } from '../constants'; 
 
 export default function PreCheckout() {
   const { cart, total, totalItems } = useContext(CartContext);
@@ -18,15 +17,14 @@ export default function PreCheckout() {
     address2: "",
     phone_number: "",
   });
+  const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
   useEffect(() => {
     const fetchAddresses = async () => {
       const token = localStorage.getItem("access_token");
       if (token) {
         try {
-          const res = await axios.get(`${API_BASE_URL}/addresses/`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await axios.get(`${API_BASE_URL}/addresses/`, SESSION_TOKEN);
           setAddresses(res.data);
           if (res.data.length > 0) setSelectedAddress("0");
         } catch (err) {
@@ -47,18 +45,16 @@ export default function PreCheckout() {
   };
 
   const handleAddAddress = async () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      alert("Please log in to add an address.");
-      return;
-    }
-  
     try {
-      const response = await axios.post(`${API_BASE_URL}/create-address/`, newAddress, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAddresses((prev) => [...prev, response.data]); // Update the addresses list with the new address
-      setNewAddress({ name: "", address1: "", address2: "", phone_number: "" }); // Reset the form
+      const response = await axios.post(
+        `${API_BASE_URL}/create-address/`, 
+        newAddress, 
+        SESSION_TOKEN
+      );
+      setAddresses((prev) => [...prev, response.data]);
+      setNewAddress({ name: "", address1: "", address2: "", phone_number: "" });
+      setSelectedAddress(addresses.length.toString()); // Select the newly added address
+      setShowAddAddressForm(false);
       alert("Address added successfully!");
     } catch (error) {
       console.error("Failed to create address", error);
@@ -96,15 +92,11 @@ export default function PreCheckout() {
         address,
       };
 
-      const token = localStorage.getItem("access_token");
-
       try {
+        const token = localStorage.getItem("access_token");
         const response = await axios.post(
           `${API_BASE_URL}/create-order/`,
-          payload,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          payload, token ? SESSION_TOKEN : SESSION_KEY
         );
         alert("Order placed successfully! Invoice ID: " + response.data.invoice_id);
       } catch (error) {
@@ -158,7 +150,7 @@ export default function PreCheckout() {
         <hr />
 
         <h2>Shipping Address</h2>
-        {addresses.length > 0 ? (
+        {addresses.length > 0 && (
           <div className="address-list">
             {addresses.map((addr, index) => (
               <label
@@ -180,55 +172,61 @@ export default function PreCheckout() {
               </label>
             ))}
           </div>
-        ) : (
-          <div className="no-address">
-            <p className="no-address-message">No saved addresses found.</p>
-            <div className="add-address-form">
-              <h3 className="form-title">Add New Address</h3>
-              <div className="form-group">
-                <label htmlFor="name">Name</label>
-                <input
-                  id="name"
-                  type="text"
-                  placeholder="Enter your name"
-                  value={newAddress.name}
-                  onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address1">Address Line 1</label>
-                <input
-                  id="address1"
-                  type="text"
-                  placeholder="Enter address line 1"
-                  value={newAddress.address1}
-                  onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address2">Address Line 2</label>
-                <input
-                  id="address2"
-                  type="text"
-                  placeholder="Enter address line 2"
-                  value={newAddress.address2}
-                  onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="phone_number">Phone Number</label>
-                <input
-                  id="phone_number"
-                  type="text"
-                  placeholder="Enter phone number"
-                  value={newAddress.phone_number}
-                  onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
-                />
-              </div>
-              <button className="add-address-button" onClick={handleAddAddress}>
-                Add Address
-              </button>
+        )}
+
+        <button 
+          className="add-new-address-button" 
+          onClick={() => setShowAddAddressForm(!showAddAddressForm)}
+        >
+          {showAddAddressForm ? "Cancel" : "+ Add New Address"}
+        </button>
+
+        {showAddAddressForm && (
+          <div className="add-address-form">
+            <h3 className="form-title">Add New Address</h3>
+            <div className="form-group">
+              <label htmlFor="name">Name</label>
+              <input
+                id="name"
+                type="text"
+                placeholder="Enter your name"
+                value={newAddress.name}
+                onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+              />
             </div>
+            <div className="form-group">
+              <label htmlFor="address1">Address Line 1</label>
+              <input
+                id="address1"
+                type="text"
+                placeholder="Enter address line 1"
+                value={newAddress.address1}
+                onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="address2">Address Line 2</label>
+              <input
+                id="address2"
+                type="text"
+                placeholder="Enter address line 2"
+                value={newAddress.address2}
+                onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="phone_number">Phone Number</label>
+              <input
+                id="phone_number"
+                type="text"
+                placeholder="Enter phone number"
+                value={newAddress.phone_number}
+                onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
+              />
+            </div>
+            <button className="save-address-button" onClick={handleAddAddress}>
+              Save Address
+            </button>
           </div>
         )}
 

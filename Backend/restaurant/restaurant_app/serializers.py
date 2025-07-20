@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Category, Item, Cart, Address, Invoice, Transaction
 from .models import OTP
 from django.contrib.auth.models import User
+from .models import UserProfile
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,15 +23,30 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = ['id', 'name','description', 'image', 'category', 'price', 'bestseller','discounted_price','available','shelf_life','veg','delivery_time']
 
+# class CartSerializer(serializers.ModelSerializer):
+#     item = ItemSerializer(read_only=True)
+#     item_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Item.objects.all(), write_only=True, source='item'
+#     )
+
+
+#     class Meta:
+#         model = Cart
+#         fields = ['id', 'item', 'quantity','item_id']
+
 class CartSerializer(serializers.ModelSerializer):
-    item = ItemSerializer(read_only=True)
+    item = ItemSerializer()
+    item_id = serializers.PrimaryKeyRelatedField(
+        queryset=Item.objects.all(), write_only=True, source='item'
+    )
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'item', 'quantity',]
+        fields = ['id', 'item', 'quantity', 'total_price', 'updated_at','item_id']
 
-# serializers.py
-
+    def get_total_price(self, obj):
+        return obj.total_price
 
 class SendOTPSerializer(serializers.Serializer):
     phone = serializers.CharField()
@@ -45,15 +61,22 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username']
 
 class RegisterSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(required=True)
+
     class Meta:
         model = User
-        fields = ('username', 'password', 'email')
+        fields = ['username', 'first_name', 'last_name', 'email', 'password', 'phone']
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        phone = validated_data.pop('phone')
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        UserProfile.objects.create(user=user, role='maker', phone=phone)
         return user
-
+    
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
@@ -61,11 +84,10 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    addresses = AddressSerializer(many=True, read_only=True)
-    
+    user = serializers.StringRelatedField()  # or use UserSerializer for nested info
     class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'addresses']
+        model = UserProfile
+        fields = ['user', 'role', 'phone', 'created_at', 'updated_at']
 
 class InvoiceListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,7 +110,6 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
     transactions = TransactionDetailSerializer(many=True, read_only=True)
-
     class Meta:
         model = Invoice
         fields = [
@@ -96,9 +117,15 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'cgst', 'sgst', 'discount', 'status', 'transactions'
         ]
 
-from .models import Rating
+from .models import Rating, UserProfile
 
 class RatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = ['id','item', 'transaction', 'rating', 'comment']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()  # or use UserSerializer for nested info
+    class Meta:
+        model = UserProfile
+        fields = ['user', 'role', 'phone', 'created_at', 'updated_at']

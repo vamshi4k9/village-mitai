@@ -19,7 +19,11 @@ import LoginPage from "./components/LoginPage";
 import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
 import Profile from './components/Profile';
-import Ordering from './components/Ordering';
+import Ordering from './components/Dashboards/Ordering';
+import AdminLogin from './components/AdminLogin';
+import MakerDashboard from './components/Dashboards/MakerDashboard';
+import DeliveryDashboard from './components/Dashboards/DeliveryDashboard';
+import ProtectedRoute from './ProtectedRoute';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -31,7 +35,7 @@ function App() {
   };
 
   // Define routes where header/footer should be hidden
-  const hideLayoutRoutes = ['/order-status'];
+  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register'];
 
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 
@@ -54,7 +58,32 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/order-status" element={<Ordering />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Ordering />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/maker/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['maker']}>
+                <MakerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['delivery']}>
+                <DeliveryDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
 
         {!shouldHideLayout && <Footer />}
