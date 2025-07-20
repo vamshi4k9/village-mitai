@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL, SESSION_KEY} from '../constants'; 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
@@ -15,12 +15,8 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const cartRes = await axios.get(`${API_BASE_URL}/cart/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+
+        const cartRes = await axios.get(`${API_BASE_URL}/cart/`, SESSION_KEY);
           setCart(cartRes.data);
       } catch (error) {
         console.error("Error fetching cart:", error);
@@ -47,12 +43,8 @@ export const CartProvider = ({ children }) => {
    const incQuant = async (cartItem) => {
     try {
       const newQuantity = cartItem.quantity + 1;
-      const token = localStorage.getItem('access_token');
-      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, SESSION_KEY);
       const updatedCart = cart.map(item => item.id === cartItem.id ? res.data : item);
       setCart(updatedCart);
     } catch (error) {
@@ -65,12 +57,7 @@ export const CartProvider = ({ children }) => {
 
     if (cartItem.quantity === 1) {
         try {
-          const token = localStorage.getItem('access_token');
-          await axios.delete(`${API_BASE_URL}cart/${cartItem.id}/`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          await axios.delete(`${API_BASE_URL}cart/${cartItem.id}/`, cart ,SESSION_KEY);
           setCart(cart.filter(item => item.id !== cartItem.id));
         } catch (error) {
           console.error("Error deleting item:", error);
@@ -79,12 +66,7 @@ export const CartProvider = ({ children }) => {
       } 
     try {
       const newQuantity = cartItem.quantity - 1;
-      const token = localStorage.getItem('access_token');
-      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, SESSION_KEY);
       const updatedCart = cart.map(item => item.id === cartItem.id ? res.data : item);
       setCart(updatedCart);
     } catch (error) {
@@ -93,12 +75,7 @@ export const CartProvider = ({ children }) => {
   };
   const removeFromCart = async (cartItem) => {
     try {
-      const token = localStorage.getItem('access_token');
-      await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, SESSION_KEY);
       setCart(cart.filter(item => item.id !== cartItem.id));
     } catch (error) {
       console.error("Error removing item:", error);
@@ -113,15 +90,6 @@ export const CartProvider = ({ children }) => {
       setShowToast(false);
     }, 3000);
   };
-
-
-
-
-
-
-
-
-
   return (
     <CartContext.Provider value={{ cart, setCart, total, incQuant, decQuant, removeFromCart, totalItems , triggerToast}}>
       {children}
@@ -135,39 +103,3 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

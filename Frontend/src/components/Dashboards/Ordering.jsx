@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { API_BASE_URL } from "../constants";
-import TableView from "./TableView"; // Import the table view component
-import "../styles/Ordering.css";
+import { API_BASE_URL } from "../../constants";
+import TableView from "../TableView"; // Import the table view component
+import "../../styles/Ordering.css";
 
 function Ordering() {
   const [invoices, setInvoices] = useState([]);
@@ -25,14 +25,13 @@ function Ordering() {
         alert("Failed to fetch data. Please try again.");
       }
     };
-
     fetchInvoices();
   }, []);
 
   return (
     <div className="ordering-container">
       <h2>Order Management</h2>
-      <TableView invoices={invoices} /> {/* Pass invoices as props */}
+      <TableView invoices={invoices} userRole='Admin' /> {/* Pass invoices as props */}
     </div>
   );
 }

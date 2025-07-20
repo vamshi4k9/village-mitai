@@ -5,7 +5,7 @@ import { CartContext } from "./CartContext";
 import ReviewSection from "./ProductPage/ReviewSection";
 import ReviewList from "./ProductPage/ReviewList";
 
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL } from '../constants';
 
 import '../styles/ProductDetail.css'
 
@@ -155,9 +155,9 @@ const ProductDetail = ({ productId }) => {
               <option value={500}>500g</option>
               <option value={1000}>1kg</option>
             </select>
-            <span>Total Weight: {totalWeight >= 1000
+            {/* <span>Total Weight: {totalWeight >= 1000
               ? `${(totalWeight / 1000).toFixed(2)}kg`
-              : `${totalWeight}g`}</span>
+              : `${totalWeight}g`}</span> */}
           </div>
 
           <div className="quan">
@@ -165,17 +165,12 @@ const ProductDetail = ({ productId }) => {
               ? `${(totalWeight / 1000).toFixed(2)}kg`
               : `${totalWeight}g`}</p>
           </div>
-
-
           {/* Add to Cart Button */}
           <button
             className="add-to-cart-btn-detail"
             onClick={handleCart}>
             Add to Cart
           </button>
-
-
-
           {/* "Tax Included" Section */}
           <p className="tax-info">
             Tax included. Shipping calculated at checkout.
@@ -221,10 +216,9 @@ const ProductDetail = ({ productId }) => {
       </div>
 
 
-      <ReviewList productId={productId} key={refresh} />
+      {/* <ReviewList productId={productId} key={refresh} /> */}
 
       <ReviewSection itemId={id} token={localStorage.getItem("token")} triggerToast={triggerToast} />
-      {/* Full-Width Section Below Left & Right Sections */}
       <div className="full-width-features">
         <div className="feature-card">
           <img src={`${process.env.PUBLIC_URL}/images/Authentic_Recipe.avif`} alt="Authentic Recipe" />

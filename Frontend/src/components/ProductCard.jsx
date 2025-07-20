@@ -12,7 +12,14 @@ const ProductCard = ({ item, smallImage = false }) => {
   const { cart, setCart, incQuant, decQuant, triggerToast } = useContext(CartContext);
   const { getUrlWithAgentId } = useAgentId();
 
-
+  const getSessionKey = () => {
+    let sessionKey = localStorage.getItem('cart_session_key');
+    if (!sessionKey) {
+      sessionKey = `anon_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('cart_session_key', sessionKey);
+    }
+    return sessionKey;
+  };
 
   const navigate = useNavigate();
   const handleClick = () => {
@@ -22,12 +29,10 @@ const ProductCard = ({ item, smallImage = false }) => {
   const handleCart = async () => {
     try {
       const payload = { item: item.id, quantity: 1 };
-      const token = localStorage.getItem('access_token');
-      const res = await axios.post(`${API_BASE_URL}/cart/`, payload, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const config = {
+        headers: { 'X-Session-Key': getSessionKey() }
+      };
+      const res = await axios.post(`${API_BASE_URL}/cart/`, payload, config);
       setCart([...cart, res.data]);
       triggerToast(`${item.name} added to cart`);
 

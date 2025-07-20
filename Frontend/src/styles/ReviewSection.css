@@ -1,68 +1,156 @@
-.review-section {
-    margin-top: 40px;
-    width: 100%;
-    border-top: 1px solid #693d16;
-    padding-top: 30px;
+.reviews-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f4f2f1;
+  padding: 40px 20px;
+  min-height: 60vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.reviews-section h3 {
+  font-size: 1.8rem;
+  color: #4b2a0d;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.review-box {
+  background: #ffffff;
+  border: 1px solid #4b2a0d;
+  border-radius: 8px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.review-box strong {
+  color: #3f230b;
+  font-size: 1.1rem;
+}
+
+.review-box p {
+  color: #4b2a0d;
+  font-size: 1rem;
+  margin: 4px 0;
+  word-break: break-word;
+}
+
+.review-box hr {
+  border: none;
+  border-bottom: 1px solid #d8cfc4;
+  margin: 12px 0 0 0;
+}
+
+.submit-review {
+  background: #fff;
+  border: 1px solid #4b2a0d;
+  border-radius: 8px;
+  padding: 30px 20px;
+  max-width: 400px;
+  width: 100%;
+  margin-top: 30px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.submit-review h4 {
+  font-size: 1.2rem;
+  color: #4b2a0d;
+  margin-bottom: 18px;
+}
+
+.submit-review label {
+  color: #3f230b;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: left;
+}
+
+.submit-review select {
+  margin-left: 10px;
+  padding: 6px 10px;
+  border: 1px solid #4b2a0d;
+  border-radius: 5px;
+  background: #f9f9f9;
+  color: #3f230b;
+  font-size: 1rem;
+}
+
+.submit-review textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px;
+  margin-top: 10px;
+  margin-bottom: 18px;
+  border: 1px solid #4b2a0d;
+  border-radius: 5px;
+  font-size: 1rem;
+  color: #3f230b;
+  background: #f9f9f9;
+  resize: vertical;
+}
+
+.submit-review textarea:focus,
+.submit-review select:focus {
+  outline: none;
+  border-color: #3f230b;
+  background: #fff;
+}
+
+.submit-review button {
+  width: 100%;
+  padding: 12px;
+  background-color: #4b2a0d;
+  color:white;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s;
+}
+
+.submit-review button:hover {
+  background-color: #3a1e08;
+}
+
+.reviews-section p {
+  color: #d32f2f;
+  background: #fff0f0;
+  border: 1px solid #d32f2f;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (max-width: 600px) {
+  .reviews-section {
+    padding: 20px 5px;
   }
-  
-  .review-box {
-    border-bottom: 1px solid #ccc;
-    padding: 10px 0;
+  .review-box,
+  .submit-review,
+  .reviews-section p {
+    padding: 16px 8px;
+    max-width: 98vw;
   }
-  
-  .review-box strong {
-    color: #4b2a0d;
+  .reviews-section h3 {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
   }
-  
-  .review-box p {
-    margin: 4px 0;
-    color: #3f230b;
-    font-size: 0.9rem;
+  .submit-review h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
   }
-  
-  .submit-review {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .submit-review select,
-  .submit-review textarea {
-    padding: 8px;
-    border: 1px solid #4b2a0d;
-    border-radius: 5px;
-    width: 100%;
-    font-size: 0.9rem;
-  }
-  
-  .submit-review textarea {
-    min-height: 80px;
-    resize: vertical;
-  }
-  
-  .submit-review button {
-    align-self: flex-start;
-    padding: 10px 20px;
-    background-color: #4b2a0d;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .submit-review button:hover {
-    background-color: #3a1f08;
-  }
-  
-  @media (max-width: 768px) {
-    .review-section {
-      padding: 20px 10px;
-    }
-  
-    .submit-review select,
-    .submit-review textarea {
-      font-size: 0.85rem;
-    }
-  }
-  
+}

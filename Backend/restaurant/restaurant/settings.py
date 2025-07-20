@@ -15,6 +15,8 @@ from pathlib import Path
 import os
 from decouple import config
 
+from corsheaders.defaults import default_headers
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -41,6 +43,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -48,7 +51,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),    
@@ -138,6 +140,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  
 ]
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-session-key",
+]
 # settings.py
 PHONEPE_MERCHANT_ID = 'PGTESTPAYUAT' # Replace with your actual Merchant ID
 PHONEPE_MERCHANT_KEY = '099eb0cd-02cf-4e2a-8aca-3e6c6aff0399'  # Replace with your actual Merchant Key
@@ -151,7 +156,17 @@ ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
 STATIC_ROOT = '/var/www/village-mitai/static/'
 
 MEDIA_URL = '/media/'
+
+# AUTH_USER_MODEL = 'restaurant_app.User'
+
+# MEDIA_ROOT = '/media/'
 MEDIA_ROOT = '/var/www/village-mitai/media'
+
+
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_NAME = 'cart_session'
+SESSION_COOKIE_AGE = 1209600 
+SESSION_COOKIE_HTTPONLY = True
 
 
 

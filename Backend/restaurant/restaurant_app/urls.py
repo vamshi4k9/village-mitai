@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import CategoryViewSet, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, PastOrdersView, SubmitRatingView,upload_image, search_items, create_order
+from .views import CategoryViewSet, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, PastOrdersView, SubmitRatingView,upload_image, search_items, create_order ,admin_login
 from rest_framework.routers import DefaultRouter
 from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -18,12 +18,12 @@ urlpatterns = [
     path('api/bestsellers/', BestsellerItemsAPIView.as_view(), name='bestsellers_api'),
     path("api/upload-image/", upload_image, name="upload-image"),
     path('api/search/', search_items, name='search-items'),
-    # path('api/create-order/', create_order, name='create_order'),
     path('api/send-otp/', SendOTPView.as_view()),
     path('api/verify-otp/', VerifyOTPView.as_view()),
     path('api/addresses/', AddressView.as_view()),
     path('api/register/', RegisterView.as_view()),
     path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/admin-login/', admin_login, name='admin_login'),
     path('api/profile/', ProfileView.as_view()),
     path("api/create-order/", CreateOrderView.as_view(), name="create-order"),
     path('api/orders/', get_user_orders, name='user-orders'),
