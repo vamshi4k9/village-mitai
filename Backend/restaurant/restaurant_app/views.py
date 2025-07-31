@@ -1,13 +1,13 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-from .serializers import CategorySerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
+from .serializers import CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import Category, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
+from .models import Category, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -102,11 +102,6 @@ def upload_image(request):
         return JsonResponse({"image_url": image_url}, status=201)
 
     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
-
-
-
 
 
 def search_items(request):
@@ -516,3 +511,6 @@ def admin_login(request):
             'message': 'An unexpected error occurred. Please try again later.'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class FieldMarketingFormCreateView(generics.CreateAPIView):
+    queryset = FieldMarketingForm.objects.all()
+    serializer_class = FieldMarketingFormSerializer

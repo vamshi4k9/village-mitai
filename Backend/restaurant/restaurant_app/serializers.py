@@ -1,8 +1,13 @@
 from rest_framework import serializers
-from .models import Category, Item, Cart, Address, Invoice, Transaction
+from .models import Category, Item, Cart, Address, Invoice, Transaction, FieldMarketingForm
 from .models import OTP
 from django.contrib.auth.models import User
 from .models import UserProfile
+
+class FieldMarketingFormSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FieldMarketingForm
+        fields = '__all__'
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

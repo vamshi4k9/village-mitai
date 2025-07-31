@@ -2,6 +2,54 @@ from django.db import models
 from django.contrib.auth.models import User 
 from django.db import models
 
+class FieldMarketingForm(models.Model):
+    GENDER_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+        ('Other', 'Other'),
+    ]
+
+    QUALIFICATION_CHOICES = [
+        ('10th', '10th'),
+        ('12th', '12th'),
+        ('Graduate', 'Graduate'),
+        ('Postgraduate', 'Postgraduate'),
+    ]
+
+    WORK_HOUR_CHOICES = [
+        ('2 Hours', '2 Hours'),
+        ('4 Hours', '4 Hours'),
+        ('6 Hours', '6 Hours'),
+        ('Full-time', 'Full-time'),
+        ('Flexible', 'Flexible'),
+    ]
+
+    SALARY_PREFERENCE_CHOICES = [
+        ('Salary-Based', 'Salary-Based'),
+        ('Commission-Based', 'Commission-Based'),
+        ('Open to Both', 'Open to Both'),
+    ]
+
+    full_name = models.CharField(max_length=100)
+    dob = models.DateField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
+    mobile_number = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
+    city_area = models.CharField(max_length=100)
+    languages_spoken = models.JSONField(default=list)  # Stores array of languages
+    qualification = models.CharField(max_length=20, choices=QUALIFICATION_CHOICES)
+    owns_vehicle = models.BooleanField()
+    has_field_experience = models.BooleanField()
+    preferred_work_location = models.CharField(max_length=100, blank=True, null=True)
+    daily_commitment = models.CharField(max_length=20, choices=WORK_HOUR_CHOICES)
+    willing_for_fieldwork = models.BooleanField()
+    salary_preference = models.CharField(max_length=30, choices=SALARY_PREFERENCE_CHOICES)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.full_name
+
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
