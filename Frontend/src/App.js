@@ -18,6 +18,7 @@ import PreCheckout from './components/PreCheckout';
 import LoginPage from "./components/LoginPage";
 import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
+import RecruitForm from './components/RecruitForm';
 import Profile from './components/Profile';
 import Ordering from './components/Dashboards/Ordering';
 import AdminLogin from './components/AdminLogin';
@@ -35,7 +36,7 @@ function App() {
   };
 
   // Define routes where header/footer should be hidden
-  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register'];
+  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register', '/recruit'];
 
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 
@@ -60,6 +61,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/recruit" element={<RecruitForm />} />
           <Route
             path="/admin/dashboard"
             element={
