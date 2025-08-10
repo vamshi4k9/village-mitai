@@ -9,7 +9,7 @@
 
 .register-card {
   background: #ffffff;
-  border: 1px solid #4b2a0d;
+  border: 1px solid #31511E;
   border-radius: 8px;
   padding: 40px 30px;
   width: 100%;
@@ -29,7 +29,7 @@
 
 .register-heading {
   font-size: 1.8rem;
-  color: #4b2a0d;
+  color: #31511E;
   margin-bottom: 30px;
   text-align: center;
 }
@@ -38,24 +38,24 @@
   width: 100%;
   padding: 12px 15px;
   margin-bottom: 18px;
-  border: 1px solid #4b2a0d;
+  border: 1px solid #31511E;
   border-radius: 5px;
   font-size: 1rem;
-  color: #3f230b;
+  color: #31511E;
   background: #f9f9f9;
   transition: border-color 0.2s, background 0.2s;
 }
 
 .register-input:focus {
   outline: none;
-  border-color: #3f230b;
+  border-color: #31511E;
   background: #fff;
 }
 
 .register-button {
   width: 100%;
   padding: 12px;
-  background-color: #4b2a0d;
+  background-color: #31511E;
   color: white;
   font-size: 1rem;
   border: none;

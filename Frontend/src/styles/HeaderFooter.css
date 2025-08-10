@@ -19,7 +19,7 @@
   font-family: "Ruthie", cursive;
   font-size: 2.9rem;
   font-weight: 600;
-  color: #351c02;
+  color: #31511E;
   text-shadow: 3px 3px 2px rgb(153, 91, 53);
 }
 
@@ -41,12 +41,12 @@
 .nav-link i,
 .mobile i {
   font-size: 24px;
-  color: #5a3825;
+  color: #1A1A19;
 }
 
 .desktop span,
 .mobile span {
-  background-color: #5a3825;
+  background-color: #1A1A19;
   border-radius: 50%;
   color: white;
   padding: 2px 5px;
@@ -55,7 +55,7 @@
 }
 
 .mobile-links a {
-  color: #351c02;
+  color: #31511E;
 }
 
 .list-unstyled a {
@@ -275,7 +275,7 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background-color: #5a3825;
+  background-color: #1A1A19;
   border-radius: 50%;
   color: white;
   padding: 2px 6px;

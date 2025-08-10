@@ -76,7 +76,7 @@ h2 {
   object-fit: cover;
 }
 
-button {
+/* button {
   padding: 5px 10px;
   background-color: #007bff;
   color: #fff;
@@ -87,13 +87,13 @@ button {
 
 button:hover {
   background-color: #0056b3;
-}
+} */
 
-select {
+/* select {
   padding: 5px;
   border: 1px solid #ddd;
   border-radius: 4px;
-}
+} */
 
 .arrow-button {
   background: none;

@@ -17,7 +17,7 @@ html, body{
         }
 
 .bg-brown {
-          background-color: #5a3825 !important;
+          background-color: #1A1A19 !important;
         }
 
 .category-div{
@@ -91,7 +91,7 @@ html, body{
   height: 400px; 
 }
 .partner-text {
-  background-color: #c4a577;
+  background-color: #859F3D;
   color: #221100;
   display: flex;
   flex-direction: column;
@@ -123,7 +123,7 @@ html, body{
   border: 1px solid #221100;
 }
 .wholesale{
-  color: #c4a577;
+  color: #859F3D;
   background-color: #221100;
 }
 
@@ -138,7 +138,7 @@ padding-top: 120px;}
 
 .all-items-div{
   padding-top: 30px;
-  border-top: 1px solid #5a3825;
+  border-top: 1px solid #1A1A19;
 }
 
 
@@ -172,7 +172,7 @@ padding-top: 120px;}
 
 .scroll-text {
   font-size: 1.1rem;
-  color: #c4a577;
+  color: #859F3D;
 }
 
 
@@ -227,11 +227,11 @@ padding-top: 120px;}
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #351c02;
+  border-bottom: 2px solid #31511E;
   margin:  0 20px;
   padding:  10px 10px;
   padding-top: 20px;
-  color: #351c02;
+  color: #31511E;
   position: fixed;
   top: 0;
   background-color: #f4f2f1;
@@ -255,9 +255,9 @@ padding-top: 120px;}
   display: flex;
   align-items: center;
   margin-bottom: 15px;
-  gap: 20px;
-  border-bottom: 1px solid #c4a577;
-  color: #351c02;
+  gap: 10px;
+  border-bottom: 1px solid #859F3D;
+  color: #31511E;
 }
 
 .cart-item-img {
@@ -307,7 +307,7 @@ padding-top: 120px;}
   border: none
 }
 .cart-quantity{
-  border: 1px solid #5a3825;
+  border: 1px solid #1A1A19;
   padding: 3px 9px;
 }
 
@@ -323,20 +323,18 @@ padding-top: 120px;}
   background-color: none;
   border: none;
   color: #7b7167;
-  border-bottom: 1px solid #7b7167;
 }
 
 
 .remove-btn:hover{
   color: rgb(153, 18, 18);
-  border-bottom: 1px solid rgb(153, 18, 18);
 }
 
 .checkout-btn {
   display: block;
   text-align: center;
   padding: 10px;
-  background-color: #c4a577;
+  background-color: #859F3D;
   color: white;
   text-decoration: none;
   margin-top: 10px;
@@ -344,7 +342,7 @@ padding-top: 120px;}
 
 .checkout-btn-txt{
   text-decoration: none;
-  color: #351c02;
+  color: #31511E;
   text-transform: uppercase;
   border-radius: 0 !important;
 }
@@ -353,7 +351,7 @@ padding-top: 120px;}
 }
 
 .cart-header span{
-  background-color: #5a3825;
+  background-color: #1A1A19;
   border-radius: 50%;
 color: white;
 padding: 1px 6px;

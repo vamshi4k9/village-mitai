@@ -27,3 +27,14 @@
   background: #ccc;
   color: #333;
 }
+
+.cart-count-cart {
+  background-color: #1A1A19;
+  border-radius: 50%;
+  color: white;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 18px;
+  text-align: center;
+  align-self: center;
+}

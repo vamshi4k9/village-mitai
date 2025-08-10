@@ -31,8 +31,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="App">
-      {/* Bootstrap Carousel */}
+    <div >
       <div
         id="homeCarousel"
         className="carousel slide"

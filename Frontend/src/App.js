@@ -19,6 +19,7 @@ import LoginPage from "./components/LoginPage";
 import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
 import RecruitForm from './components/RecruitForm';
+import OrderStatus from './components/OrderStatus';
 import Profile from './components/Profile';
 import Ordering from './components/Dashboards/Ordering';
 import AdminLogin from './components/AdminLogin';
@@ -35,8 +36,7 @@ function App() {
     setIsCartOpen(!isCartOpen);
   };
 
-  // Define routes where header/footer should be hidden
-  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register', '/recruit'];
+  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register', '/recruit','/order_status'];
 
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 
@@ -45,7 +45,6 @@ function App() {
       <div className="App">
         {!shouldHideLayout && <Header toggleCart={toggleCart} />}
         {!shouldHideLayout && <CartPopup isOpen={isCartOpen} toggleCart={toggleCart} />}
-
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path="/collections/:categorySlug" element={<Category />} />
@@ -62,6 +61,7 @@ function App() {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/recruit" element={<RecruitForm />} />
+          <Route path="/order_status" element={<OrderStatus />} />
           <Route
             path="/admin/dashboard"
             element={

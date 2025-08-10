@@ -387,15 +387,15 @@ class PastOrdersView(APIView):
         })
     
 class InvoiceDetailView(APIView):
-    authentication_classes = [JWTAuthentication]  # applies for all methods
+    authentication_classes = [OptionalJWTAuthentication]  # applies for all methods
 
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [IsAuthenticated()]  # enforce permission only on GET
-        return []
+    # def get_permissions(self):
+    #     if self.request.method == 'GET':
+    #         # return [IsAuthenticated()]  # enforce permission only on GET
+    #     return []
     def get(self, request, invoice_id):
         try:
-            invoice = Invoice.objects.get(id=invoice_id, user=request.user)
+            invoice = Invoice.objects.get(id=invoice_id)
         except Invoice.DoesNotExist:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
