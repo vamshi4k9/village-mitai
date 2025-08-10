@@ -49,7 +49,7 @@ const ProductCard = ({ item, smallImage = false }) => {
       <div className="image-container">
         <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" onClick={handleClick}/>
 
-        <div className="add-to-cart-btn">
+        {/* <div className="add-to-cart-btn">
           {cartItem ? (
             <div className="d-flex align-items-center justify-content-center">
               <div
@@ -73,7 +73,7 @@ const ProductCard = ({ item, smallImage = false }) => {
               Add to Cart
             </div>
           )}
-        </div>
+        </div> */}
       </div>
       <p className="bestseller-info">
         {item.name} <br /> Rs.{item.price}

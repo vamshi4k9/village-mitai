@@ -46,7 +46,14 @@ const ProductDetail = ({ productId }) => {
   };
 
   const totalWeight = quantity * selectedWeight;
-
+  const getSessionKey = () => {
+    let sessionKey = localStorage.getItem('cart_session_key');
+    if (!sessionKey) {
+      sessionKey = `anon_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('cart_session_key', sessionKey);
+    }
+    return sessionKey;
+  };
   // Handle add to cart
   const handleCart = async () => {
     try {
@@ -55,11 +62,10 @@ const ProductDetail = ({ productId }) => {
         console.log(cartItem)
         const updatedQuantity = cartItem.quantity + quantity;
         const token = localStorage.getItem('access_token');
-        await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity }, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const config = {
+        headers: { 'X-Session-Key': getSessionKey() }
+      };
+        await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity }, config);
         setCart(cart.map(item =>
           item.id === cartItem.id ? { ...item, quantity: updatedQuantity } : item
         ));
@@ -85,7 +91,7 @@ const ProductDetail = ({ productId }) => {
     <div>
       <div className="product-detail-container">
         {/* Left Section - Image & Description Toggle */}
-        <div className="left-section">
+        <div className="left-section justify-items-center">
           <img src={product.image} alt={product.name} className="product-image" />
 
 
@@ -140,7 +146,8 @@ const ProductDetail = ({ productId }) => {
           </div>
 
           {/* Quantity Controls */}
-          <div className="quan">
+          <div className="flex">
+          <div className="quan mr-4">
             <p>Quantity</p>
             <div className="quantity-controls">
               <button onClick={decreaseQuantity}>-</button>
@@ -149,7 +156,7 @@ const ProductDetail = ({ productId }) => {
             </div>
           </div>
           <div className="quan">
-            <p>Select Weight:</p>
+            <p>Weight</p>
             <select className="quantity-controls" onChange={handleWeightChange} value={selectedWeight}>
               <option value={250}>250g</option>
               <option value={500}>500g</option>
@@ -158,7 +165,8 @@ const ProductDetail = ({ productId }) => {
             {/* <span>Total Weight: {totalWeight >= 1000
               ? `${(totalWeight / 1000).toFixed(2)}kg`
               : `${totalWeight}g`}</span> */}
-          </div>
+            </div>
+            </div>
 
           <div className="quan">
             <p>Total Weight: {totalWeight >= 1000

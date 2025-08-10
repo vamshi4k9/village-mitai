@@ -32,7 +32,7 @@ export default function Items() {
 
     return (
         <div className="container all-items">
-            <h1 className="text-center mb-4" style={{ color: '#5a3825' }}>All Items</h1>
+            <h1 className="text-center mb-4" style={{ color: '#1A1A19' }}>All Items</h1>
 
             <div className="row justify-content-center all-items-div">
                 {allitems.length === 0 ? (

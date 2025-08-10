@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import { CartContext } from "./CartContext";
-import {  useNavigate } from "react-router-dom"; // ⬅️ Added useNavigate
+import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
 import "../styles/CartPopup.css";
 
@@ -56,7 +56,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
       <div className={`cart-popup ${isOpen ? "open" : ""}`}>
         <div className="cart-header">
-          <h4>Your Cart {totalItems > 0 && <span className="cart-count">{totalItems}</span>}</h4>
+          <h4>Your Cart {totalItems > 0 && <span className="cart-count-cart">{totalItems}</span>}</h4>
           <button className="close-btn" onClick={toggleCart}><i className="bi bi-x"></i></button>
         </div>
 
@@ -66,20 +66,24 @@ const CartPopup = ({ isOpen, toggleCart }) => {
           <div className="cart-items">
             {cart.map((item) => (
               <div key={item.item.id} className="cart-item">
-                <img src={item.item.image} alt={item.item.name} className="cart-item-img" />
-                <div className="cart-item-details">
-                  <div className="cart-item-info">
-                    <p className="cart-item-name">{item.item.name}</p>
-                    <p className="cart-item-price">Rs. {item.item.price} INR</p>
+                <div className="flex">
+                  <img src={item.item.image} alt={item.item.name} className="cart-item-img" />
+                  <div className="cart-item-details">
+                    <div className="cart-item-info">
+                      <p className="cart-item-name">{item.item.name}</p>
+                      <p className="cart-item-price">Rs. {item.item.price} INR</p>
+                    </div>
                   </div>
+                </div>
+                <div className="flex">
                   <div className="cart-item-actions">
                     <div className="cart-quantity">
                       <button onClick={() => decQuant(item)}>-</button>
                       <span>{item.quantity}</span>
                       <button onClick={() => incQuant(item)}>+</button>
                     </div>
-                    <button className="remove-btn" onClick={() => removeFromCart(item)}>Remove</button>
                   </div>
+                  <button className="remove-btn ml-3" onClick={() => removeFromCart(item)}>Remove</button>
                 </div>
               </div>
             ))}

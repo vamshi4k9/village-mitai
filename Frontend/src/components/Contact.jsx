@@ -11,7 +11,7 @@ const Contact = () => {
         back to you as soon as possible.
       </p>
       
-      <div className="row w-100 mt-4 contact-details" style={{borderTop: '1px solid #c4a577', paddingTop: '40px'}}>
+      <div className="row w-100 mt-4 contact-details" style={{borderTop: '1px solid #859F3D', paddingTop: '40px'}}>
         <div className="col-md-6 d-flex justify-content-center">
           <img
             src={`${process.env.PUBLIC_URL}/images/baklava-pistachio-sobiyet-318929.webp`}            alt="Contact Us"
