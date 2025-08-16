@@ -10,14 +10,14 @@
 
 .reviews-section h3 {
   font-size: 1.8rem;
-  color: #31511E;
+  color: #3F2305;
   margin-bottom: 30px;
   text-align: center;
 }
 
 .review-box {
   background: #ffffff;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 8px;
   padding: 24px 20px;
   width: 100%;
@@ -29,12 +29,12 @@
 }
 
 .review-box strong {
-  color: #31511E;
+  color: #3F2305;
   font-size: 1.1rem;
 }
 
 .review-box p {
-  color: #31511E;
+  color: #3F2305;
   font-size: 1rem;
   margin: 4px 0;
   word-break: break-word;
@@ -48,7 +48,7 @@
 
 .submit-review {
   background: #fff;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 8px;
   padding: 30px 20px;
   max-width: 400px;
@@ -62,12 +62,12 @@
 
 .submit-review h4 {
   font-size: 1.2rem;
-  color: #31511E;
+  color: #3F2305;
   margin-bottom: 18px;
 }
 
 .submit-review label {
-  color: #31511E;
+  color: #3F2305;
   font-size: 1rem;
   margin-bottom: 10px;
   width: 100%;
@@ -77,10 +77,10 @@
 .submit-review select {
   margin-left: 10px;
   padding: 6px 10px;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 5px;
   background: #f9f9f9;
-  color: #31511E;
+  color: #3F2305;
   font-size: 1rem;
 }
 
@@ -90,10 +90,10 @@
   padding: 10px;
   margin-top: 10px;
   margin-bottom: 18px;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 5px;
   font-size: 1rem;
-  color: #31511E;
+  color: #3F2305;
   background: #f9f9f9;
   resize: vertical;
 }
@@ -101,14 +101,14 @@
 .submit-review textarea:focus,
 .submit-review select:focus {
   outline: none;
-  border-color: #31511E;
+  border-color: #3F2305;
   background: #fff;
 }
 
 .submit-review button {
   width: 100%;
   padding: 12px;
-  background-color: #31511E;
+  background-color: #3F2305;
   color:white;
   font-size: 1rem;
   border: none;

@@ -71,9 +71,11 @@ const CartPopup = ({ isOpen, toggleCart }) => {
                   <div className="cart-item-details">
                     <div className="cart-item-info">
                       <p className="cart-item-name">{item.item.name}</p>
-                      <p className="cart-item-price">Rs. {item.item.price} INR</p>
+                      {item.item.available}
+                      <p className="cart-item-price">Rs. {item.item.price * item.quantity} INR </p>
                     </div>
-                  </div>
+                    <p className="cart-item-price"> {item.weight} Grams </p>
+                    </div>
                 </div>
                 <div className="flex">
                   <div className="cart-item-actions">
@@ -92,8 +94,8 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
         {cart.length > 0 && (
           <div className="cart-footer">
-            <p className="cart-total">Total: Rs. {total}</p>
-            <div className="checkout-btn" onClick={handleCheckout}>
+            <p className="cart-total">Total: Rs. {total}  {totalItems}</p>
+            <div className="checkout-btn cursor-pointer" onClick={handleCheckout}>
               <span className="checkout-btn-txt">Checkout</span>
             </div>
           </div>

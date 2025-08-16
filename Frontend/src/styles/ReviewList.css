@@ -9,7 +9,7 @@
   
   .review-list h3 {
     font-size: 1.8rem;
-    color: #31511E;
+    color: #3F2305;
     margin-bottom: 30px;
     text-align: center;
   }
@@ -27,7 +27,7 @@
   
   .review-card {
     background: #ffffff;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     border-radius: 8px;
     padding: 24px 20px;
     width: 100%;
@@ -46,7 +46,7 @@
   }
   
   .review-header strong {
-    color: #31511E;
+    color: #3F2305;
     font-size: 1.1rem;
   }
   
@@ -59,7 +59,7 @@
   }
   
   .review-comment {
-    color: #31511E;
+    color: #3F2305;
     font-size: 1rem;
     margin-top: 6px;
     word-break: break-word;
@@ -82,7 +82,7 @@
   .review-form button {
     margin-top: 10px;
     padding: 10px;
-    background-color: #31511E;
+    background-color: #3F2305;
     color: white;
     border: none;
     cursor: pointer;

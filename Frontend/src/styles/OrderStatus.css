@@ -61,7 +61,7 @@
   top: 5px;
 }
 
-.timeline-item.completed .timeline-marker { background: #31511E; }
+.timeline-item.completed .timeline-marker { background: #3F2305; }
 .timeline-item.active .timeline-marker { background: orange; }
 .timeline-item.cancelled .timeline-marker { background: red; }
 
@@ -86,7 +86,7 @@
 }
 
 .track-btn {
-  background: #31511E;
+  background: #3F2305;
   color: white;
   padding: 8px 15px;
   border: none;

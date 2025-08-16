@@ -21,7 +21,7 @@
     font-size: 1rem;
     font-weight: 600;
     text-decoration: none;
-    color: #000;
+    color: #3f2305;
     margin-left: 10px;
   }
   .view-all-text:hover {
@@ -91,7 +91,7 @@ right: 0;
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: #333;
+    color: #3f2305;
     transition: color 0.3s ease-in-out;
   }
   

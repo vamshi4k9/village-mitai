@@ -56,28 +56,21 @@ const ProductDetail = ({ productId }) => {
   };
   // Handle add to cart
   const handleCart = async () => {
-    try {
-      if (cartItem) {
-        // If item is already in cart, update its quantity
-        console.log(cartItem)
-        const updatedQuantity = cartItem.quantity + quantity;
-        const token = localStorage.getItem('access_token');
-        const config = {
+      const config = {
         headers: { 'X-Session-Key': getSessionKey() }
       };
+    try {
+      if (cartItem) {
+        const updatedQuantity = cartItem.quantity + quantity;
+        const token = localStorage.getItem('access_token');
         await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity }, config);
         setCart(cart.map(item =>
           item.id === cartItem.id ? { ...item, quantity: updatedQuantity } : item
         ));
       } else {
-        // If item is not in cart, add it
-        const payload = { item: product.id, quantity: quantity };
+        const payload = { item: product.id, quantity: quantity,weight: selectedWeight };
         const token = localStorage.getItem('access_token');
-        const res = await axios.post(`${API_BASE_URL}/cart/`, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await axios.post(`${API_BASE_URL}/cart/`, payload, config);
         setCart([...cart, res.data]);
       }
       triggerToast(`${product.name} added to cart`);

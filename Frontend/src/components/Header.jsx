@@ -121,7 +121,7 @@ export default function Header({ toggleCart }) {
         width: "100%",
         top: 0,
         zIndex: 1000,
-        backgroundColor: "white",
+        backgroundColor: "#FFFFFF",
       }}>
         {loadingCategories && <span>Loading...</span>}
         {error && <span className="text-danger">Error: {error}</span>}

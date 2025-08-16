@@ -13,20 +13,20 @@
 h2 {
   text-align: center;
   margin-bottom: 20px;
-  color: #333;
+  color: #3f2305;
 }
 
 /* Base theme */
 .ag-theme-alpine {
   margin-top : 6rem;
-  background-color: #FFFFFF; /* White background */
-  font-family: "Open Sans", sans-serif; /* Custom font */
-  color: #333; /* Text color */
+  background-color: #FFFFFF; 
+  font-family: "Open Sans", sans-serif;
+  color: #3f2305; 
 }
 
 /* Header styles */
 .ag-header-cell {
-  background-color: #f5f5f5; /* Light gray background */
+  background-color: #FFFFFF; /* Light gray background */
   font-size: 14px; /* Custom font size */
   font-weight: bold; /* Bold text */
   border-bottom: 1px solid #ccc; /* Border */
@@ -45,7 +45,7 @@ h2 {
 
 /* Pagination styles */
 .ag-paging-panel {
-  background-color: #f5f5f5; /* Light gray background */
+  background-color: #FFFFFF; /* Light gray background */
   border-top: 1px solid #ccc; /* Border */
 }
 
@@ -58,7 +58,7 @@ h2 {
 
 .invoice-table th,
 .transaction-table th {
-  background-color: #f5f5f5;
+  background-color: #FFFFFF;
   border: 1px solid #ddd;
   padding: 10px;
   text-align: left;

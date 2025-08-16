@@ -25,11 +25,11 @@
 }
 .auth-popup button:last-child {
   background: #ccc;
-  color: #333;
+  color: #3f2305;
 }
 
 .cart-count-cart {
-  background-color: #1A1A19;
+  background-color: #3F2305;
   border-radius: 50%;
   color: white;
   font-size: 1rem;

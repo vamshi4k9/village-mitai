@@ -1,7 +1,7 @@
 from django.urls import path, include
-from .views import CategoryViewSet, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, PastOrdersView, SubmitRatingView,upload_image, search_items, create_order ,admin_login
+from .views import BannerListView, CategoryViewSet, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, PastOrdersView, SubmitRatingView,upload_image, search_items ,admin_login
 from rest_framework.routers import DefaultRouter
-from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices
+from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices, create_order, verify_payment
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 
@@ -35,5 +35,9 @@ urlpatterns = [
     path('api/create-address/', AddressView.as_view(), name='create-address'),
     path('api/all-transactions-invoices/', get_all_transactions_and_invoices, name='all-transactions-invoices'),
     path('api/submit-recruit/', FieldMarketingFormCreateView.as_view(), name='submit-form'),
+    path('api/create-order-razor/', create_order, name='create_order'),
+    path('api/verify-payment/', verify_payment, name='verify_payment'),
+    path('api/banners/', BannerListView.as_view(), name='banner-list'),
+
 
 ]

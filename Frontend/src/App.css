@@ -17,7 +17,7 @@ html, body{
         }
 
 .bg-brown {
-          background-color: #1A1A19 !important;
+          background-color: #3F2305 !important;
         }
 
 .category-div{
@@ -51,7 +51,7 @@ html, body{
 .category-name {
   font-size: 0.9rem;
   margin-top: 10px;
-  color: #333;
+  color: #3f2305;
   text-transform: capitalize;
 }
 .cat-lnk{
@@ -91,7 +91,7 @@ html, body{
   height: 400px; 
 }
 .partner-text {
-  background-color: #859F3D;
+  background-color: #3F2305;
   color: #221100;
   display: flex;
   flex-direction: column;
@@ -123,7 +123,7 @@ html, body{
   border: 1px solid #221100;
 }
 .wholesale{
-  color: #859F3D;
+  color: #3F2305;
   background-color: #221100;
 }
 
@@ -138,7 +138,7 @@ padding-top: 120px;}
 
 .all-items-div{
   padding-top: 30px;
-  border-top: 1px solid #1A1A19;
+  border-top: 1px solid #3F2305;
 }
 
 
@@ -172,7 +172,7 @@ padding-top: 120px;}
 
 .scroll-text {
   font-size: 1.1rem;
-  color: #859F3D;
+  color: #3F2305;
 }
 
 
@@ -227,11 +227,11 @@ padding-top: 120px;}
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #31511E;
+  border-bottom: 2px solid #3F2305;
   margin:  0 20px;
   padding:  10px 10px;
   padding-top: 20px;
-  color: #31511E;
+  color: #3F2305;
   position: fixed;
   top: 0;
   background-color: #f4f2f1;
@@ -240,8 +240,8 @@ padding-top: 120px;}
 .cart-items {
   padding-top: 60px;
   flex-grow: 1;
-  max-height: calc(100vh - 120px); /* Adjust height based on header/footer */
-  overflow-y: auto;
+  /* max-height: calc(100vh - 120px);
+  overflow-y: auto; */
   scrollbar-width: none !important; /* Hide scrollbar for Firefox */
 }
 
@@ -256,8 +256,8 @@ padding-top: 120px;}
   align-items: center;
   margin-bottom: 15px;
   gap: 10px;
-  border-bottom: 1px solid #859F3D;
-  color: #31511E;
+  border-bottom: 1px solid #3F2305;
+  color: #3F2305;
 }
 
 .cart-item-img {
@@ -307,7 +307,7 @@ padding-top: 120px;}
   border: none
 }
 .cart-quantity{
-  border: 1px solid #1A1A19;
+  border: 1px solid #3F2305;
   padding: 3px 9px;
 }
 
@@ -334,7 +334,7 @@ padding-top: 120px;}
   display: block;
   text-align: center;
   padding: 10px;
-  background-color: #859F3D;
+  background-color: #3F2305;
   color: white;
   text-decoration: none;
   margin-top: 10px;
@@ -342,8 +342,7 @@ padding-top: 120px;}
 
 .checkout-btn-txt{
   text-decoration: none;
-  color: #31511E;
-  text-transform: uppercase;
+  color: #dfd7bf;
   border-radius: 0 !important;
 }
 .contact{
@@ -351,7 +350,7 @@ padding-top: 120px;}
 }
 
 .cart-header span{
-  background-color: #1A1A19;
+  background-color: #3F2305;
   border-radius: 50%;
 color: white;
 padding: 1px 6px;
