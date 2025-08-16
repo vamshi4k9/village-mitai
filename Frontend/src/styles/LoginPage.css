@@ -9,7 +9,7 @@
   
   .login-card {
     background: #ffffff;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     border-radius: 8px;
     padding: 40px;
     width: 100%;
@@ -19,7 +19,7 @@
   
   .login-heading {
     font-size: 1.8rem;
-    color: #31511E;
+    color: #3F2305;
     margin-bottom: 30px;
     text-align: center;
   }
@@ -28,23 +28,23 @@
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 20px;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     border-radius: 5px;
     font-size: 1rem;
-    color: #31511E;
+    color: #3F2305;
     background: #f9f9f9;
   }
   
   .login-input:focus {
     outline: none;
-    border-color: #31511E;
+    border-color: #3F2305;
     background: #fff;
   }
   
   .login-button {
     width: 100%;
     padding: 12px;
-    background-color: #31511E;
+    background-color: #3F2305;
     color: white;
     font-size: 1rem;
     border: none;

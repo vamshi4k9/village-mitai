@@ -42,7 +42,7 @@
     top: 40%;
     transform: translateX(-50%);
     width: 90%;
-    background-color: black;
+    background-color: #3f2305;
     /* background: rgba(255, 255, 255, 0.7); */
     text-align: center;
     padding: 5px 0;
@@ -50,7 +50,7 @@
     text-transform: uppercase;
     opacity: 0;
     color: white;
-    border: 1px solid black;
+    border: 1px solid #3f2305;
     transition: opacity 0.3s ease-in-out;
     font-weight: 500;
   }
@@ -63,7 +63,7 @@
   .bestseller-info {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #333;
+    color: #3f2305;
     margin-bottom: 0;
     text-transform: capitalize;
     text-align: center;

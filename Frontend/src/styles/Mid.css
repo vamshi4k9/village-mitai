@@ -8,7 +8,7 @@
           
           .mid-title {
             font-size: 2rem;
-            color: #333;
+            color: #3f2305;
           }
           
           .mid-description {
@@ -246,7 +246,7 @@
  
  .shop-btn:hover {
    background: white;
-   color: black;
+   color: #3f2305;
  }
  
  @media (max-width: 768px) {

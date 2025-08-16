@@ -1,13 +1,18 @@
+import hashlib
+import hmac
 from django.shortcuts import get_object_or_404
+import razorpay
 from rest_framework.response import Response
-from .serializers import CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
+
+from restaurant import settings
+from .serializers import BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import Category, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
+from .models import Banner, Category, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -209,7 +214,9 @@ class CartViewSet(ModelViewSet):
         return super().get_queryset().filter(session_key=session_key)
 
     def create(self, request, *args, **kwargs):
-        session_key = request.headers.get("x-session-key")
+        session_key = self.request.headers.get("x-session-key")
+        print(session_key,"ses")
+        
         if not session_key:
             request.session.create()
             session_key = request.session.session_key
@@ -250,7 +257,7 @@ class ProfileView(APIView):
     
 class AddressView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = [OptionalJWTAuthentication]
+    # authentication_classes = [OptionalJWTAuthentication]
     def get(self, request):
         if request.user.is_authenticated:
             addresses = Address.objects.filter(user=request.user)
@@ -262,6 +269,7 @@ class AddressView(APIView):
 
     def post(self, request):
         session_key = request.headers.get("x-session-key")
+        print(session_key)
         if request.user.is_authenticated:
             serializer = AddressSerializer(data=request.data)
             if serializer.is_valid():
@@ -514,3 +522,44 @@ def admin_login(request):
 class FieldMarketingFormCreateView(generics.CreateAPIView):
     queryset = FieldMarketingForm.objects.all()
     serializer_class = FieldMarketingFormSerializer
+    
+    
+client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+@csrf_exempt
+def create_order(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        amount = int(data.get("amount", 0)) * 100  # convert to paise
+
+        order = client.order.create({
+            "amount": amount,
+            "currency": "INR",
+            "payment_capture": 1
+        })
+
+        return JsonResponse(order, safe=False)
+    
+@csrf_exempt
+def verify_payment(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        razorpay_order_id = data['razorpay_order_id']
+        razorpay_payment_id = data['razorpay_payment_id']
+        razorpay_signature = data['razorpay_signature']
+
+        generated_signature = hmac.new(
+            bytes(settings.RAZORPAY_KEY_SECRET, 'utf-8'),
+            bytes(razorpay_order_id + "|" + razorpay_payment_id, 'utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+
+        if generated_signature == razorpay_signature:
+            return JsonResponse({"status": "Payment Verified"})
+        else:
+            return JsonResponse({"status": "Payment Verification Failed"}, status=400)
+        
+class BannerListView(generics.ListAPIView):
+    queryset = Banner.objects.all()
+    serializer_class = BannerSerializer

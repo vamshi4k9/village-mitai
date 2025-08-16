@@ -1,8 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { CartContext } from "./CartContext";
+import  LocationPicker from "./LocationPicker.js";
 import axios from "axios";
 import "../styles/PreCheckout.css";
-import { API_BASE_URL, SESSION_KEY,SESSION_TOKEN } from '../constants'; 
+import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from '../constants';
 
 export default function PreCheckout() {
   const { cart, total, totalItems } = useContext(CartContext);
@@ -47,8 +48,8 @@ export default function PreCheckout() {
   const handleAddAddress = async () => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/create-address/`, 
-        newAddress, 
+        `${API_BASE_URL}/create-address/`,
+        newAddress,
         SESSION_TOKEN
       );
       setAddresses((prev) => [...prev, response.data]);
@@ -103,13 +104,50 @@ export default function PreCheckout() {
         console.error("Failed to place order", error);
         alert("Failed to place order. Please try again.");
       }
-    } else {
+    }
+    else if (paymentMode === 'UPI') {
+      const orderRes = await axios.post(
+        `${API_BASE_URL}/create-order-razor/`,
+        { amount: 500 }, // ✅ data
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const orderData = orderRes.data; // ✅ Correct way
+      const options = {
+        key: "rzp_test_YqrLQMzf9Xl7Qw", // from Razorpay dashboard
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "My Shop",
+        description: "Test Transaction",
+        order_id: orderData.id,
+        handler: async (response) => {
+          const verifyRes = await axios.post(
+            `${API_BASE_URL}/verify-payment/`,
+            response, // ✅ data
+            { headers: { "Content-Type": "application/json" } } // ✅ config
+          );
+
+          alert(verifyRes.data.status); // ✅ Axios stores parsed data in .data
+        },
+        prefill: {
+          name: "Vishnu Vamshi",
+          email: "test@example.com",
+          contact: "9999999999",
+        },
+        theme: {
+          color: "#4b2a0d",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    }
+    else {
       alert(`Paying ₹${total - discount} via ${paymentMode}`);
     }
   };
 
   return (
-    <div className="precheckout-container">
+    <div className="precheckout-container mt-2">
       <div className="left-section">
         <h2>Your Cart</h2>
         <div className="cart-items">
@@ -174,8 +212,8 @@ export default function PreCheckout() {
           </div>
         )}
 
-        <button 
-          className="add-new-address-button" 
+        <button
+          className="add-new-address-button"
           onClick={() => setShowAddAddressForm(!showAddAddressForm)}
         >
           {showAddAddressForm ? "Cancel" : "+ Add New Address"}
@@ -224,6 +262,18 @@ export default function PreCheckout() {
                 onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
               />
             </div>
+            <div className="form-group">
+              {/* <label>Choose Location on Map</label> */}
+              <LocationPicker
+                onLocationSelect={(latlng) => {
+                  setNewAddress({
+                    ...newAddress,
+                    latitude: latlng.lat,
+                    longitude: latlng.lng
+                  });
+                }}
+              />
+            </div>
             <button className="save-address-button" onClick={handleAddAddress}>
               Save Address
             </button>
@@ -234,13 +284,14 @@ export default function PreCheckout() {
 
         <h2>Payment Method</h2>
         <div className="payment-options">
-          {["UPI", "Cash On Delivery", "Card", "Net Banking"].map((mode) => (
+          {["UPI", "Cash On Delivery"].map((mode) => (
             <label
               key={mode}
               className={`payment-option ${paymentMode === mode ? "selected" : ""}`}
             >
               <input
                 type="radio"
+                className="payment-radio"
                 name="payment"
                 value={mode}
                 checked={paymentMode === mode}
@@ -250,7 +301,6 @@ export default function PreCheckout() {
             </label>
           ))}
         </div>
-
         <button className="pay-button" onClick={handlePayment}>
           Pay ₹{total - discount}
         </button>

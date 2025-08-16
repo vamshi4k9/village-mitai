@@ -7,7 +7,7 @@
   background: #f4f2f1;
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #31511E;
+  color: #3F2305;
 }
 
 /* Main Card */
@@ -15,7 +15,7 @@
   width: 100%;
   max-width: 750px;
   background-color: #ffffff;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 12px;
   padding: 40px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -24,7 +24,7 @@
 /* Section Titles */
 .left-section h2 {
   font-size: 1.5rem;
-  color: #31511E;
+  color: #3F2305;
   margin-bottom: 20px;
 }
 
@@ -59,12 +59,12 @@
 
 .item-name {
   font-weight: 600;
-  color: #31511E;
+  color: #3F2305;
 }
 
 .item-total {
   font-weight: bold;
-  color: #31511E;
+  color: #3F2305;
 }
 
 /* Summary Section */
@@ -80,7 +80,7 @@
 .discount,
 .net-total {
   font-weight: bold;
-  color: #31511E;
+  color: #3F2305;
 }
 
 /* Coupon Section */
@@ -93,21 +93,21 @@
 .coupon-box input {
   flex: 1;
   padding: 10px;
-  border: 1px solid #31511E;
+  border: 1px solid #3F2305;
   border-radius: 6px;
   background: #f9f9f9;
-  color: #31511E;
+  color: #3F2305;
 }
 
 .coupon-box input:focus {
   outline: none;
   background: #fff;
-  border-color: #31511E;
+  border-color: #3F2305;
 }
 
 .coupon-box button {
   padding: 10px 20px;
-  background: #31511E;
+  background: #3F2305;
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -137,7 +137,7 @@
 }
 
 .address-card.selected {
-  border-color: #31511E;
+  border-color: #3F2305;
   background-color: #f4f2f1;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .form-title {
-  color: #31511E;
+  color: #3F2305;
   margin-bottom: 15px;
   font-size: 1.1rem;
   font-weight: 600;
@@ -184,10 +184,9 @@
   border-radius: 6px;
 }
 
-/* Add Address Button */
 .add-address-button {
   padding: 10px 16px;
-  background-color: #31511E;
+  background-color: #3F2305;
   color: #fff;
   border: none;
   border-radius: 6px;
@@ -218,7 +217,7 @@
 
 .payment-option.selected {
   background-color: #eae2da;
-  border-color: #31511E;
+  border-color: #3F2305;
 }
 
 /* Pay Button */
@@ -226,7 +225,7 @@
   width: 100%;
   margin-top: 20px;
   padding: 14px;
-  background-color: #31511E;
+  background-color: #3F2305;
   color: white;
   font-size: 1rem;
   font-weight: 600;
@@ -270,3 +269,10 @@
     flex-direction: column;
   }
 }
+
+.payment-option input[type="radio"] {
+  position: absolute;
+  opacity: 0; /* Hide the default radio */
+  cursor: pointer;
+}
+

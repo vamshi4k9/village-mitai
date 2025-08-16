@@ -3,29 +3,29 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #31511E;
+    color: #3F2305;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
   
   .profile-heading {
     font-size: 2rem;
-    color: #31511E;
+    color: #3F2305;
     margin-bottom: 30px;
   }
   
   .profile-card {
     width: 100%;
     max-width: 700px;
-    background: #859F3D;
+    background: #F5F5F5;
     padding: 30px;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     border-radius: 8px;
   }
   
   .profile-card p {
     margin-bottom: 10px;
     font-size: 1rem;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .profile-section {
@@ -34,7 +34,7 @@
   
   .profile-section h3 {
     font-size: 1.2rem;
-    color: #31511E;
+    color: #3F2305;
     margin-bottom: 10px;
   }
   
@@ -43,7 +43,7 @@
     background: #fff;
     padding: 15px;
     margin-bottom: 15px;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     border-radius: 5px;
   }
   
@@ -56,7 +56,7 @@
   .logout-button {
     margin-top: 30px;
     padding: 12px 20px;
-    background: #31511E;
+    background: #3F2305;
     color: white;
     border: none;
     border-radius: 5px;
@@ -66,7 +66,7 @@
   
   .loading {
     font-size: 1.1rem;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .view-details-btn {

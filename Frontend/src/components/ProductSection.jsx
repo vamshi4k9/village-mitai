@@ -43,7 +43,7 @@
 
 //         <Link
 //           to={activeTab === "bestsellers" ? "/bestsellers" : "/category/dubai kunafa chocolate"}
-//           className="view-all-text" style={{color: '#5a3825', alignSelf: 'center', fontSize: '1rem', fontWeight: '600', textDecoration: 'none'}}>
+//           className="view-all-text" style={{color: '#3F2305', alignSelf: 'center', fontSize: '1rem', fontWeight: '600', textDecoration: 'none'}}>
 //           View All {activeTab === "bestsellers" ? "Bestsellers" : "Kunafa Collection"} →
 //         </Link>
 //       </div>

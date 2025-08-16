@@ -215,3 +215,11 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.rating}★ by {self.user} on {self.item.name}"
+    
+class Banner(models.Model):
+    image = models.ImageField(upload_to="banners/")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"Banner {self.id}"

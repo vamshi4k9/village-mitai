@@ -5,7 +5,7 @@ export default function NewsLetter() {
     <div>
       
       <div className="container-fluid py-4">
-  <div className="container" style={{ borderTop: "1px solid #859F3D" }}>
+  <div className="container" style={{ borderTop: "1px solid #3F2305" }}>
     <div className="row align-items-center">
       <div className="col-md-6 d-flex flex-column justify-content-center text-center text-md-start py-5">
         <p style={{ fontSize: "1.2rem"}}>Stay Sweet with Exclusive Updates</p>
@@ -20,12 +20,12 @@ export default function NewsLetter() {
             type="email"
             className="form-control me-2"
             placeholder="Enter your email"
-            style={{ border: "1px solid #859F3D", borderRadius: "0" }}
+            style={{ border: "1px solid #3F2305", borderRadius: "0" }}
           />
           <button
             className="btn px-3"
             style={{
-              backgroundColor: "#859F3D",
+              backgroundColor: "#3F2305",
               borderRadius: "0",
               textTransform: "uppercase",
               fontSize: "0.8rem",

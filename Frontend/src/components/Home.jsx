@@ -1,16 +1,36 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
-import Mid from "./Mid";
-import Bottom from "./Bottom";
 import CategorySection from "./CategorySection";
-import useAgentId from "./useAgentId";
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL } from '../constants';
+import { useNavigate } from "react-router-dom";
+
 
 export default function Home() {
   const [categories, setCategories] = useState([]);
-  const { getUrlWithAgentId } = useAgentId();
+  const [banners, setBanners] = useState([]);
 
+  useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/banners/`);
+        setBanners(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchBanners();
+  }, []);
+
+  const navigate = useNavigate();
+
+  const handleBannerClick = (banner) => {
+    if (banner.item_id) {
+            navigate(`/product/${banner.item_id}`);
+    } else if (banner.category_name) {
+      navigate(`/collections/${banner.category_name}`);
+    }
+  };
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -31,12 +51,12 @@ export default function Home() {
   ];
 
   return (
-    <div >
+    <div className="mt-[6rem]">
       <div
         id="homeCarousel"
         className="carousel slide"
         data-bs-ride="carousel"
-        data-bs-interval="3000" // auto-slide every 3s
+        data-bs-interval="3000"
       >
         {/* Indicator dots */}
         <div className="carousel-indicators">
@@ -52,47 +72,23 @@ export default function Home() {
             />
           ))}
         </div>
-
         <div className="carousel-inner">
-          {bannerImages.map((img, index) => (
+          {banners.map((banner, index) => (
             <div
-              key={index}
+              key={banner.id}
               className={`carousel-item ${index === 0 ? "active" : ""}`}
+              onClick={() => handleBannerClick(banner)}
+              style={{ cursor: "pointer" }}
             >
               <img
-                src={img}
+                src={banner.image}
                 className="d-block w-100 carousel-img"
                 alt={`Banner ${index + 1}`}
               />
-              <div
-                className="carousel-caption d-flex flex-column justify-content-center align-items-center"
-                style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.3)",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  position: "absolute",
-                }}
-              >
-                {/* {index === 1 && (
-                  // <div className="text-white text-center">
-                  //   <p style={{ fontSize: "1.5rem" }}>Our Collection</p>
-                  //   <Link
-                  //     to={getUrlWithAgentId("/items")}
-                  //     className="btn btn-outline-light mt-3 px-4 py-2"
-                  //     style={{ textTransform: "uppercase", fontSize: "0.9rem" }}
-                  //   >
-                  //     View Menu
-                  //   </Link>
-                  // </div>
-                )} */}
-              </div>
             </div>
           ))}
         </div>
 
-        {/* Controls */}
         <button
           className="carousel-control-prev"
           type="button"

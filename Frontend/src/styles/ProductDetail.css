@@ -26,7 +26,7 @@
     font-weight: bold;
     width: 600px; /* Fixed width to match image */
     border-bottom: 1px solid #693d16; /* Keep bottom border initially */
-    color: #31511E;
+    color: #3F2305;
   }
   .description-toggle.open{
     border-bottom: none;
@@ -38,7 +38,7 @@
     width: 600px; 
     max-width: 100%;
     display: none;
-    color: #31511E;
+    color: #3F2305;
     font-size: 0.9rem;
     padding: 15px 5px;
     text-align: left;
@@ -67,7 +67,7 @@
   }
   
   .feature-box, .apart-box {
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     padding: 5px 10px;
     display: flex;
     flex-wrap: nowrap;
@@ -81,24 +81,24 @@
   
   .feature-box span, .apart-box span {
     font-size: 0.9rem;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .apart-heading {
     margin-top: 29px;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .detailed_name {
     font-size: 2rem;
     font-weight: 480;
     text-transform: capitalize;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .detailed_price {
     letter-spacing: 1px;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .quan {
@@ -112,18 +112,18 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     padding: 7px 16px;
   }
   
   .quantity-controls button {
     border: none;
     background: none;
-    color: #31511E;
+    color: #3F2305;
   }
   
   .quan p {
-    color: #31511E;
+    color: #3F2305;
     font-size: 1rem;
     margin-bottom: 10px;
   }
@@ -132,7 +132,7 @@
     width: 100%;
     margin-top: 30px;
     padding: 15px 15px;
-    background: #31511E;
+    background: #3F2305;
     color: white;
     border: none;
     cursor: pointer;
@@ -143,13 +143,13 @@
   .tax-info {
     margin-top: 15px;
     font-size: 0.9rem;
-    color: #31511E;
+    color: #3F2305;
 }
 
 .additional-features {
     margin-top: 15px;
     padding: 15px;
-    border: 1px solid #31511E;
+    border: 1px solid #3F2305;
     text-align: left;
     font-size: 0.9rem;
 }
@@ -159,7 +159,7 @@
     align-items: center;
     gap: 10px;
     padding: 10px 0;
-    border-bottom: 1px solid #31511E;
+    border-bottom: 1px solid #3F2305;
 }
 
 .feature-item:last-child {
@@ -204,7 +204,7 @@
 .feature-card span {
     margin-top: 10px;
     font-size: 0.9rem;
-    color: #31511E;
+    color: #3F2305;
 }
 
 @media (min-width: 1024px){
