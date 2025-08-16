@@ -31,6 +31,8 @@ jobs:
             cd /root/AppData/village-mitai/Backend/restaurant
 
 
+            python manage.py makemigrations
+
             echo "📂 Running migrations"
             python manage.py migrate
 
