@@ -20,7 +20,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "📦 Pulling latest code"
-            cd /root/AppData/village-mitai/Frontend
+            cd /opt/villagemitai/Frontend
             git pull origin main
 
             echo "🔧 Setting up Node.js environment"
@@ -48,7 +48,7 @@ jobs:
             pnpm -v
 
             echo "🛠 Installing frontend dependencies"
-            cd /root/AppData/village-mitai/Frontend
+            cd /opt/villagemitai/Frontend
             pnpm install
 
             echo "🔨 Building React app"
