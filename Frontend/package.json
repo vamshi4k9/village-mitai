@@ -68,4 +68,9 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.4"
   }
+  "pnpm": {
+  "overrides": {
+    "eslint-config-react-app": "7.0.1",
+    "eslint-plugin-react": "7.31.8"
+  }
 }
