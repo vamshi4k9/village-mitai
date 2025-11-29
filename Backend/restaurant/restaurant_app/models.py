@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User 
 from django.db import models
@@ -28,7 +29,7 @@ class FieldMarketingForm(models.Model):
         ('Salary-Based', 'Salary-Based'),
         ('Commission-Based', 'Commission-Based'),
         ('Open to Both', 'Open to Both'),
-    ]
+    ]   
 
     full_name = models.CharField(max_length=100)
     dob = models.DateField()
@@ -114,8 +115,8 @@ class Cart(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     weight = models.CharField(max_length=50, blank=True, null=True)
-    class Meta:
-        unique_together = ('session_key', 'item')
+    # class Meta:
+    #     unique_together = ('session_key', 'item')
 
     def __str__(self):
         return f"{self.user} - {self.quantity} x {self.item.name} ({self.weight})"
@@ -216,10 +217,39 @@ class Rating(models.Model):
     def __str__(self):
         return f"{self.rating}★ by {self.user} on {self.item.name}"
     
-class Banner(models.Model):
-    image = models.ImageField(upload_to="banners/")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True, blank=True)
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(
+        max_length=10,
+        choices=[("percent", "Percent"), ("fixed", "Fixed Amount")],
+        default="percent"
+    )
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.is_active and self.valid_from < now <= self.valid_to
 
     def __str__(self):
-        return f"Banner {self.id}"
+        return f"{self.code} | {self.discount_type} {self.discount_value}"
+
+
+class AgentCustomerEntry(models.Model):
+    agent = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, default=1)
+
+    customer_name = models.CharField(max_length=200)
+    customer_phone = models.CharField(max_length=15)
+    area = models.CharField(max_length=200)
+    pincode = models.CharField(max_length=10)
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer_name} ({self.customer_phone})"

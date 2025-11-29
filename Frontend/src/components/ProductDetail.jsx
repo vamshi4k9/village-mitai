@@ -28,7 +28,6 @@ const ProductDetail = ({ productId }) => {
 
   if (!product) return <h2>Loading...</h2>;
 
-  const cartItem = cart.find((cItem) => cItem.item.id === product.id);
 
   // Increase quantity locally
   const increaseQuantity = () => setQuantity(quantity + 1);
@@ -56,19 +55,22 @@ const ProductDetail = ({ productId }) => {
   };
   // Handle add to cart
   const handleCart = async () => {
-      const config = {
-        headers: { 'X-Session-Key': getSessionKey() }
-      };
+    const config = {
+      headers: { 'X-Session-Key': getSessionKey() }
+    };
     try {
+      const cartItem = cart.find(
+        (cItem) => cItem.item.id === product.id && cItem.weight == selectedWeight
+      );
       if (cartItem) {
         const updatedQuantity = cartItem.quantity + quantity;
         const token = localStorage.getItem('access_token');
-        await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity }, config);
+        await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: updatedQuantity, weight: selectedWeight }, config);
         setCart(cart.map(item =>
           item.id === cartItem.id ? { ...item, quantity: updatedQuantity } : item
         ));
       } else {
-        const payload = { item: product.id, quantity: quantity,weight: selectedWeight };
+        const payload = { item: product.id, quantity: quantity, weight: selectedWeight };
         const token = localStorage.getItem('access_token');
         const res = await axios.post(`${API_BASE_URL}/cart/`, payload, config);
         setCart([...cart, res.data]);
@@ -140,26 +142,26 @@ const ProductDetail = ({ productId }) => {
 
           {/* Quantity Controls */}
           <div className="flex">
-          <div className="quan mr-4">
-            <p>Quantity</p>
-            <div className="quantity-controls">
-              <button onClick={decreaseQuantity}>-</button>
-              <span>{quantity}</span>
-              <button onClick={increaseQuantity}>+</button>
+            <div className="quan mr-4">
+              <p>Quantity</p>
+              <div className="quantity-controls">
+                <button onClick={decreaseQuantity}>-</button>
+                <span>{quantity}</span>
+                <button onClick={increaseQuantity}>+</button>
+              </div>
             </div>
-          </div>
-          <div className="quan">
-            <p>Weight</p>
-            <select className="quantity-controls" onChange={handleWeightChange} value={selectedWeight}>
-              <option value={250}>250g</option>
-              <option value={500}>500g</option>
-              <option value={1000}>1kg</option>
-            </select>
-            {/* <span>Total Weight: {totalWeight >= 1000
+            <div className="quan">
+              <p>Weight</p>
+              <select className="quantity-controls" onChange={handleWeightChange} value={selectedWeight}>
+                <option value={250}>250g</option>
+                <option value={500}>500g</option>
+                <option value={1000}>1kg</option>
+              </select>
+              {/* <span>Total Weight: {totalWeight >= 1000
               ? `${(totalWeight / 1000).toFixed(2)}kg`
               : `${totalWeight}g`}</span> */}
             </div>
-            </div>
+          </div>
 
           <div className="quan">
             <p>Total Weight: {totalWeight >= 1000

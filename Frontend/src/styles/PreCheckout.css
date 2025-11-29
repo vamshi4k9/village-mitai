@@ -276,3 +276,48 @@
   cursor: pointer;
 }
 
+.coupon-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coupon-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.coupon-input-wrapper input {
+  width: 100%;
+  padding: 8px 32px 8px 10px; /* leave space on right for cross */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.remove-coupon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 16px;
+  color: #b91c1c;
+}
+
+.remove-coupon:hover {
+  color: #991b1b;
+}
+
+.apply-btn {
+  padding: 8px 14px;
+  background: #4b2a0d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.apply-btn:hover {
+  background: #3a210a;
+}
