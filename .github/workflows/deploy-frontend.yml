@@ -52,7 +52,7 @@ jobs:
             pnpm install
 
             echo "🔨 Building React app"
-            pnpm run build
+            CI=false pnpm run build
 
             # Create timestamped build directory
             TIMESTAMP=$(date +%Y%m%d_%H%M%S)
