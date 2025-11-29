@@ -20,6 +20,8 @@ import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
 import RecruitForm from './components/RecruitForm';
 import OrderStatus from './components/OrderStatus';
+import AgentPage from './components/AgentPage';
+import AgentDashboard from './components/AgentDashboard';
 import Profile from './components/Profile';
 import Ordering from './components/Dashboards/Ordering';
 import AdminLogin from './components/AdminLogin';
@@ -36,7 +38,7 @@ function App() {
     setIsCartOpen(!isCartOpen);
   };
 
-  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register', '/recruit','/order_status'];
+  const hideLayoutRoutes = ['/admin/dashboard', '/admin-login', '/maker/dashboard', '/delivery/dashboard', '/login', '/register', '/recruit','/order_status','/agent-page','/agent-dashboard'];
 
   const shouldHideLayout = hideLayoutRoutes.includes(location.pathname);
 
@@ -62,6 +64,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/recruit" element={<RecruitForm />} />
           <Route path="/order_status" element={<OrderStatus />} />
+          <Route path="/agent-page" element={<AgentPage />} />
+          <Route path="/agent-dashboard" element={<AgentDashboard />} />
           <Route
             path="/admin/dashboard"
             element={

@@ -21,7 +21,7 @@ export default function Cart() {
                             <div className="card-body">
                                 <h5 className="card-title">{cartItem.item.name}</h5>
                                 <p className="card-text">Price: ${cartItem.item.price.toFixed(2)}</p>
-                                <p className="card-text">Quantity: 
+                                <p className="card-text">-: 
                                     <button className="btn btn-sm btn-outline-primary mx-2" onClick={() => incQuant(cartItem)}>+</button>
                                     {cartItem.quantity}
                                     <button className="btn btn-sm btn-outline-danger mx-2" onClick={() => decQuant(cartItem)}>-</button>

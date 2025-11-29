@@ -6,7 +6,7 @@ from .models import (
     Address,
     Invoice,
     Transaction,
-    FieldMarketingForm,
+    FieldMarketingForm, AgentCustomerEntry
 )
 from .models import OTP
 from django.contrib.auth.models import User
@@ -226,3 +226,9 @@ class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
         fields = ['id', 'image', 'category_name', 'item_id']
+
+
+class AgentCustomerEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AgentCustomerEntry
+        fields = "__all__"

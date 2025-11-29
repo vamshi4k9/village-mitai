@@ -55,7 +55,7 @@
   
   .category-banner-img {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     filter: brightness(60%); /* 👈 This darkens the image */
     transition: transform 0.3s ease-in-out;

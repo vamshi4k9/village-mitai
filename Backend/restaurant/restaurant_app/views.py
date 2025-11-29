@@ -3,16 +3,18 @@ import hmac
 from django.shortcuts import get_object_or_404
 import razorpay
 from rest_framework.response import Response
+from django.core.paginator import Paginator
+
 
 from restaurant import settings
-from .serializers import BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
+from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import Banner, Category, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -215,7 +217,6 @@ class CartViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         session_key = self.request.headers.get("x-session-key")
-        print(session_key,"ses")
         
         if not session_key:
             request.session.create()
@@ -563,3 +564,183 @@ def verify_payment(request):
 class BannerListView(generics.ListAPIView):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
+
+@api_view(['POST'])
+def apply_coupon(request):
+    code = request.data.get("code")
+    cart_items = request.data.get("cart_items", [])
+    try:
+        coupon = Coupon.objects.get(code=code)
+        if not coupon.is_valid():
+            return Response({"error": "Coupon expired or inactive"}, status=400)
+
+        # Filter eligible items by category
+        if coupon.category:
+            eligible_items = [i for i in cart_items if i["category_id"] == coupon.category.id]
+        else:
+            eligible_items = cart_items
+
+        if not eligible_items:
+            return Response({"error": "Coupon not applicable to selected items"}, status=400)
+
+        # Convert to Decimal for safe arithmetic
+        eligible_subtotal = sum(Decimal(i["price"]) * i["qty"] for i in eligible_items)
+        total_cart_value = sum(Decimal(i["price"]) * i["qty"] for i in cart_items)
+
+        if eligible_subtotal < coupon.min_order_value:
+            return Response({"error": f"Minimum order value ₹{coupon.min_order_value} required"}, status=400)
+        if coupon.discount_type.lower() == "percent" :
+            discount = eligible_subtotal * (coupon.discount_value / Decimal("100"))
+        else:
+            discount = coupon.discount_value
+
+        if coupon.max_discount:
+            discount = min(discount, coupon.max_discount)
+        
+        
+        new_total = max(total_cart_value - discount, Decimal("0"))
+        discounted_items = []
+        if eligible_subtotal > 0:
+            for item in cart_items:
+                item_price = Decimal(item["price"]) * item["qty"]
+                if item in eligible_items:
+                    item_discount = (item_price / eligible_subtotal) * discount
+                    new_price = (Decimal(item["price"]) * item["qty"]) - item_discount
+                    discounted_items.append({
+                        "id": item["id"],
+                        "original_price": str(item["price"]),
+                        "qty": item["qty"],
+                        "discounted_total": round(new_price, 2)
+                    })
+                else:
+                    discounted_items.append({
+                        "id": item["id"],
+                        "original_price": str(item["price"]),
+                        "qty": item["qty"],
+                        "discounted_total": str(item["price"] * item["qty"])
+                    })
+
+        return Response({
+            "success": True,
+            "discount": float(discount),
+            "new_total": float(new_total),
+            "coupon_id": coupon.id,
+            "discounted_items": discounted_items
+        })
+
+    except Exception as e:
+        print(e)
+        return Response({"error": "Invalid coupon"}, status=400)
+
+
+
+@api_view(["POST"])
+# If you want only logged-in agents → use IsAuthenticated
+# @permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])  # allow public also if needed
+def agent_submit(request):
+    data = request.data
+
+    agent_id = data.get("agent_id")
+
+    if agent_id:
+        try:
+            agent = User.objects.get(id=agent_id)
+        except User.DoesNotExist:
+            agent = User.objects.get(id=1)   # fallback
+    else:
+        if request.user and request.user.is_authenticated:
+            agent = request.user
+        else:
+            agent = User.objects.get(id=1)   # default agent
+
+    entry = AgentCustomerEntry.objects.create(
+        agent=agent,
+        customer_name=data.get("customer_name"),
+        customer_phone=data.get("customer_phone"),
+        area=data.get("area"),
+        pincode=data.get("pincode"),
+        notes=data.get("notes", "")
+    )
+
+    serializer = AgentCustomerEntrySerializer(entry)
+    return Response(
+        {"message": "Entry created successfully", "data": serializer.data},
+        status=status.HTTP_201_CREATED
+    )
+    
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def agent_dashboard(request):
+    try:
+        agent_id = request.GET.get("agent_id", 1)
+        page_number = int(request.GET.get("page", 1))
+    except:
+        agent_id = 1
+        page_number = 1
+
+    try:
+        agent = User.objects.get(id=agent_id)
+    except User.DoesNotExist:
+        agent = User.objects.get(id=1)
+
+    # ✅ All customer entries for this agent
+    entries_qs = AgentCustomerEntry.objects.filter(agent=agent).order_by("-created_at")
+
+    # ✅ Pagination
+    paginator = Paginator(entries_qs, 10)  # 10 items per page
+    page_obj = paginator.get_page(page_number)
+
+    final_entries = []
+    total_before = 0
+    total_after = 0
+    total_sum_orders = 0
+
+    for entry in page_obj:
+        phone = entry.customer_phone
+        # ✅ Get all addresses that match this phone number
+        addresses = Address.objects.filter(phone_number=phone)
+
+        # ✅ Collect all session_keys linked to this customer
+        session_keys = list(addresses.values_list("session_key", flat=True))
+
+        # ✅ Fetch all invoices of this customer across all session_keys
+        invoices = Invoice.objects.filter(session_key__in=session_keys).order_by("order_date")
+
+        # ✅ Count orders BEFORE and AFTER registration
+        orders_before = invoices.filter(order_date__lt=entry.created_at).count()
+        orders_after = invoices.filter(order_date__gte=entry.created_at).count()
+        total_orders = invoices.count()
+
+        # ✅ Add to dashboard stats
+        total_before += orders_before
+        total_after += orders_after
+        total_sum_orders += total_orders
+
+        final_entries.append({
+            "id": entry.id,
+            "customer_name": entry.customer_name,
+            "customer_phone": entry.customer_phone,
+            "area": entry.area,
+            "pincode": entry.pincode,
+            "created_at": entry.created_at.strftime("%Y-%m-%d %I:%M %p"),
+
+            "orders_before": orders_before,
+            "orders_after": orders_after,
+            "total_orders": total_orders
+        })
+
+    # ✅ Global stats for top cards
+    stats = {
+        "registered_count": entries_qs.count(),
+        "total_orders_before": total_before,
+        "total_orders_after": total_after,
+        "total_orders": total_sum_orders,
+    }
+
+    return Response({
+        "entries": final_entries,
+        "stats": stats,
+        "page": page_number,
+        "page_count": paginator.num_pages
+    }, status=status.HTTP_200_OK)

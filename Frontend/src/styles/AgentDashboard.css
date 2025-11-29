@@ -1,0 +1,188 @@
+/* Layout */
+.dash-container {
+  background: #f4f2f1;
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.dash-card {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 960px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Title */
+.dash-title {
+  color: #3F2305;
+  text-align: center;
+  margin: 8px 0 16px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Summary cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summary-box {
+  background: #f9f6f4;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid #e2dcd6;
+}
+.summary-box h3 {
+  color: #3F2305;
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+.summary-box p {
+  font-size: 0.85rem;
+  color: #6d5e4e;
+}
+
+/* Section title */
+.section-title {
+  color: #3F2305;
+  font-size: 1.1rem;
+  margin: 12px 0 8px;
+  font-weight: 700;
+}
+
+/* Table wrapper for horizontal scroll on small screens */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #eee;
+}
+
+/* Desktop table */
+.customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px; /* so columns don’t squish too much */
+}
+
+.customer-table th {
+  background: #3F2305;
+  color: #fff;
+  padding: 12px;
+  font-size: 0.85rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.customer-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+  color: #4b2a0d;
+}
+
+/* Hover */
+.customer-table tbody tr:hover {
+  background: #f8f4f2;
+}
+
+/* Pagination */
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.pagination button {
+  padding: 10px 14px;
+  background: #3F2305;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 110px;
+}
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pagination span {
+  font-weight: 700;
+  color: #3F2305;
+}
+
+/* -------- Mobile-first card view -------- */
+/* On small screens, render rows as stacked cards using the same markup. */
+@media (max-width: 640px) {
+  .dash-card {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr; /* 1 per row on mobile */
+    gap: 10px;
+  }
+
+  .table-wrap {
+    border: none;
+    overflow: visible;
+  }
+
+  .customer-table {
+    border-collapse: separate;
+    border-spacing: 0 10px; /* card gaps */
+    min-width: 0; /* allow it to shrink fully */
+  }
+
+  .customer-table thead {
+    display: none; /* hide header on mobile */
+  }
+
+  .customer-table tr {
+    display: block;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .customer-table td {
+    display: grid;
+    grid-template-columns: 120px 1fr; /* label : value */
+    gap: 8px;
+    border: none;
+    padding: 8px 0;
+    font-size: 0.95rem;
+  }
+
+  .customer-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #3F2305;
+  }
+
+  .pagination {
+    justify-content: stretch;
+  }
+  .pagination button {
+    flex: 1 1 45%;
+  }
+  .pagination span {
+    width: 100%;
+    text-align: center;
+    padding: 6px 0;
+  }
+}

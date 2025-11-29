@@ -1,11 +1,10 @@
-// LoginPage.js
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/LoginPage.css';
 import { API_BASE_URL } from '../constants';
 
-function LoginPage() {
+function AdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('admin');
@@ -146,4 +145,4 @@ function LoginPage() {
   );
 }
 
-export default LoginPage;
+export default AdminLogin;

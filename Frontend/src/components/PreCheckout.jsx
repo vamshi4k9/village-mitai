@@ -1,17 +1,22 @@
 import React, { useContext, useState, useEffect } from "react";
 import { CartContext } from "./CartContext";
-import  LocationPicker from "./LocationPicker.js";
+import LocationPicker from "./LocationPicker.js";
 import axios from "axios";
 import "../styles/PreCheckout.css";
-import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from '../constants';
+import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from "../constants";
+import { useNavigate } from "react-router-dom";
+
 
 export default function PreCheckout() {
-  const { cart, total, totalItems } = useContext(CartContext);
+  const { cart, total, totalItems, setCart } = useContext(CartContext);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState("0");
   const [paymentMode, setPaymentMode] = useState("");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [newTotal, setNewTotal] = useState(total);
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
   const [newAddress, setNewAddress] = useState({
     name: "",
     address1: "",
@@ -36,14 +41,76 @@ export default function PreCheckout() {
     fetchAddresses();
   }, []);
 
-  const applyCoupon = () => {
-    if (coupon.trim().toLowerCase() === "save10") {
-      setDiscount(0.1 * total);
-      alert("Coupon applied! 10% discount.");
-    } else {
-      alert("Invalid coupon code");
+  const applyCoupon = async () => {
+    try {
+      const cartItems = cart.map(({ item, quantity }) => ({
+        id: item.id,
+        price: item.price,
+        qty: quantity,
+        category_id: item.category,
+      }));
+
+      const response = await axios.post(
+        `${API_BASE_URL}/apply-coupon/`,
+        {
+          code: coupon,
+          cart_items: cartItems,
+        },
+        SESSION_TOKEN
+      );
+
+      setDiscount(response.data.discount);
+      setNewTotal(response.data.new_total);
+
+      if (response.data.discounted_items) {
+        setCart((prevCart) =>
+          prevCart.map((ci) => {
+            const discItem = response.data.discounted_items.find(
+              (d) => d.id === ci.item.id
+            );
+            if (discItem) {
+              return {
+                ...ci,
+                item: {
+                  ...ci.item,
+                  original_price: ci.item.price,
+                  discounted_total: discItem.discounted_total,
+                },
+              };
+            }
+            return ci;
+          })
+        );
+      }
+
+      setMessage("Coupon applied successfully!");
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Failed to apply coupon");
+      setDiscount(0);
+      setNewTotal(total);
     }
   };
+
+  const removeCoupon = () => {
+    setCart((prevCart) =>
+      prevCart.map((ci) => ({
+        ...ci,
+        item: {
+          ...ci.item,
+          price: ci.item.original_price || ci.item.price,
+          original_price: undefined,
+          discounted_total: undefined,
+        },
+      }))
+    );
+
+    setCoupon("");
+    setDiscount(0);
+    setNewTotal(total);
+    setMessage("Coupon removed.");
+  };
+
+
 
   const handleAddAddress = async () => {
     try {
@@ -54,7 +121,7 @@ export default function PreCheckout() {
       );
       setAddresses((prev) => [...prev, response.data]);
       setNewAddress({ name: "", address1: "", address2: "", phone_number: "" });
-      setSelectedAddress(addresses.length.toString()); // Select the newly added address
+      setSelectedAddress(addresses.length.toString());
       setShowAddAddressForm(false);
       alert("Address added successfully!");
     } catch (error) {
@@ -79,16 +146,16 @@ export default function PreCheckout() {
       const payload = {
         payment_mode: "CASH",
         delivery_time: 1,
-        net_amount: total - discount,
+        net_amount: newTotal,
         cgst: 0,
         sgst: 0,
         discount,
         cart_items: cart.map(({ item, quantity }) => ({
           id: item.id,
-          price: item.price,
+          price: item.discounted_total || item.price,
           quantity,
           weight: item.weight || "",
-          discounted: 0,
+          discounted: item.discounted_total ? 1 : 0,
         })),
         address,
       };
@@ -100,20 +167,21 @@ export default function PreCheckout() {
           payload, token ? SESSION_TOKEN : SESSION_KEY
         );
         alert("Order placed successfully! Invoice ID: " + response.data.invoice_id);
+        navigate("/");
+
       } catch (error) {
         console.error("Failed to place order", error);
         alert("Failed to place order. Please try again.");
       }
-    }
-    else if (paymentMode === 'UPI') {
+    } else if (paymentMode === "UPI") {
       const orderRes = await axios.post(
         `${API_BASE_URL}/create-order-razor/`,
-        { amount: 500 }, // ✅ data
+        { amount: newTotal },
         { headers: { "Content-Type": "application/json" } }
       );
-      const orderData = orderRes.data; // ✅ Correct way
+      const orderData = orderRes.data;
       const options = {
-        key: "rzp_test_YqrLQMzf9Xl7Qw", // from Razorpay dashboard
+        key: "rzp_test_YqrLQMzf9Xl7Qw",
         amount: orderData.amount,
         currency: orderData.currency,
         name: "My Shop",
@@ -122,11 +190,12 @@ export default function PreCheckout() {
         handler: async (response) => {
           const verifyRes = await axios.post(
             `${API_BASE_URL}/verify-payment/`,
-            response, // ✅ data
-            { headers: { "Content-Type": "application/json" } } // ✅ config
+            response,
+            { headers: { "Content-Type": "application/json" } }
           );
 
-          alert(verifyRes.data.status); // ✅ Axios stores parsed data in .data
+          alert(verifyRes.data.status);
+          navigate("/");
         },
         prefill: {
           name: "Vishnu Vamshi",
@@ -140,9 +209,8 @@ export default function PreCheckout() {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    }
-    else {
-      alert(`Paying ₹${total - discount} via ${paymentMode}`);
+    } else {
+      alert(`Paying ₹${newTotal} via ${paymentMode}`);
     }
   };
 
@@ -151,16 +219,28 @@ export default function PreCheckout() {
       <div className="left-section">
         <h2>Your Cart</h2>
         <div className="cart-items">
-          {cart.map((item) => (
-            <div key={item.item.id} className="cart-item">
-              <img src={item.item.image} alt={item.item.name} />
+          {cart.map((ci) => (
+            <div key={ci.item.id} className="cart-item">
+              <img src={ci.item.image} alt={ci.item.name} />
               <div className="cart-item-details">
-                <p className="item-name">{item.item.name}</p>
+                <p className="item-name">{ci.item.name}</p>
                 <p>
-                  ₹{item.item.price} × {item.quantity}
+                  {ci.item.discounted_total &&
+                    ci.item.discounted_total < ci.item.original_price * ci.quantity ? (
+                    <>
+                      <span className="line-through text-gray-500">
+                        ₹{ci.item.original_price * ci.quantity}
+                      </span>
+                      <span className="ml-2 text-green-600 font-bold">
+                        ₹{ci.item.discounted_total}
+                      </span>
+                    </>
+                  ) : (
+                    <>₹{ci.item.original_price * ci.quantity}</>
+                  )}
                 </p>
+
               </div>
-              <div className="item-total">₹{item.item.price * item.quantity}</div>
             </div>
           ))}
         </div>
@@ -170,20 +250,38 @@ export default function PreCheckout() {
           {discount > 0 && <p className="discount">Discount: ₹{discount}</p>}
           {discount > 0 && (
             <p className="net-total">
-              <strong>Net Payable: ₹{total - discount}</strong>
+              <strong>Net Payable: ₹{newTotal}</strong>
             </p>
           )}
         </div>
 
-        <div className="coupon-box">
-          <input
-            type="text"
-            placeholder="Enter Coupon Code"
-            value={coupon}
-            onChange={(e) => setCoupon(e.target.value)}
-          />
-          <button onClick={applyCoupon}>Apply</button>
-        </div>
+<div className="coupon-box">
+  <div className="coupon-input-wrapper w-full">
+    <input
+      type="text"
+      placeholder="Enter Coupon Code"
+      value={coupon}
+      onChange={(e) => setCoupon(e.target.value)}
+      disabled={discount > 0}
+    />
+    {discount > 0 && (
+      <span className="remove-coupon" onClick={removeCoupon}>
+        ✕
+      </span>
+    )}
+  </div>
+
+  {discount === 0 && (
+    <button className="apply-btn" onClick={applyCoupon}>
+      Apply
+    </button>
+  )}
+
+  {message && <p className="mt-2 text-sm">{message}</p>}
+</div>
+
+
+
 
         <hr />
 
@@ -193,7 +291,8 @@ export default function PreCheckout() {
             {addresses.map((addr, index) => (
               <label
                 key={index}
-                className={`address-card ${selectedAddress === index.toString() ? "selected" : ""}`}
+                className={`address-card ${selectedAddress === index.toString() ? "selected" : ""
+                  }`}
               >
                 <input
                   type="radio"
@@ -204,7 +303,9 @@ export default function PreCheckout() {
                 />
                 <div className="address-details">
                   <p className="address-name">{addr.name}</p>
-                  <p>{addr.address1}, {addr.address2}</p>
+                  <p>
+                    {addr.address1}, {addr.address2}
+                  </p>
                   <p>Phone: {addr.phone_number}</p>
                 </div>
               </label>
@@ -229,7 +330,9 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter your name"
                 value={newAddress.name}
-                onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })}
+                onChange={(e) =>
+                  setNewAddress({ ...newAddress, name: e.target.value })
+                }
               />
             </div>
             <div className="form-group">
@@ -239,7 +342,9 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter address line 1"
                 value={newAddress.address1}
-                onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })}
+                onChange={(e) =>
+                  setNewAddress({ ...newAddress, address1: e.target.value })
+                }
               />
             </div>
             <div className="form-group">
@@ -249,7 +354,9 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter address line 2"
                 value={newAddress.address2}
-                onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })}
+                onChange={(e) =>
+                  setNewAddress({ ...newAddress, address2: e.target.value })
+                }
               />
             </div>
             <div className="form-group">
@@ -259,17 +366,18 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter phone number"
                 value={newAddress.phone_number}
-                onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })}
+                onChange={(e) =>
+                  setNewAddress({ ...newAddress, phone_number: e.target.value })
+                }
               />
             </div>
             <div className="form-group">
-              {/* <label>Choose Location on Map</label> */}
               <LocationPicker
                 onLocationSelect={(latlng) => {
                   setNewAddress({
                     ...newAddress,
                     latitude: latlng.lat,
-                    longitude: latlng.lng
+                    longitude: latlng.lng,
                   });
                 }}
               />
@@ -287,7 +395,8 @@ export default function PreCheckout() {
           {["UPI", "Cash On Delivery"].map((mode) => (
             <label
               key={mode}
-              className={`payment-option ${paymentMode === mode ? "selected" : ""}`}
+              className={`payment-option ${paymentMode === mode ? "selected" : ""
+                }`}
             >
               <input
                 type="radio"
@@ -302,7 +411,7 @@ export default function PreCheckout() {
           ))}
         </div>
         <button className="pay-button" onClick={handlePayment}>
-          Pay ₹{total - discount}
+          Pay ₹{newTotal}
         </button>
       </div>
     </div>
