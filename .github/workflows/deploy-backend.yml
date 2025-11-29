@@ -20,7 +20,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "📦 Pulling latest code"
-            cd /root/AppData/village-mitai/Backend
+            cd /opt/villagemitai/Backend
             git pull origin main
 
             echo "🐍 Activating virtualenv"
@@ -28,7 +28,7 @@ jobs:
             
             echo "📦 Installing dependencies"
             pip install -r requirements.txt
-            cd /root/AppData/village-mitai/Backend/restaurant
+            cd /opt/villagemitai/Backend/restaurant
 
 
             python manage.py makemigrations
