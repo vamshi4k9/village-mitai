@@ -1,0 +1,64 @@
+/* Reuse the same layout theme */
+.dash-container {
+  background: #f4f2f1;
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.dash-card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 960px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* Title */
+.dash-title {
+  color: #3F2305;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* Catalogue Grid */
+.catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+/* Button style */
+.catalogue-btn {
+  background: #3F2305;
+  color: #fff;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.catalogue-btn:hover {
+  background: #5a3510;
+  transform: translateY(-2px);
+}
+
+.catalogue-btn:active {
+  transform: scale(0.98);
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .catalogue-grid {
+    grid-template-columns: 1fr;
+  }
+}
