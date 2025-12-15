@@ -30,6 +30,11 @@ class FieldMarketingForm(models.Model):
         ('Commission-Based', 'Commission-Based'),
         ('Open to Both', 'Open to Both'),
     ]   
+    ROLE_CHOICES = [
+        ('Field Agent', 'Field Agent'),
+        ('Delivery Partner', 'Delivery Partner'),
+        ('Cook', 'Cook'),
+    ]   
 
     full_name = models.CharField(max_length=100)
     dob = models.DateField()
@@ -37,7 +42,7 @@ class FieldMarketingForm(models.Model):
     mobile_number = models.CharField(max_length=15)
     email = models.EmailField(blank=True, null=True)
     city_area = models.CharField(max_length=100)
-    languages_spoken = models.JSONField(default=list)  # Stores array of languages
+    languages_spoken = models.JSONField(default=list)
     qualification = models.CharField(max_length=20, choices=QUALIFICATION_CHOICES)
     owns_vehicle = models.BooleanField()
     has_field_experience = models.BooleanField()
@@ -45,6 +50,7 @@ class FieldMarketingForm(models.Model):
     daily_commitment = models.CharField(max_length=20, choices=WORK_HOUR_CHOICES)
     willing_for_fieldwork = models.BooleanField()
     salary_preference = models.CharField(max_length=30, choices=SALARY_PREFERENCE_CHOICES)
+    role = models.CharField(max_length=50, choices=ROLE_CHOICES,default='Field Agent')
 
     created_at = models.DateTimeField(auto_now_add=True)
 

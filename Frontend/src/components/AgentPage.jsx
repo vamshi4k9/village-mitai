@@ -73,6 +73,7 @@ export default function AgentPage() {
 
           <label>Name *</label>
           <input
+            className="input_agent"
             type="text"
             name="customer_name"
             value={form.customer_name}
@@ -82,6 +83,7 @@ export default function AgentPage() {
 
           <label>Phone Number *</label>
           <input
+            className="input_agent"
             type="text"
             name="customer_phone"
             value={form.customer_phone}
@@ -91,6 +93,7 @@ export default function AgentPage() {
 
           <label>Area *</label>
           <input
+            className="input_agent"
             type="text"
             name="area"
             value={form.area}
@@ -100,6 +103,7 @@ export default function AgentPage() {
 
           <label>Pincode *</label>
           <input
+            className="input_agent"
             type="text"
             name="pincode"
             value={form.pincode}
@@ -111,6 +115,7 @@ export default function AgentPage() {
         <div className="form-section">
           <h4>Additional Notes</h4>
           <textarea
+            className="input_agent"
             name="notes"
             value={form.notes}
             onChange={handleChange}
