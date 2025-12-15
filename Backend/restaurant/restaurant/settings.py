@@ -138,7 +138,8 @@ STATIC_URL = '/backend-static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  
+    "https://villagemitai.in",
+    "https://www.villagemitai.in",
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-session-key",
@@ -151,7 +152,7 @@ PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL
 SALT_INDEX = 1
 
 DEBUG = False
-ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.in']
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.in','www.villagemitai.in']
 # ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org', 'localhost:3000', '127.0.0.1', 'localhost']
 
 STATIC_ROOT = '/var/www/village-mitai/static/'
