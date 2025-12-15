@@ -151,7 +151,7 @@ PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL
 SALT_INDEX = 1
 
 DEBUG = False
-ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org']
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.in']
 # ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org', 'localhost:3000', '127.0.0.1', 'localhost']
 
 STATIC_ROOT = '/var/www/village-mitai/static/'
@@ -161,7 +161,6 @@ MEDIA_URL = '/media/'
 
 RAZORPAY_KEY_ID = "rzp_test_YqrLQMzf9Xl7Qw" 
 RAZORPAY_KEY_SECRET = "8JjT4lm90P1F0TMn1M0bvt31"
-
 
 # AUTH_USER_MODEL = 'restaurant_app.User'
 
