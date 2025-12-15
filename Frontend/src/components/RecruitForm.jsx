@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../styles/RecruitForm.css";
 import axios from "axios";
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL } from '../constants';
 
 
 const RecruitForm = () => {
@@ -20,6 +20,7 @@ const RecruitForm = () => {
         dailyHours: "",
         flyerWillingness: "",
         salaryPreference: "",
+        role: "",
     };
 
     const [form, setForm] = useState(initialForm);
@@ -44,7 +45,7 @@ const RecruitForm = () => {
         const requiredFields = [
             "fullName", "dob", "gender", "phone", "city",
             "languages", "qualification", "ownBike", "marketingExperience",
-            "preferredLocation", "dailyHours", "flyerWillingness", "salaryPreference"
+            "preferredLocation", "dailyHours", "flyerWillingness", "salaryPreference", "role"
         ];
 
         const missingFields = requiredFields.filter(field =>
@@ -72,7 +73,8 @@ const RecruitForm = () => {
             preferred_work_location: form.preferredLocation,
             daily_commitment: form.dailyHours,
             willing_for_fieldwork: form.flyerWillingness === "Yes",
-            salary_preference: form.salaryPreference
+            salary_preference: form.salaryPreference,
+            role: form.role,
         };
 
         try {
@@ -195,6 +197,25 @@ const RecruitForm = () => {
                                 onChange={handleChange}
                             />
                             {opt}
+                        </label>
+                    ))}
+                </div>
+                <label className="labelClass">
+                    Applying For<span className="required">*</span>
+                </label>
+                
+
+                <div className="radio-group role-group">
+                    {["Delivery Partner", "Field Agent", "Cook"].map((role) => (
+                        <label key={role} className="radio-label">
+                            <input
+                                type="radio"
+                                name="role"
+                                value={role}
+                                checked={form.role === role}
+                                onChange={handleChange}
+                            />
+                            {role}
                         </label>
                     ))}
                 </div>

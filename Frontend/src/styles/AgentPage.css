@@ -36,7 +36,7 @@ label {
   font-weight: 600;
 }
 
-input, textarea {
+.input_agent {
   width: 100%;
   padding: 12px;
   margin-bottom: 15px;

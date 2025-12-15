@@ -188,3 +188,84 @@ select{
     font-size: 0.95rem;
   }
 }
+
+/* iOS date input fix */
+input[type="date"] {
+  -webkit-appearance: none;      /* disable native styling */
+  appearance: none;
+  min-height: 44px;              /* Apple recommended touch height */
+  line-height: 1.4;
+  padding: 12px 15px;
+  font-size: 16px;               /* MUST be 16px to prevent zoom */
+  background-color: #f9f9f9;
+}
+
+/* Fix calendar icon position */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.8;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* Reset iOS checkbox & radio weird spacing */
+.checkbox-label input,
+.radio-label input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #3F2305;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Radio should be circular */
+.radio-label input {
+  border-radius: 50%;
+}
+
+/* Checked state */
+.checkbox-label input:checked,
+.radio-label input:checked {
+  background-color: #3F2305;
+}
+
+/* Optional tick for checkbox */
+.checkbox-label input:checked::after {
+  content: "✓";
+  color: white;
+  font-size: 12px;
+}
+
+/* Fix alignment */
+.checkbox-label,
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+@media (max-width: 600px) {
+  .checkbox-group,
+  .radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.role-group {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .role-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
