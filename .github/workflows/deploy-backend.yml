@@ -40,6 +40,6 @@ jobs:
             python manage.py collectstatic --noinput
 
             echo "🔁 Restarting Gunicorn service"
-            sudo systemctl restart gunicorn
+            sudo systemctl restart gunicorn-villagemitai
 
             echo "✅ Backend deployed successfully"
