@@ -1,7 +1,7 @@
 .product-detail-container {
     margin-top: 10px;
     display: flex;
-    gap: 50px;
+    gap: 20Apx;
     justify-content: center;
     padding-top: 140px;
     align-items: flex-start;
@@ -13,6 +13,7 @@
   
   .product-image {
     width: 600px;
+    brder-radius: 10px;
   }
   
   .description-toggle {
@@ -62,16 +63,17 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
-    align-items: flex-start;
+    align-items: center;
     flex-wrap: wrap;
   }
   
   .feature-box, .apart-box {
     border: 1px solid #3F2305;
+    border-radius: 6px; 
     padding: 5px 10px;
     display: flex;
     flex-wrap: nowrap;
-    gap: 4px;
+    /* gap: 4px; */
     align-items: center;
   }
   
@@ -104,7 +106,7 @@
   .quan {
     display: flex;
     flex-direction: column;
-    margin-top: 20px;
+    margin-top: 10px;
     align-items: flex-start;
   }
   
@@ -113,7 +115,9 @@
     align-items: flex-start;
     gap: 10px;
     border: 1px solid #3F2305;
-    padding: 7px 16px;
+    padding: 4px 13px;
+    border-radius: 6px;
+    background-color: #f4f2f1;
   }
   
   .quantity-controls button {
@@ -130,7 +134,7 @@
   
   .add-to-cart-btn-detail {
     width: 100%;
-    margin-top: 30px;
+    margin-top: 6px;
     padding: 15px 15px;
     background: #3F2305;
     color: white;
@@ -222,6 +226,7 @@
     }
     .product-image{
         width: 90%;
+        border-radius: 10px;
     }
     .right-detailed{
         justify-content: center;

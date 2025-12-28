@@ -55,7 +55,7 @@ export default function Header({ toggleCart }) {
     <>
       {/* Header (scrolls normally) */}
       <div className="main-header-wrapper">
-        <nav className="navbar navbar-expand-md p-3 px-2 sticky-top" style={{
+        <nav className="navbar navbar-expand-md px-2 sticky-top" style={{
           position: "fixed",
           width: "100%",
           top: 0,
@@ -65,7 +65,7 @@ export default function Header({ toggleCart }) {
         }}>
           <div className="container-fluid d-flex align-items-center justify-content-between">
             <a className="navbar-brand fw-bold d-none d-md-block" href={getUrlWithAgentId("/")}>
-              <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-40" />
+              <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-[8rem]" />
             </a>
             <div className="d-none d-md-flex align-items-center">
               <div className={`search-wrapper ${showSearch ? "expanded" : ""}`}>
@@ -100,7 +100,7 @@ export default function Header({ toggleCart }) {
               </button>
 
               <a className="navbar-brand text-center logo-mobile mb-0" href={getUrlWithAgentId("/")}>
-                <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-40" />
+                <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-[7rem]" />
               </a>
 
               <button className="cart-btn mobile" onClick={toggleCart}>
