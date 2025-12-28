@@ -88,16 +88,12 @@ const ProductDetail = ({ productId }) => {
         {/* Left Section - Image & Description Toggle */}
         <div className="left-section justify-items-center">
           <img src={product.image} alt={product.name} className="product-image" />
-
-
-
-
         </div>
 
         {/* Right Section - Product Details */}
         <div className="right-detailed">
-          <p className="detailed_name">{product.name}</p>
-          <p className="detailed_price">
+          <div className="detailed_name">{product.name}</div>
+          <div className="detailed_price">
             {product.discounted_price !== null ? (
               <>
                 <span style={{ textDecoration: "line-through", color: "gray", marginRight: "8px" }}>
@@ -110,18 +106,18 @@ const ProductDetail = ({ productId }) => {
             ) : (
               <>Rs.{product.price}.00</>
             )}
-          </p>
+          </div>
 
           {/* Key Features Section */}
           <div className="product-features">
             {product.veg !== null && (
-              <div className="feature-box">
+              <div className="">
                 <img
                   src={`${process.env.PUBLIC_URL}/images/${product.veg ? 'veg-icon' : 'non-veg-icon'}.png`}
                   alt={product.veg ? 'Vegetarian' : 'Non-Vegetarian'}
                   className="feature-icon"
                 />
-                <span>{product.veg ? 'Pure Vegetarian' : 'Non-Vegetarian'}</span>
+                {/* <span>{product.veg ? 'Pure Vegetarian' : 'Non-Vegetarian'}</span> */}
               </div>
             )}
 
@@ -143,7 +139,7 @@ const ProductDetail = ({ productId }) => {
           {/* Quantity Controls */}
           <div className="flex">
             <div className="quan mr-4">
-              <p>Quantity</p>
+              <div className="mb-1">Quantity</div>
               <div className="quantity-controls">
                 <button onClick={decreaseQuantity}>-</button>
                 <span>{quantity}</span>
@@ -151,7 +147,7 @@ const ProductDetail = ({ productId }) => {
               </div>
             </div>
             <div className="quan">
-              <p>Weight</p>
+              <div className="mb-1">Weight</div>
               <select className="quantity-controls" onChange={handleWeightChange} value={selectedWeight}>
                 <option value={250}>250g</option>
                 <option value={500}>500g</option>
@@ -222,7 +218,7 @@ const ProductDetail = ({ productId }) => {
       {/* <ReviewList productId={productId} key={refresh} /> */}
 
       <ReviewSection itemId={id} token={localStorage.getItem("token")} triggerToast={triggerToast} />
-      <div className="full-width-features">
+      {/* <div className="full-width-features">
         <div className="feature-card">
           <img src={`${process.env.PUBLIC_URL}/images/Authentic_Recipe.avif`} alt="Authentic Recipe" />
           <span>Authentic Recipe</span>
@@ -247,7 +243,7 @@ const ProductDetail = ({ productId }) => {
           <img src={`${process.env.PUBLIC_URL}/images/Made_with_Phello_Sheets.avif`} alt="Flavourful" />
           <span>Made with Phyllo Sheets</span>
         </div>
-      </div>
+      </div> */}
 
     </div>
   );

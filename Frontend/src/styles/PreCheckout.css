@@ -14,11 +14,11 @@
 .left-section {
   width: 100%;
   max-width: 750px;
-  background-color: #ffffff;
-  border: 1px solid #3F2305;
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* background-color: #ffffff; */
+  /* border: 1px solid #3F2305; */
+  /* border-radius: 12px; */
+  /* padding: 40px; */
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); */
 }
 
 /* Section Titles */
@@ -242,7 +242,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .left-section {
-    padding: 20px;
+    /* padding: 20px; */
   }
 
   .cart-item {
