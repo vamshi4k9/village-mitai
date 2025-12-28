@@ -1,7 +1,7 @@
 .product-detail-container {
     margin-top: 10px;
     display: flex;
-    gap: 20Apx;
+    gap: 20px;
     justify-content: center;
     padding-top: 140px;
     align-items: flex-start;
@@ -221,7 +221,7 @@
     .product-detail-container{
         flex-direction: column;
         align-items: center;
-        padding: 110px 5px;
+        padding: 80px 5px;
         padding-bottom: 5px;
     }
     .product-image{

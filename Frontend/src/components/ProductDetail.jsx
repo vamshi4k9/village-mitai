@@ -86,7 +86,7 @@ const ProductDetail = ({ productId }) => {
     <div>
       <div className="product-detail-container">
         {/* Left Section - Image & Description Toggle */}
-        <div className="left-section justify-items-center">
+        <div className="left-section grid place-items-center">
           <img src={product.image} alt={product.name} className="product-image" />
         </div>
 
