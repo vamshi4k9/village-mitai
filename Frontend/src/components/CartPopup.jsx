@@ -3,11 +3,12 @@ import { CartContext } from "./CartContext";
 import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
 import "../styles/CartPopup.css";
+import { Link } from "react-router-dom";
 
 
 const CartPopup = ({ isOpen, toggleCart }) => {
   const { cart, incQuant, decQuant, removeFromCart, total, totalItems } = useContext(CartContext);
-  const navigate = useNavigate(); // ⬅️ Initialize
+  const navigate = useNavigate();
   const { getUrlWithAgentId } = useAgentId();
   const [showAuthPopup, setShowAuthPopup] = useState(false);
 
@@ -31,6 +32,28 @@ const CartPopup = ({ isOpen, toggleCart }) => {
       })),
     };
   };
+
+  const getPriceByWeight = (item, weight) => {
+    switch (Number(weight)) {
+      case 250:
+        return {
+          price: Number(item.price_quarter),
+          discounted: Number(item.discounted_price_quarter),
+        };
+      case 500:
+        return {
+          price: Number(item.price_half),
+          discounted: Number(item.discounted_price_half),
+        };
+      case 1000:
+      default:
+        return {
+          price: Number(item.price),
+          discounted: Number(item.discounted_price),
+        };
+    }
+  };
+
 
   const handleGuest = () => {
     setShowAuthPopup(false);
@@ -56,47 +79,114 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
       <div className={`cart-popup ${isOpen ? "open" : ""}`}>
         <div className="cart-header">
-          <h4>Your Cart {totalItems > 0 && <span className="cart-count-cart">{totalItems}</span>}</h4>
-          <button className="close-btn" onClick={toggleCart}><i className="bi bi-x"></i></button>
+          <div>Your Cart {totalItems > 0 && <span className="cart-count-cart">{totalItems}</span>}</div>
+          <button className="close-btn text-xs" onClick={toggleCart}><i className="bi bi-x"></i></button>
         </div>
 
         {cart.length === 0 ? (
-          <p className="empty-cart">Your cart is empty</p>
+          <div className="empty-cart">Your cart is empty</div>
         ) : (
           <div className="cart-items">
-            {cart.map((item) => (
-              <div key={item.item.id} className="cart-item">
-                <div className="flex">
-                  <img src={item.item.image} alt={item.item.name} className="cart-item-img" />
-                  <div className="cart-item-details">
-                    <div className="cart-item-info">
-                      <p className="cart-item-name">{item.item.name}</p>
-                      {item.item.available}
-                      <p className="cart-item-price">Rs. {item.item.price * item.quantity} INR </p>
-                    </div>
-                    <p className="cart-item-price"> {item.weight} Grams </p>
-                    </div>
-                </div>
-                <div className="flex">
-                  <div className="cart-item-actions">
-                    <div className="cart-quantity">
-                      <button onClick={() => decQuant(item)}>-</button>
-                      <span>{item.quantity}</span>
-                      <button onClick={() => incQuant(item)}>+</button>
+            {cart.map((item) => {
+              const { price, discounted } = getPriceByWeight(item.item, item.weight);
+
+              const hasDiscount =
+                discounted !== null &&
+                !isNaN(discounted) &&
+                discounted < price;
+
+              const finalPrice = hasDiscount ? discounted : price;
+              const itemTotal = finalPrice * item.quantity;
+
+              const discountPercent = hasDiscount
+                ? Math.round(((price - discounted) / price) * 100)
+                : 0;
+
+              return (
+                <div key={item.item.id} className="cart-item">
+
+                  <div className="flex">
+                    <Link
+                      to={`/product/${item.item.id}`}
+                      onClick={toggleCart}
+                    >
+                      <img
+                        src={item.item.image}
+                        alt={item.item.name}
+                        className="cart-item-img"
+                      />
+                    </Link>
+                    <div className="cart-item-details">
+                      <div className="cart-item-info">
+                        <div className="cart-item-name" >
+                          <Link
+                            to={`/product/${item.item.id}`}
+                            onClick={toggleCart}
+                            style={{ textDecoration: "none", color: "inherit" }}
+                          >
+                            {item.item.name}
+                          </Link>
+                        </div>
+                        {item.item.available}
+                        <div className="cart-item-price">
+                          {hasDiscount ? (
+                            <>
+                              <div>
+                                <span
+                                  style={{
+                                    textDecoration: "line-through",
+                                    color: "#888",
+                                    marginRight: "6px"
+                                  }}
+                                >
+                                  Rs.{price * item.quantity}
+                                </span>
+
+                                <span style={{ fontWeight: "bold", color: "green" }}>
+                                  Rs.{itemTotal}
+                                </span>
+                              </div>
+
+                              <div style={{ fontSize: "12px", color: "#d32f2f" }}>
+                                ({discountPercent}% OFF)
+                              </div>
+                            </>
+                          ) : (
+                            <span style={{ fontWeight: "bold" }}>
+                              Rs.{itemTotal}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="cart-item-weight">
+                        {item.weight >= 1000
+                          ? `${item.weight / 1000} KG`
+                          : `${item.weight} g`}
+                      </div>
                     </div>
                   </div>
-                  <button className="remove-btn ml-3" onClick={() => removeFromCart(item)}>Remove</button>
+                  <div className="flex">
+                    <div className="cart-item-actions">
+                      <div className="cart-quantity">
+                        <button onClick={() => decQuant(item)}>-</button>
+                        <span>{item.quantity}</span>
+                        <button onClick={() => incQuant(item)}>+</button>
+                      </div>
+                    </div>
+                    <button className="remove-btn ml-3" onClick={() => removeFromCart(item)}>Remove</button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
+
           </div>
         )}
 
         {cart.length > 0 && (
           <div className="cart-footer">
-            <p className="cart-total">Total: Rs. {total}  {totalItems}</p>
+            <p className="cart-total font-semibold">Total: Rs.{total} </p>
             <div className="checkout-btn cursor-pointer" onClick={handleCheckout}>
-              <span className="checkout-btn-txt">Checkout</span>
+              <span className="checkout-btn-txt font-semibold">Checkout</span>
             </div>
           </div>
         )}

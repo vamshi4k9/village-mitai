@@ -40,7 +40,6 @@ class ItemDetailSerializer(serializers.ModelSerializer):
             "veg",
         ]
 
-
 class ItemSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
 
@@ -48,18 +47,27 @@ class ItemSerializer(serializers.ModelSerializer):
         model = Item
         fields = [
             "id",
+            "category",
             "name",
             "description",
             "image",
-            "category",
+
+            # pricing
             "price",
-            "bestseller",
             "discounted_price",
+            "price_half",
+            "discounted_price_half",
+            "price_quarter",
+            "discounted_price_quarter",
+
             "available",
-            "shelf_life",
+            "bestseller",
             "veg",
+
+            "shelf_life",
             "delivery_time",
         ]
+
 
 
 # class CartSerializer(serializers.ModelSerializer):

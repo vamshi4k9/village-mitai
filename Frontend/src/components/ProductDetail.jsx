@@ -9,7 +9,6 @@ import { API_BASE_URL } from '../constants';
 
 import '../styles/ProductDetail.css'
 
-
 const ProductDetail = ({ productId }) => {
   const [refresh, setRefresh] = useState(false);
   const { id } = useParams();
@@ -26,11 +25,68 @@ const ProductDetail = ({ productId }) => {
       .catch((error) => console.log("Error fetching product:", error));
   }, [id]);
 
+  const weightOptions = product
+    ? [
+      { value: 250, label: '250g', price: product.price_quarter },
+      { value: 500, label: '500g', price: product.price_half },
+      { value: 1000, label: '1 KG', price: product.price },
+    ]
+    : [];
+
+
+  // keep only available weights
+  const availableWeights = weightOptions.filter(w => w.price !== null);
+  useEffect(() => {
+    if (
+      availableWeights.length > 0 &&
+      !availableWeights.some(w => w.value === selectedWeight)
+    ) {
+      setSelectedWeight(availableWeights[0].value);
+    }
+  }, [availableWeights]);
+
   if (!product) return <h2>Loading...</h2>;
-
-
   // Increase quantity locally
   const increaseQuantity = () => setQuantity(quantity + 1);
+
+  const getPriceByWeight = () => {
+    if (!product) return { price: 0, discounted: null };
+
+    switch (selectedWeight) {
+      case 250:
+        return {
+          price: product.price_quarter,
+          discounted: product.discounted_price_quarter,
+        };
+      case 500:
+        return {
+          price: product.price_half,
+          discounted: product.discounted_price_half,
+        };
+      case 1000:
+        return {
+          price: product.price,
+          discounted: product.discounted_price,
+        };
+      default:
+        return {
+          price: product.price,
+          discounted: product.discounted_price,
+        };
+    }
+  };
+  const { price, discounted } = getPriceByWeight();
+
+  const hasDiscount =
+    discounted !== null &&
+    discounted !== undefined &&
+    price !== null &&
+    discounted < price;
+
+  const discountPercent = hasDiscount
+    ? Math.round(((price - discounted) / price) * 100)
+    : 0;
+
 
   // Decrease quantity locally, but not below 1
   const decreaseQuantity = () => {
@@ -94,20 +150,44 @@ const ProductDetail = ({ productId }) => {
         <div className="right-detailed">
           <div className="detailed_name">{product.name}</div>
           <div className="detailed_price">
-            {product.discounted_price !== null ? (
+            {hasDiscount ? (
               <>
-                <span style={{ textDecoration: "line-through", color: "gray", marginRight: "8px" }}>
-                  Rs.{product.price}.00
+                <span
+                  style={{
+                    textDecoration: "line-through",
+                    color: "#888",
+                    marginRight: "8px"
+                  }}
+                >
+                  Rs.{price}
                 </span>
-                <span style={{ color: "green", fontWeight: "bold" }}>
-                  Rs.{product.discounted_price}.00
+
+                <span
+                  style={{
+                    color: "green",
+                    fontWeight: "bold",
+                    marginRight: "8px"
+                  }}
+                >
+                  Rs.{discounted}
+                </span>
+
+                <span
+                  style={{
+                    color: "#d32f2f",
+                    fontSize: "14px",
+                    fontWeight: "600"
+                  }}
+                >
+                  ({discountPercent}% OFF)
                 </span>
               </>
             ) : (
-              <>Rs.{product.price}.00</>
+              <span style={{ fontWeight: "bold" }}>
+                Rs.{price}
+              </span>
             )}
           </div>
-
           {/* Key Features Section */}
           <div className="product-features">
             {product.veg !== null && (
@@ -148,25 +228,33 @@ const ProductDetail = ({ productId }) => {
             </div>
             <div className="quan">
               <div className="mb-1">Weight</div>
-              <select className="quantity-controls" onChange={handleWeightChange} value={selectedWeight}>
-                <option value={250}>250g</option>
-                <option value={500}>500g</option>
-                <option value={1000}>1kg</option>
+              <select
+                className="quantity-controls"
+                onChange={handleWeightChange}
+                value={selectedWeight}
+              >
+                {availableWeights.map(w => (
+                  <option key={w.value} value={w.value}>
+                    {w.label}
+                  </option>
+                ))}
               </select>
+
               {/* <span>Total Weight: {totalWeight >= 1000
               ? `${(totalWeight / 1000).toFixed(2)}kg`
               : `${totalWeight}g`}</span> */}
             </div>
+            <div className="quan align-items-end justify-content-end ml-4">
+              <p>Total Weight: {totalWeight >= 1000
+                ? `${(totalWeight / 1000)} KG`
+                : `${totalWeight}g`}</p>
+            </div>
           </div>
 
-          <div className="quan">
-            <p>Total Weight: {totalWeight >= 1000
-              ? `${(totalWeight / 1000).toFixed(2)}kg`
-              : `${totalWeight}g`}</p>
-          </div>
+
           {/* Add to Cart Button */}
           <button
-            className="add-to-cart-btn-detail"
+            className="add-to-cart-btn-detail mt-3"
             onClick={handleCart}>
             Add to Cart
           </button>
@@ -174,8 +262,6 @@ const ProductDetail = ({ productId }) => {
           <p className="tax-info">
             Tax included. Shipping calculated at checkout.
           </p>
-
-
           {/* Description Toggle */}
           <div
             className={`description-toggle ${descOpen ? "open" : ""}`}
