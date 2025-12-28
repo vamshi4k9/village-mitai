@@ -1,7 +1,7 @@
 .product-detail-container {
     margin-top: 10px;
     display: flex;
-    gap: 20px;
+    gap: 5px;
     justify-content: center;
     padding-top: 140px;
     align-items: flex-start;
@@ -17,7 +17,7 @@
   }
   
   .description-toggle {
-    margin-top: 20px;
+    /* margin-top: 20px; */
     padding: 15px 5px;
     border-top: 1px solid #693d16;
     cursor: pointer;
@@ -141,11 +141,12 @@
     border: none;
     cursor: pointer;
     align-self: flex-start;
+    border-radius: 6px;
   }
 
 
   .tax-info {
-    margin-top: 15px;
+    margin-top: 8px;
     font-size: 0.9rem;
     color: #3F2305;
 }
