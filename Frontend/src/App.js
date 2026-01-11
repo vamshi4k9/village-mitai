@@ -29,6 +29,8 @@ import AdminLogin from './components/AdminLogin';
 import MakerDashboard from './components/Dashboards/MakerDashboard';
 import DeliveryDashboard from './components/Dashboards/DeliveryDashboard';
 import ProtectedRoute from './ProtectedRoute';
+import ScrollToTop from "./components/ScrollToTop";
+
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -96,6 +98,7 @@ function App() {
 
         {!shouldHideLayout && <Footer />}
       </div>
+      <ScrollToTop /> 
     </CartProvider>
   );
 }

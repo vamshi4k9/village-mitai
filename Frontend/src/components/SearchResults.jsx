@@ -25,8 +25,8 @@ export default function SearchResults() {
   }, [query]);
 
   return (
-    <div className="container" style={{ marginTop: '170px' }}>
-      <h5>Search Results for: <span className="text-primary">{query}</span></h5>
+    <div className="container" style={{ marginTop: '4rem' }}>
+      <h5 className="mt-[5rem]">Search Results for: <span className="text-primary">{query}</span></h5>
       <div className="flex-grid mt-3">
         {results.length > 0 ? (
           results.map((item) => (

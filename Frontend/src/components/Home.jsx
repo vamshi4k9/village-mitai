@@ -51,7 +51,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="mt-[6rem]">
+    <div className="mt-[4rem]">
       <div
         id="homeCarousel"
         className="carousel slide"
