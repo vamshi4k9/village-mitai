@@ -22,18 +22,18 @@ export default function CategorySection({ categoryName, categoryImageUrl }) {
   }, [categoryName]);
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-3">
      
 
       <div className="flex-grid">
         {/* Category image card */}
-        <div className="flex-item category-banner" onClick={() => navigate(`/collections/${categoryName}`)}>
+        {/* <div className="flex-item category-banner" onClick={() => navigate(`/collections/${categoryName}`)}>
           <img src={categoryImageUrl} alt={categoryName} className="category-banner-img" />
           <div className="category-banner-overlay">
             <div className="category-banner-text">{categoryName}</div>
             <div className="category-banner-button">View All</div>
           </div>
-        </div>
+        </div> */}
 
         {/* Items */}
         {items.map((item) => (

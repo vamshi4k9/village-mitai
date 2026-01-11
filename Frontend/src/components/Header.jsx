@@ -4,7 +4,7 @@ import useAgentId from "./useAgentId";
 import "../styles/HeaderFooter.css";
 import { useNavigate } from "react-router-dom"; // ⬅️ Added useNavigate
 
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL } from '../constants';
 
 export default function Header({ toggleCart }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -61,7 +61,8 @@ export default function Header({ toggleCart }) {
           top: 0,
           zIndex: 1000,
           backgroundColor: "white",
-          paddingLeft: '0'
+          paddingLeft: '0',
+          height: '4rem',
         }}>
           <div className="container-fluid d-flex align-items-center justify-content-between">
             <a className="navbar-brand fw-bold d-none d-md-block" href={getUrlWithAgentId("/")}>
@@ -94,20 +95,95 @@ export default function Header({ toggleCart }) {
               </button>
             </div>
             {/* Mobile Header */}
-            <div className="d-md-none w-100 d-flex justify-content-between align-items-center">
-              <button className="navbar-toggler border-0" type="button" onClick={() => setIsOpen(true)} style={{ paddingLeft: 0 }}>
+            <div className="d-md-none w-100 flex items-center justify-between ">
+
+              {/* Hamburger */}
+              <button
+                className="navbar-toggler border-0 p-0"
+                type="button"
+                onClick={() => setIsOpen(true)}
+              >
                 <span className="navbar-toggler-icon"></span>
               </button>
 
-              <a className="navbar-brand text-center logo-mobile mb-0" href={getUrlWithAgentId("/")}>
-                <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-[7rem]" />
+              {/* Logo */}
+              <a
+                className="navbar-brand logo-mobile mb-0 flex justify-center"
+                href={getUrlWithAgentId("/")}
+              >
+                <img
+                  src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
+                  alt="Partner with us"
+                  className="object-scale-down w-[7rem]"
+                />
               </a>
 
-              <button className="cart-btn mobile" onClick={toggleCart}>
-                {totalItems > 0 && <span className="cart-count">{totalItems}</span>}
-                <i className="bi bi-cart"></i>
-              </button>
+              {/* Right actions */}
+              <div className="flex items-center gap-3">
+
+                {/* Search */}
+                <div className="relative">
+                  <button
+                    className="bg-transparent border-0 p-0"
+                    onClick={() => setShowSearch(true)}
+                  >
+                    <i className="bi bi-search text-xl"></i>
+                  </button>
+                  {/* {showSearch && (
+                    <input
+                      type="text"
+                      className="search-input absolute right-0 top-1/2 -translate-y-1/2"
+                      placeholder="Search..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                      autoFocus
+                    />
+                  )} */}
+                  {/* Mobile Search Overlay */}
+                  {showSearch && (
+                    <div className="mobile-search-overlay">
+                      <div className="mobile-search-bar">
+                        <i className="bi bi-search text-muted"></i>
+
+                        <input
+                          type="text"
+                          className="mobile-search-input"
+                          placeholder="Search products..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onKeyDown={handleSearchKeyDown}
+                          autoFocus
+                        />
+
+                        <button
+                          className="mobile-search-close"
+                          onClick={() => {
+                            setShowSearch(false);
+                            setSearchTerm("");
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* Cart */}
+                <button className="cart-btn mobile relative" onClick={toggleCart}>
+                  {totalItems > 0 && (
+                    <span className="cart-count absolute -top-1 -right-1">
+                      {totalItems}
+                    </span>
+                  )}
+                  <i className="bi bi-cart text-xl"></i>
+                </button>
+
+              </div>
             </div>
+
           </div>
         </nav>
       </div>
@@ -154,10 +230,10 @@ export default function Header({ toggleCart }) {
             <button className="close-btn" onClick={() => setIsOpen(false)}>
               &times;
             </button>
-            <div className="mobile-sidebar-main">
+            <div className="mobile-sidebar-main w-[11rem]">
               {/* Mobile Search Bar */}
               {/* Mobile Search (always visible) */}
-              <div className="d-flex align-items-center w-100 mt-2" style={{ backgroundColor: '#edede9' }}>
+              {/* <div className="d-flex align-items-center w-100 mt-2" style={{ backgroundColor: '#edede9' }}>
                 <div className="search-box-wrapper" style={{ position: "relative" }}>
                   <i className="bi bi-search search-icon-inside" />
                   <input
@@ -173,7 +249,7 @@ export default function Header({ toggleCart }) {
                     }}
                   />
                 </div>
-              </div>
+              </div> */}
 
               <a className="d-block py-2 text-decoration-none" href={getUrlWithAgentId("/")}>
                 Home

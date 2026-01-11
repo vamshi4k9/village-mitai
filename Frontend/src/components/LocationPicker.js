@@ -160,7 +160,6 @@ export default function LocationPicker({ onLocationSelect }) {
             borderRadius: "4px",
           }}
         >
-          Selected: {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
         </div>
       )}
 

@@ -185,7 +185,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
         {cart.length > 0 && (
           <div className="cart-footer">
             <p className="cart-total font-semibold">Total: Rs.{total} </p>
-            <div className="checkout-btn cursor-pointer" onClick={handleCheckout}>
+            <div className="checkout-btn cursor-pointer rounded-md" onClick={handleCheckout}>
               <span className="checkout-btn-txt font-semibold">Checkout</span>
             </div>
           </div>
@@ -193,18 +193,36 @@ const CartPopup = ({ isOpen, toggleCart }) => {
       </div>
 
       {/* Auth Popup */}
-      {showAuthPopup && (
-        <div className="auth-popup-overlay">
-          <div className="auth-popup">
-            <h3>Continue to Checkout</h3>
-            <p>You are not logged in. Please choose an option:</p>
-            <button onClick={handleGuest}>Continue as Guest</button>
-            <button onClick={handleLogin}>Login</button>
-            <button onClick={handleSignup}>Sign Up</button>
-            <button onClick={() => setShowAuthPopup(false)}>Cancel</button>
-          </div>
-        </div>
-      )}
+{/* Auth Popup */}
+{showAuthPopup && (
+  <div className="auth-popup-overlay">
+    <div className="auth-popup">
+      <h3 className="auth-title">Continue to Checkout</h3>
+      <p className="auth-subtitle">
+        Login for faster checkout or continue as a guest
+      </p>
+
+      <div className="auth-actions">
+        <button className="auth-btn guest" onClick={handleGuest}>
+          Continue as Guest
+        </button>
+
+        <button className="auth-btn login" onClick={handleLogin}>
+          Login
+        </button>
+
+        <button className="auth-btn signup" onClick={handleSignup}>
+          Sign Up
+        </button>
+      </div>
+
+      <button className="auth-cancel" onClick={() => setShowAuthPopup(false)}>
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+
     </>
   );
 };

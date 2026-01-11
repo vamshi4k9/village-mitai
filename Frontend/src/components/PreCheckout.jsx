@@ -5,6 +5,8 @@ import axios from "axios";
 import "../styles/PreCheckout.css";
 import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from "../constants";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
 
 
 export default function PreCheckout() {
@@ -111,7 +113,6 @@ export default function PreCheckout() {
   };
 
 
-
   const handleAddAddress = async () => {
     try {
       const response = await axios.post(
@@ -129,6 +130,31 @@ export default function PreCheckout() {
       alert("Failed to create address. Please try again.");
     }
   };
+
+  const getPriceByWeight = (item, weight) => {
+    const w = Number(weight);
+
+    if (w === 250) {
+      return {
+        price: Number(item.price_quarter),
+        discounted: Number(item.discounted_price_quarter),
+      };
+    }
+
+    if (w === 500) {
+      return {
+        price: Number(item.price_half),
+        discounted: Number(item.discounted_price_half),
+      };
+    }
+
+    // default 1000g / 1kg
+    return {
+      price: Number(item.price),
+      discounted: Number(item.discounted_price),
+    };
+  };
+
 
   const handlePayment = async () => {
     if (!selectedAddress || !paymentMode) {
@@ -219,34 +245,102 @@ export default function PreCheckout() {
       <div className="left-section">
         <h2>Your Cart</h2>
         <div className="cart-items">
-          {cart.map((ci) => (
-            <div key={ci.item.id} className="cart-item">
-              <img src={ci.item.image} alt={ci.item.name} />
-              <div className="cart-item-details">
-                <p className="item-name">{ci.item.name}</p>
-                <p>
-                  {ci.item.discounted_total &&
-                    ci.item.discounted_total < ci.item.original_price * ci.quantity ? (
-                    <>
-                      <span className="line-through text-gray-500">
-                        ₹{ci.item.original_price * ci.quantity}
+          {cart.map((ci) => {
+            const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
+
+            const hasDiscount =
+              !isNaN(discounted) &&
+              discounted > 0 &&
+              discounted < price;
+
+            const finalPrice = hasDiscount ? discounted : price;
+            const itemTotal = finalPrice * ci.quantity;
+
+            const discountPercent = hasDiscount
+              ? Math.round(((price - discounted) / price) * 100)
+              : 0;
+
+            return (
+              <div key={ci.item.id} className="cart-item flex-row">
+                <Link to={`/product/${ci.item.id}`}>
+                  <img src={ci.item.image} alt={ci.item.name} />
+                </Link>
+
+                <div className="cart-item-details checkout-cart-layout">
+                  <div className="checkout-item-left">
+                    <div className="item-name text-lg">{ci.item.name}</div>
+
+                    <div className="checkout-item-meta">
+                      <span className="checkout-weight">
+                        {ci.weight >= 1000
+                          ? `${ci.weight / 1000} KG`
+                          : `${ci.weight} g`}
                       </span>
-                      <span className="ml-2 text-green-600 font-bold">
-                        ₹{ci.item.discounted_total}
+
+                      <span className="checkout-qty">
+                        Qty: {ci.quantity}
                       </span>
-                    </>
-                  ) : (
-                    <>₹{ci.item.original_price * ci.quantity}</>
-                  )}
-                </p>
+                    </div>
+                  </div>
+
+                  <div className="checkout-item-right">
+                    {hasDiscount ? (
+                      <>
+                        <span className="checkout-price-old">
+                          ₹{price * ci.quantity}
+                        </span>
+
+                        <span className="checkout-price-new">
+                          Rs.{itemTotal}
+                        </span>
+
+                        <span className="checkout-discount">
+                          {discountPercent}% OFF
+                        </span>
+                      </>
+                    ) : (
+                      <span className="checkout-price-new">
+                        Rs.{itemTotal}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
 
               </div>
-            </div>
-          ))}
+            );
+          })}
+
         </div>
         <div className="cart-summary">
+          <div className="price-breakup">
+            {/* <div className="row">
+              <span>Subtotal</span>
+              <span>₹{total}</span>
+            </div> */}
+
+            {discount > 0 && (
+              <div className="row discount-row">
+                <span>Coupon Discount</span>
+                <span>- ₹{discount}</span>
+              </div>
+            )}
+
+            {/* <div className="row">
+              <span>Delivery Charges</span>
+              <span className="free">FREE</span>
+            </div> */}
+
+            <div className="divider"></div>
+
+            {/* <div className="row total-row">
+              <strong>Payable Amount</strong>
+              <strong>₹{newTotal}</strong>
+            </div> */}
+          </div>
+
           <p>Total Items: {totalItems}</p>
-          <p className="total-amount">Total: ₹{total}</p>
+          <p className="total-amount">Total: Rs.{total}</p>
           {discount > 0 && <p className="discount">Discount: ₹{discount}</p>}
           {discount > 0 && (
             <p className="net-total">
@@ -255,36 +349,31 @@ export default function PreCheckout() {
           )}
         </div>
 
-<div className="coupon-box">
-  <div className="coupon-input-wrapper w-full">
-    <input
-      type="text"
-      placeholder="Enter Coupon Code"
-      value={coupon}
-      onChange={(e) => setCoupon(e.target.value)}
-      disabled={discount > 0}
-    />
-    {discount > 0 && (
-      <span className="remove-coupon" onClick={removeCoupon}>
-        ✕
-      </span>
-    )}
-  </div>
+        <div className="coupon-box">
+          <div className="coupon-input-wrapper w-full">
+            <input
+              type="text"
+              placeholder="Enter Coupon Code"
+              value={coupon}
+              onChange={(e) => setCoupon(e.target.value)}
+              disabled={discount > 0}
+            />
+            {discount > 0 && (
+              <span className="remove-coupon" onClick={removeCoupon}>
+                ✕
+              </span>
+            )}
+          </div>
 
-  {discount === 0 && (
-    <button className="apply-btn" onClick={applyCoupon}>
-      Apply
-    </button>
-  )}
+          {discount === 0 && (
+            <button className="apply-btn" onClick={applyCoupon}>
+              Apply
+            </button>
+          )}
 
-  {message && <p className="mt-2 text-sm">{message}</p>}
-</div>
-
-
-
-
+          {message && <p className="mt-2 text-sm">{message}</p>}
+        </div>
         <hr />
-
         <h2>Shipping Address</h2>
         {addresses.length > 0 && (
           <div className="address-list">
@@ -411,7 +500,7 @@ export default function PreCheckout() {
           ))}
         </div>
         <button className="pay-button" onClick={handlePayment}>
-          Pay ₹{newTotal}
+          Pay Rs.{total}
         </button>
       </div>
     </div>
