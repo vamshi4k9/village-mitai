@@ -70,4 +70,33 @@
     text-align: center;
     padding-bottom: 5%;
   }
-  
+
+.card-normal-price {
+  color: #3F2305;
+  font-weight: 500;
+}
+
+.card-original-price {
+  text-decoration: line-through;
+  color: #9e9e9e; /* greyish */
+  font-size: 0.9rem;
+  margin-right: 6px;
+}
+
+.card-discounted-price {
+  color: green; /* green */
+  font-weight: 600;
+  font-size: 1rem;
+  margin-right: 6px;
+}
+
+.card-discount-percent {
+  color: #d32f2f; /* red */
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.card-normal-price {
+  color: #3F2305;
+  font-weight: 500;
+}

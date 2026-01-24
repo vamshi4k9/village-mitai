@@ -15,7 +15,6 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchCart = async () => {
       try {
-
         const cartRes = await axios.get(`${API_BASE_URL}/cart/`, SESSION_KEY);
           setCart(cartRes.data);
       } catch (error) {
@@ -27,18 +26,19 @@ export const CartProvider = ({ children }) => {
 
 
   // Calculate total
-  useEffect(() => {
-    let totalPrice = 0;
-    let totalItemCount = 0;
+useEffect(() => {
+  let totalPrice = 0;
+  let totalItemCount = 0;
 
-    for (let i = 0; i < cart.length; i++) {
-      totalPrice += cart[i].item.price * cart[i].quantity;
-      totalItemCount += cart[i].quantity; 
-    }
-    setTotal(totalPrice);
-    setTotalItems(totalItemCount);
+  for (let i = 0; i < cart.length; i++) {
+    totalPrice += Number(cart[i].total_price || 0);
+    totalItemCount += cart[i].quantity;
+  }
 
-  }, [cart]);
+  setTotal(totalPrice);
+  setTotalItems(totalItemCount);
+}, [cart]);
+
    //increase item quantity
    const incQuant = async (cartItem) => {
     try {

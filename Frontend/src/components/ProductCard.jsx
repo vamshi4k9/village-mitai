@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
 import { CartContext } from "./CartContext";
 import axios from "axios";
-import "../styles/ProductCard.css"; 
+import "../styles/ProductCard.css";
 import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
-import { API_BASE_URL} from '../constants'; 
+import { API_BASE_URL } from '../constants';
 
 
 
@@ -43,52 +43,45 @@ const ProductCard = ({ item, smallImage = false }) => {
   };
 
   const cartItem = cart.find((cItem) => cItem.item.id === item.id);
+  const price = item.price != null ? Number(item.price) : null;
+  const discounted = item.discounted_price != null ? Number(item.discounted_price) : null;
+
+  const hasDiscount =
+    typeof price === "number" &&
+    typeof discounted === "number" &&
+    discounted > 0 &&
+    discounted < price;
+
+  const discountPercent = hasDiscount
+  ? Math.round(((price - discounted) / price) * 100)
+  : 0;
 
   return (
     <div className="bestseller-card">
       <div className="image-container">
-        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" onClick={handleClick}/>
+        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" onClick={handleClick} />
 
-        {/* <div className="add-to-cart-btn">
-          {cartItem ? (
-            <div className="d-flex align-items-center justify-content-center">
-              <div
-                className="cart-control ms-2"
-                style={{ color: "white", padding: "5px 10px", cursor: "pointer" }}
-                onClick={() => decQuant(cartItem)}
-              >
-                -
-              </div>
-              <span className="fw-bold">{cartItem.quantity}</span>
-              <div
-                className="cart-control me-2"
-                style={{ color: "white", padding: "5px 10px", cursor: "pointer" }}
-                onClick={() => incQuant(cartItem)}
-              >
-                +
-              </div>
-            </div>
-          ) : (
-            <div onClick={handleCart} style={{ cursor: "pointer" }}>
-              Add to Cart
-            </div>
-          )}
-        </div> */}
       </div>
       <p className="bestseller-info">
-        {item.name} <br /> Rs.{item.price}
+        {item.name}
+        <br />
+
+        {hasDiscount ? (
+          <>
+            <span className="card-original-price">Rs {price}</span>
+            <span className="card-discounted-price">Rs {discounted}</span>
+            <span className="card-discount-percent">
+              ({discountPercent}% OFF)
+            </span>
+          </>
+        ) : (
+          <span className="card-normal-price">Rs {price}</span>
+        )}
       </p>
+
+
     </div>
   );
 };
 
 export default ProductCard;
-
-
-
-
-
-
-
-
-

@@ -244,7 +244,7 @@ export default function PreCheckout() {
     <div className="precheckout-container mt-2">
       <div className="left-section">
         <h2>Your Cart</h2>
-        <div className="cart-items">
+        <div className="cart-items-list">
           {cart.map((ci) => {
             const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
 
