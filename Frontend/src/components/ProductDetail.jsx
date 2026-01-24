@@ -49,39 +49,47 @@ const ProductDetail = ({ productId }) => {
   // Increase quantity locally
   const increaseQuantity = () => setQuantity(quantity + 1);
 
+  const toNumber = (val) =>
+    val !== null && val !== undefined ? Number(val) : null;
+
   const getPriceByWeight = () => {
     if (!product) return { price: 0, discounted: null };
 
     switch (selectedWeight) {
       case 250:
         return {
-          price: product.price_quarter,
-          discounted: product.discounted_price_quarter,
+          price: toNumber(product.price_quarter),
+          discounted: toNumber(product.discounted_price_quarter),
         };
+
       case 500:
         return {
-          price: product.price_half,
-          discounted: product.discounted_price_half,
+          price: toNumber(product.price_half),
+          discounted: toNumber(product.discounted_price_half),
         };
+
       case 1000:
         return {
-          price: product.price,
-          discounted: product.discounted_price,
+          price: toNumber(product.price),
+          discounted: toNumber(product.discounted_price),
         };
+
       default:
         return {
-          price: product.price,
-          discounted: product.discounted_price,
+          price: toNumber(product.price),
+          discounted: toNumber(product.discounted_price),
         };
     }
   };
+
   const { price, discounted } = getPriceByWeight();
 
   const hasDiscount =
-    discounted !== null &&
-    discounted !== undefined &&
-    price !== null &&
+    typeof price === "number" &&
+    typeof discounted === "number" &&
+    discounted > 0 &&
     discounted < price;
+
 
   const discountPercent = hasDiscount
     ? Math.round(((price - discounted) / price) * 100)

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User 
@@ -129,7 +130,26 @@ class Cart(models.Model):
     
     @property
     def total_price(self):
-        return self.quantity * self.item.price
+        item = self.item
+        qty = self.quantity
+
+        try:
+            weight = int(self.weight)
+        except (TypeError, ValueError):
+            weight = 1000  # fallback to 1kg
+
+        if weight == 250:
+            unit_price = item.discounted_price_quarter or item.price_quarter
+        elif weight == 500:
+            unit_price = item.discounted_price_half or item.price_half
+        else:
+            unit_price = item.discounted_price or item.price
+
+        if unit_price is None:
+            return Decimal("0.00")
+
+        return Decimal(unit_price) * qty
+
 
 
 class Order(models.Model):
