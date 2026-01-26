@@ -129,7 +129,7 @@ export default function LocationPicker({ onLocationSelect }) {
             opacity: searchQuery.trim() ? 1 : 0.6,
           }}
         >
-          🔍 Search
+          Search
         </button>
         <button
           onClick={getCurrentLocation}
@@ -144,7 +144,7 @@ export default function LocationPicker({ onLocationSelect }) {
             opacity: isLoadingLocation ? 0.6 : 1,
           }}
         >
-          📍 {isLoadingLocation ? "Getting..." : "Current"}
+          {isLoadingLocation ? "Getting..." : "Current"}
         </button>
       </div>
 

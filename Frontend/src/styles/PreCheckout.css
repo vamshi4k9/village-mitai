@@ -400,3 +400,12 @@
     text-align: left;
   }
 }
+
+.sticky-summary {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 16px;
+  border-top: 1px solid #e5e5e5;
+  box-shadow: 0 -6px 16px rgba(0,0,0,0.05);
+}
