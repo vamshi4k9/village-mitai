@@ -123,13 +123,13 @@ def search_items(request):
             "id": item.id,
             "name": item.name,
             "price": item.price,
-            "image_url": item.image_url,
+            "image_url": item.image,
             "bestseller": item.bestseller,
             "category": [cat.name for cat in item.category.all()]
         }
         for item in items
     ]
-    return JsonResponse(data, safe=False)
+    return Response(data, safe=False)
 
 
 @csrf_exempt
@@ -205,31 +205,28 @@ class CartViewSet(ModelViewSet):
     serializer_class = CartSerializer
     queryset = Cart.objects.all()
 
-    # permission_classes = [IsAuthenticated]
-    # authentication_classes = [JWTAuthentication]  # Add this line
-
-    def get_queryset(self):
+    def get_session_key(self):
         session_key = self.request.headers.get("x-session-key")
         if not session_key:
             self.request.session.create()
             session_key = self.request.session.session_key
+        return session_key
+
+    def get_queryset(self):
+        session_key = self.get_session_key()
         return super().get_queryset().filter(session_key=session_key)
 
     def create(self, request, *args, **kwargs):
-        session_key = self.request.headers.get("x-session-key")
-        
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-        item_id = request.data.get('item')
-        quantity = int(request.data.get('quantity', 1))
-        weight = request.data.get('weight', 1)
+        session_key = self.get_session_key()
+        item_id = request.data.get("item")
+        quantity = int(request.data.get("quantity", 1))
+        weight = request.data.get("weight", 1)
 
         cart_item, created = Cart.objects.get_or_create(
             session_key=session_key,
             item_id=item_id,
             weight=weight,
-            defaults={'quantity': quantity}
+            defaults={"quantity": quantity},
         )
 
         if not created:
@@ -238,6 +235,20 @@ class CartViewSet(ModelViewSet):
 
         serializer = self.get_serializer(cart_item)
         return Response(serializer.data, status=201 if created else 200)
+
+    @action(detail=False, methods=["delete"], url_path="clear")
+    def clear_cart(self, request):
+        session_key = self.get_session_key()
+
+        deleted_count, _ = Cart.objects.filter(session_key=session_key).delete()
+
+        return Response(
+            {
+                "message": "Cart cleared successfully",
+                "deleted_items": deleted_count,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class RegisterView(APIView):
     def post(self, request):
@@ -523,7 +534,6 @@ def admin_login(request):
 class FieldMarketingFormCreateView(generics.CreateAPIView):
     queryset = FieldMarketingForm.objects.all()
     serializer_class = FieldMarketingFormSerializer
-    
     
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 

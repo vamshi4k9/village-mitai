@@ -6,8 +6,7 @@ import "../styles/PreCheckout.css";
 import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from "../constants";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
-
+import PaymentResultModal from "./PaymentResultModal";
 
 export default function PreCheckout() {
   const { cart, total, totalItems, setCart } = useContext(CartContext);
@@ -25,6 +24,33 @@ export default function PreCheckout() {
     address2: "",
     phone_number: "",
   });
+
+  const [paymentPopup, setPaymentPopup] = useState({
+    open: false,
+    status: "",
+    message: "",
+    data: null,
+    redirectUrl: "",
+  });
+  const closePopup = () => {
+    setPaymentPopup({
+      open: false,
+      status: "",
+      message: "",
+      data: null,
+      redirectUrl: "",
+    });
+  };
+
+  const deleteCart = async () => {
+    try {
+      await axios.delete(`${API_BASE_URL}/cart/clear/`, SESSION_KEY);
+      setCart([]);
+    } catch (err) {
+      console.error("Failed to clear cart", err);
+    }
+  };
+
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
   useEffect(() => {
@@ -47,7 +73,7 @@ export default function PreCheckout() {
     try {
       const cartItems = cart.map(({ item, quantity }) => ({
         id: item.id,
-        price: item.price,
+        price: item.total_price,
         qty: quantity,
         category_id: item.category,
       }));
@@ -112,7 +138,6 @@ export default function PreCheckout() {
     setMessage("Coupon removed.");
   };
 
-
   const handleAddAddress = async () => {
     try {
       const response = await axios.post(
@@ -124,10 +149,22 @@ export default function PreCheckout() {
       setNewAddress({ name: "", address1: "", address2: "", phone_number: "" });
       setSelectedAddress(addresses.length.toString());
       setShowAddAddressForm(false);
-      alert("Address added successfully!");
+      // alert("Address added successfully!");
+      setPaymentPopup({
+        open: true,
+        status: "failure",
+        message: "Address added successfully!",
+      });
+
     } catch (error) {
       console.error("Failed to create address", error);
-      alert("Failed to create address. Please try again.");
+      // alert("Failed to create address. Please try again.");
+      setPaymentPopup({
+        open: true,
+        status: "failure",
+        message: "Failed to create address. Please try again.",
+      });
+
     }
   };
 
@@ -148,7 +185,6 @@ export default function PreCheckout() {
       };
     }
 
-    // default 1000g / 1kg
     return {
       price: Number(item.price),
       discounted: Number(item.discounted_price),
@@ -158,13 +194,19 @@ export default function PreCheckout() {
 
   const handlePayment = async () => {
     if (!selectedAddress || !paymentMode) {
-      alert("Please select an address and payment method");
+      // alert("Please select an address and payment method");
       return;
     }
 
     const address = addresses[parseInt(selectedAddress)];
     if (!address) {
-      alert("Invalid address selected");
+      // alert("Invalid address selected");
+      setPaymentPopup({
+        open: true,
+        status: "failure",
+        message: "Invalid address selected",
+      });
+
       return;
     }
 
@@ -192,12 +234,23 @@ export default function PreCheckout() {
           `${API_BASE_URL}/create-order/`,
           payload, token ? SESSION_TOKEN : SESSION_KEY
         );
-        alert("Order placed successfully! Invoice ID: " + response.data.invoice_id);
-        navigate("/");
+        await deleteCart();
+        setPaymentPopup({
+          open: true,
+          status: "success",
+          message: "Order placed successfully!",
+          data: response.data.message,
+          redirectUrl: `/invoice/${response.data.invoice_id}`,
+        });
 
       } catch (error) {
-        console.error("Failed to place order", error);
-        alert("Failed to place order. Please try again.");
+        setPaymentPopup({
+          open: true,
+          status: "failure",
+          message: error.response?.data?.message || "Order failed",
+          data: error.response?.data,
+        });
+
       }
     } else if (paymentMode === "UPI") {
       const orderRes = await axios.post(
@@ -214,15 +267,32 @@ export default function PreCheckout() {
         description: "Test Transaction",
         order_id: orderData.id,
         handler: async (response) => {
-          const verifyRes = await axios.post(
-            `${API_BASE_URL}/verify-payment/`,
-            response,
-            { headers: { "Content-Type": "application/json" } }
-          );
+          try {
+            const verifyRes = await axios.post(
+              `${API_BASE_URL}/verify-payment/`,
+              response,
+              { headers: { "Content-Type": "application/json" } }
+            );
 
-          alert(verifyRes.data.status);
-          navigate("/");
+            await deleteCart();
+
+            setPaymentPopup({
+              open: true,
+              status: "success",
+              message: verifyRes.data.message || "Payment verified successfully",
+              data: verifyRes.data.status,
+              redirectUrl: `/order/${verifyRes.data.order_id}`,
+            });
+          } catch (err) {
+            setPaymentPopup({
+              open: true,
+              status: "failure",
+              message: "Payment verification failed",
+              data: err.response?.data,
+            });
+          }
         },
+
         prefill: {
           name: "Vishnu Vamshi",
           email: "test@example.com",
@@ -235,89 +305,104 @@ export default function PreCheckout() {
 
       const rzp = new window.Razorpay(options);
       rzp.open();
+      rzp.on("payment.failed", (response) => {
+        setPaymentPopup({
+          open: true,
+          status: "failure",
+          message: response.error.description,
+          data: response.error,
+        });
+      });
+
     } else {
-      alert(`Paying ₹${newTotal} via ${paymentMode}`);
+      // alert(`Paying ₹${newTotal} via ${paymentMode}`);
+      setPaymentPopup({
+        open: true,
+        status: "failure",
+        message: `Paying ₹${newTotal} via ${paymentMode}`,
+      });
+
     }
   };
 
   return (
-    <div className="precheckout-container mt-2">
+    <><div className="precheckout-container mt-2">
       <div className="left-section">
-        <h2>Your Cart</h2>
-        <div className="cart-items-list">
-          {cart.map((ci) => {
-            const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
+        <div className="checkout-card">
 
-            const hasDiscount =
-              !isNaN(discounted) &&
-              discounted > 0 &&
-              discounted < price;
+          <h2>Your Cart</h2>
+          <div className="cart-items-list">
+            {cart.map((ci) => {
+              const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
 
-            const finalPrice = hasDiscount ? discounted : price;
-            const itemTotal = finalPrice * ci.quantity;
+              const hasDiscount = !isNaN(discounted) &&
+                discounted > 0 &&
+                discounted < price;
 
-            const discountPercent = hasDiscount
-              ? Math.round(((price - discounted) / price) * 100)
-              : 0;
+              const finalPrice = hasDiscount ? discounted : price;
+              const itemTotal = finalPrice * ci.quantity;
 
-            return (
-              <div key={ci.item.id} className="cart-item flex-row">
-                <Link to={`/product/${ci.item.id}`}>
-                  <img src={ci.item.image} alt={ci.item.name} />
-                </Link>
+              const discountPercent = hasDiscount
+                ? Math.round(((price - discounted) / price) * 100)
+                : 0;
 
-                <div className="cart-item-details checkout-cart-layout">
-                  <div className="checkout-item-left">
-                    <div className="item-name text-lg">{ci.item.name}</div>
+              return (
+                <div key={ci.item.id} className="cart-item flex-row">
+                  <Link to={`/product/${ci.item.id}`}>
+                    <img src={ci.item.image} alt={ci.item.name} />
+                  </Link>
 
-                    <div className="checkout-item-meta">
-                      <span className="checkout-weight">
-                        {ci.weight >= 1000
-                          ? `${ci.weight / 1000} KG`
-                          : `${ci.weight} g`}
-                      </span>
+                  <div className="cart-item-details checkout-cart-layout">
+                    <div className="checkout-item-left">
+                      <div className="item-name text-lg">{ci.item.name}</div>
 
-                      <span className="checkout-qty">
-                        Qty: {ci.quantity}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="checkout-item-right">
-                    {hasDiscount ? (
-                      <>
-                        <span className="checkout-price-old">
-                          ₹{price * ci.quantity}
+                      <div className="checkout-item-meta">
+                        <span className="checkout-weight">
+                          {ci.weight >= 1000
+                            ? `${ci.weight / 1000} KG`
+                            : `${ci.weight} g`}
                         </span>
 
+                        <span className="checkout-qty">
+                          Qty: {ci.quantity}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="checkout-item-right">
+                      {hasDiscount ? (
+                        <>
+                          <span className="checkout-price-old">
+                            ₹{price * ci.quantity}
+                          </span>
+
+                          <span className="checkout-price-new">
+                            Rs.{itemTotal}
+                          </span>
+
+                          <span className="checkout-discount">
+                            {discountPercent}% OFF
+                          </span>
+                        </>
+                      ) : (
                         <span className="checkout-price-new">
                           Rs.{itemTotal}
                         </span>
-
-                        <span className="checkout-discount">
-                          {discountPercent}% OFF
-                        </span>
-                      </>
-                    ) : (
-                      <span className="checkout-price-new">
-                        Rs.{itemTotal}
-                      </span>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
-
-
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
         </div>
-        <div className="cart-summary">
+        <div className="cart-summary sticky-summary">
           <div className="price-breakup">
             {/* <div className="row">
-              <span>Subtotal</span>
-              <span>₹{total}</span>
-            </div> */}
+      <span>Subtotal</span>
+      <span>₹{total}</span>
+    </div> */}
 
             {discount > 0 && (
               <div className="row discount-row">
@@ -327,16 +412,16 @@ export default function PreCheckout() {
             )}
 
             {/* <div className="row">
-              <span>Delivery Charges</span>
-              <span className="free">FREE</span>
-            </div> */}
+      <span>Delivery Charges</span>
+      <span className="free">FREE</span>
+    </div> */}
 
             <div className="divider"></div>
 
             {/* <div className="row total-row">
-              <strong>Payable Amount</strong>
-              <strong>₹{newTotal}</strong>
-            </div> */}
+      <strong>Payable Amount</strong>
+      <strong>₹{newTotal}</strong>
+    </div> */}
           </div>
 
           <p>Total Items: {totalItems}</p>
@@ -356,8 +441,7 @@ export default function PreCheckout() {
               placeholder="Enter Coupon Code"
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
-              disabled={discount > 0}
-            />
+              disabled={discount > 0} />
             {discount > 0 && (
               <span className="remove-coupon" onClick={removeCoupon}>
                 ✕
@@ -380,16 +464,14 @@ export default function PreCheckout() {
             {addresses.map((addr, index) => (
               <label
                 key={index}
-                className={`address-card ${selectedAddress === index.toString() ? "selected" : ""
-                  }`}
+                className={`address-card ${selectedAddress === index.toString() ? "selected" : ""}`}
               >
                 <input
                   type="radio"
                   name="address"
                   value={index.toString()}
                   checked={selectedAddress === index.toString()}
-                  onChange={() => setSelectedAddress(index.toString())}
-                />
+                  onChange={() => setSelectedAddress(index.toString())} />
                 <div className="address-details">
                   <p className="address-name">{addr.name}</p>
                   <p>
@@ -419,10 +501,7 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter your name"
                 value={newAddress.name}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, name: e.target.value })
-                }
-              />
+                onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })} />
             </div>
             <div className="form-group">
               <label htmlFor="address1">Address Line 1</label>
@@ -431,10 +510,7 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter address line 1"
                 value={newAddress.address1}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, address1: e.target.value })
-                }
-              />
+                onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })} />
             </div>
             <div className="form-group">
               <label htmlFor="address2">Address Line 2</label>
@@ -443,10 +519,7 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter address line 2"
                 value={newAddress.address2}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, address2: e.target.value })
-                }
-              />
+                onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })} />
             </div>
             <div className="form-group">
               <label htmlFor="phone_number">Phone Number</label>
@@ -455,10 +528,7 @@ export default function PreCheckout() {
                 type="text"
                 placeholder="Enter phone number"
                 value={newAddress.phone_number}
-                onChange={(e) =>
-                  setNewAddress({ ...newAddress, phone_number: e.target.value })
-                }
-              />
+                onChange={(e) => setNewAddress({ ...newAddress, phone_number: e.target.value })} />
             </div>
             <div className="form-group">
               <LocationPicker
@@ -468,8 +538,7 @@ export default function PreCheckout() {
                     latitude: latlng.lat,
                     longitude: latlng.lng,
                   });
-                }}
-              />
+                }} />
             </div>
             <button className="save-address-button" onClick={handleAddAddress}>
               Save Address
@@ -484,8 +553,7 @@ export default function PreCheckout() {
           {["UPI", "Cash On Delivery"].map((mode) => (
             <label
               key={mode}
-              className={`payment-option ${paymentMode === mode ? "selected" : ""
-                }`}
+              className={`payment-option ${paymentMode === mode ? "selected" : ""}`}
             >
               <input
                 type="radio"
@@ -493,8 +561,7 @@ export default function PreCheckout() {
                 name="payment"
                 value={mode}
                 checked={paymentMode === mode}
-                onChange={() => setPaymentMode(mode)}
-              />
+                onChange={() => setPaymentMode(mode)} />
               {mode}
             </label>
           ))}
@@ -503,6 +570,16 @@ export default function PreCheckout() {
           Pay Rs.{total}
         </button>
       </div>
-    </div>
+    </div><PaymentResultModal
+        open={paymentPopup.open}
+        status={paymentPopup.status}
+        message={paymentPopup.message}
+        data={paymentPopup.data}
+        redirectUrl={paymentPopup.redirectUrl}
+        onClose={() => {
+          closePopup();
+          if (paymentPopup.status === "success") navigate("/");
+        }} /></>
+
   );
 }
