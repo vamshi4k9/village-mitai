@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 
 
 const CartPopup = ({ isOpen, toggleCart }) => {
-  const { cart, incQuant, decQuant, removeFromCart, total, totalItems } = useContext(CartContext);
+  const { cart, incQuant, decQuant, removeFromCart, total_1, totalItems } = useContext(CartContext);
   const navigate = useNavigate();
   const { getUrlWithAgentId } = useAgentId();
   const [showAuthPopup, setShowAuthPopup] = useState(false);
@@ -21,38 +21,31 @@ const CartPopup = ({ isOpen, toggleCart }) => {
     toggleCart(); // Close cart popup
     navigate(getUrlWithAgentId("/precheckout"));
 
-    const orderData = {
-      total: total,
-      totalItems: totalItems,
-      items: cart.map(item => ({
-        id: item.item.id,
-        name: item.item.name,
-        quantity: item.quantity,
-        price: item.item.price,
-      })),
-    };
   };
 
   const getPriceByWeight = (item, weight) => {
+    let price, discounted;
+
     switch (Number(weight)) {
       case 250:
-        return {
-          price: Number(item.price_quarter),
-          discounted: Number(item.discounted_price_quarter),
-        };
+        price = Number(item.price_quarter);
+        discounted = item.discounted_price_quarter;
+        break;
       case 500:
-        return {
-          price: Number(item.price_half),
-          discounted: Number(item.discounted_price_half),
-        };
+        price = Number(item.price_half);
+        discounted = item.discounted_price_half;
+        break;
       case 1000:
       default:
-        return {
-          price: Number(item.price),
-          discounted: Number(item.discounted_price),
-        };
+        price = Number(item.price);
+        discounted = item.discounted_price;
     }
+
+    discounted = discounted !== null && discounted !== "" ? Number(discounted) : null;
+
+    return { price, discounted };
   };
+
 
 
   const handleGuest = () => {
@@ -72,6 +65,44 @@ const CartPopup = ({ isOpen, toggleCart }) => {
     toggleCart();
     navigate("/register");
   };
+
+  const getFinalPrice = (item) => {
+    let price, discounted;
+
+    switch (Number(item.weight)) {
+      case 250:
+        price = Number(item.item.price_quarter);
+        discounted = item.item.discounted_price_quarter;
+        break;
+
+      case 500:
+        price = Number(item.item.price_half);
+        discounted = item.item.discounted_price_half;
+        break;
+
+      default:
+        price = Number(item.item.price);
+        discounted = item.item.discounted_price;
+    }
+
+    discounted =
+      discounted !== null &&
+        discounted !== "" &&
+        !isNaN(discounted) &&
+        discounted > 0 &&
+        discounted < price
+        ? Number(discounted)
+        : null;
+
+    return discounted ?? price;
+  };
+
+
+  const total = cart.reduce((sum, cartItem) => {
+    const finalPrice = getFinalPrice(cartItem);
+    return sum + finalPrice * cartItem.quantity;
+  }, 0);
+
 
   return (
     <>
@@ -93,6 +124,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
               const hasDiscount =
                 discounted !== null &&
                 !isNaN(discounted) &&
+                discounted > 0 &&
                 discounted < price;
 
               const finalPrice = hasDiscount ? discounted : price;
@@ -101,6 +133,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
               const discountPercent = hasDiscount
                 ? Math.round(((price - discounted) / price) * 100)
                 : 0;
+
 
               return (
                 <div key={item.item.id} className="cart-item">
@@ -184,7 +217,10 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
         {cart.length > 0 && (
           <div className="cart-footer">
-            <p className="cart-total font-semibold">Total: Rs.{total} </p>
+            <p className="cart-total font-semibold">
+              Total: Rs.{total}
+            </p>
+
             <div className="checkout-btn cursor-pointer rounded-md" onClick={handleCheckout}>
               <span className="checkout-btn-txt font-semibold">Checkout</span>
             </div>
@@ -193,35 +229,35 @@ const CartPopup = ({ isOpen, toggleCart }) => {
       </div>
 
       {/* Auth Popup */}
-{/* Auth Popup */}
-{showAuthPopup && (
-  <div className="auth-popup-overlay">
-    <div className="auth-popup">
-      <h3 className="auth-title">Continue to Checkout</h3>
-      <p className="auth-subtitle">
-        Login for faster checkout or continue as a guest
-      </p>
+      {/* Auth Popup */}
+      {showAuthPopup && (
+        <div className="auth-popup-overlay">
+          <div className="auth-popup">
+            <h3 className="auth-title">Continue to Checkout</h3>
+            <p className="auth-subtitle">
+              Login for faster checkout or continue as a guest
+            </p>
 
-      <div className="auth-actions">
-        <button className="auth-btn guest" onClick={handleGuest}>
-          Continue as Guest
-        </button>
+            <div className="auth-actions">
+              <button className="auth-btn guest" onClick={handleGuest}>
+                Continue as Guest
+              </button>
 
-        <button className="auth-btn login" onClick={handleLogin}>
-          Login
-        </button>
+              <button className="auth-btn login" onClick={handleLogin}>
+                Login
+              </button>
 
-        <button className="auth-btn signup" onClick={handleSignup}>
-          Sign Up
-        </button>
-      </div>
+              <button className="auth-btn signup" onClick={handleSignup}>
+                Sign Up
+              </button>
+            </div>
 
-      <button className="auth-cancel" onClick={() => setShowAuthPopup(false)}>
-        Cancel
-      </button>
-    </div>
-  </div>
-)}
+            <button className="auth-cancel" onClick={() => setShowAuthPopup(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
     </>
   );
