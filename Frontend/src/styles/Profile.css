@@ -37,12 +37,54 @@
     color: #3F2305;
     margin-bottom: 10px;
   }
+
+  .address-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  padding: 14px;
+  margin-bottom: 10px;
+  border: 1px solid #d8cfc4;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.address-card.selected::after {
+  content: "✓";
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #4b2a0d;   /* your theme color */
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hover */
+.address-card:hover {
+  border-color: #4b2a0d;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
+}
+
+/* Selected state */
+.address-card.selected {
+  border: 2px solid #4b2a0d;
+  background: #f8f4f1;
+}
   
   .address-card,
   .order-card {
     background: #fff;
-    padding: 15px;
-    margin-bottom: 15px;
+    padding: 6px;
+    margin-bottom: 6px;
     border: 1px solid #3F2305;
     border-radius: 5px;
   }
@@ -52,6 +94,9 @@
     margin: 5px 0;
     font-size: 0.9rem;
   }
+  .address-card input[type="radio"] {
+  display: none;
+}
   
   .logout-button {
     margin-top: 30px;

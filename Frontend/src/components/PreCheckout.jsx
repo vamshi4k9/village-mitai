@@ -210,7 +210,7 @@ export default function PreCheckout() {
       return;
     }
 
-    if (paymentMode === "Cash On Delivery") {
+    if (paymentMode === "Cash On Delivery" || paymentMode === "Take Away") {
       const payload = {
         payment_mode: "CASH",
         delivery_time: 1,
@@ -464,15 +464,14 @@ export default function PreCheckout() {
             {addresses.map((addr, index) => (
               <label
                 key={index}
-                className={`address-card ${selectedAddress === index.toString() ? "selected" : ""}`}
+                className={`address-card w-full ${selectedAddress === index.toString() ? "selected" : ""}`}
               >
                 <input
                   type="radio"
                   name="address"
                   value={index.toString()}
-                  checked={selectedAddress === index.toString()}
                   onChange={() => setSelectedAddress(index.toString())} />
-                <div className="address-details">
+                <div className="address-details w-full">
                   <p className="address-name">{addr.name}</p>
                   <p>
                     {addr.address1}, {addr.address2}
@@ -493,9 +492,9 @@ export default function PreCheckout() {
 
         {showAddAddressForm && (
           <div className="add-address-form">
-            <h3 className="form-title">Add New Address</h3>
+            {/* <h3 className="form-title">Add New Address</h3> */}
             <div className="form-group">
-              <label htmlFor="name">Name</label>
+              <label htmlFor="name" className="text-left">Name</label>
               <input
                 id="name"
                 type="text"
@@ -504,7 +503,7 @@ export default function PreCheckout() {
                 onChange={(e) => setNewAddress({ ...newAddress, name: e.target.value })} />
             </div>
             <div className="form-group">
-              <label htmlFor="address1">Address Line 1</label>
+              <label htmlFor="address1" className="text-left">Address Line 1</label>
               <input
                 id="address1"
                 type="text"
@@ -513,7 +512,7 @@ export default function PreCheckout() {
                 onChange={(e) => setNewAddress({ ...newAddress, address1: e.target.value })} />
             </div>
             <div className="form-group">
-              <label htmlFor="address2">Address Line 2</label>
+              <label htmlFor="address2" className="text-left">Address Line 2</label>
               <input
                 id="address2"
                 type="text"
@@ -522,7 +521,7 @@ export default function PreCheckout() {
                 onChange={(e) => setNewAddress({ ...newAddress, address2: e.target.value })} />
             </div>
             <div className="form-group">
-              <label htmlFor="phone_number">Phone Number</label>
+              <label htmlFor="phone_number" className="text-left">Phone Number</label>
               <input
                 id="phone_number"
                 type="text"
@@ -550,7 +549,7 @@ export default function PreCheckout() {
 
         <h2>Payment Method</h2>
         <div className="payment-options">
-          {["UPI", "Cash On Delivery"].map((mode) => (
+          {["UPI", "Cash On Delivery","Take Away"].map((mode) => (
             <label
               key={mode}
               className={`payment-option ${paymentMode === mode ? "selected" : ""}`}

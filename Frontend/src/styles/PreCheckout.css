@@ -128,19 +128,34 @@
 }
 
 .address-card {
-  padding: 15px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   background: #fff;
+  padding: 14px;
+  margin-bottom: 10px;
   border: 1px solid #d8cfc4;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
-  transition: border-color 0.3s, background 0.3s;
+  transition: all 0.2s ease;
 }
 
+/* Hover */
+.address-card:hover {
+  border-color: #4b2a0d;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
+}
+
+/* Selected state */
 .address-card.selected {
-  border-color: #3F2305;
-  background-color: #f4f2f1;
+  border: 2px solid #4b2a0d;
+  background: #f8f4f1;
 }
 
+.address-card input[type="radio"] {
+  display: none;
+}
 .address-details p {
   margin: 3px 0;
 }
@@ -408,4 +423,25 @@
   padding: 16px;
   border-top: 1px solid #e5e5e5;
   box-shadow: 0 -6px 16px rgba(0,0,0,0.05);
+}
+
+.add-new-address-button {
+  padding: 8px 14px;
+  background-color: #3F2305;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+}
+
+.save-address-button {
+  padding: 8px 14px;
+  background-color: #3F2305;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
 }
