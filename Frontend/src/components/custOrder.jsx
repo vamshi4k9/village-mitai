@@ -34,8 +34,7 @@ const OfflineOrder = () => {
 
         if (couponApplied) {
 
-            const disc = getTotal() * 0.2;
-
+            const disc = Number((total * 0.2).toFixed(2));
             setDiscount(disc);
 
         }
@@ -196,7 +195,7 @@ const OfflineOrder = () => {
             customer_name: customer.name,
             phone: customer.phone,
             coupon: coupon,
-            discount: discount,
+            discount: Number(discount.toFixed(2)),
             total_amount: getTotal(),
             final_amount: getTotal() - discount,
             items: orders
