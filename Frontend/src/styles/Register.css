@@ -108,3 +108,47 @@
     font-size: 0.95rem;
   }
 }
+.bill-container{
+  margin-top:20px;
+}
+
+.bill-table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.bill-table th{
+  text-align:left;
+  padding:8px;
+  border-bottom:2px solid #eee;
+}
+
+.bill-table td{
+  padding:8px;
+  border-bottom:1px solid #eee;
+}
+
+.bill-summary{
+  margin-top:20px;
+}
+
+.summary-row{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+}
+
+.summary-row.final{
+  font-size:18px;
+  font-weight:bold;
+}
+
+.discount{
+  color:green;
+}
+
+.coupon-success{
+  margin-top:8px;
+  color:green;
+  font-size:14px;
+}

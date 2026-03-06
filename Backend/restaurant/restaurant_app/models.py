@@ -279,3 +279,40 @@ class AgentCustomerEntry(models.Model):
 
     def __str__(self):
         return f"{self.customer_name} ({self.customer_phone})"
+    
+
+class OfflineOrder(models.Model):
+
+    customer_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=20)
+
+    coupon = models.CharField(max_length=50, blank=True, null=True)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    final_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order {self.id} - {self.customer_name}"
+
+
+class OfflineOrderItem(models.Model):
+
+    order = models.ForeignKey(
+        OfflineOrder,
+        related_name="items",
+        on_delete=models.CASCADE
+    )
+
+    item = models.ForeignKey(Item, on_delete=models.SET_NULL, null=True)
+
+    name = models.CharField(max_length=200)
+
+    weight = models.CharField(max_length=50)
+
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.name} - {self.weight}"
