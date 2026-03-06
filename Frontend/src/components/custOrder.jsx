@@ -34,7 +34,7 @@ const OfflineOrder = () => {
 
         if (couponApplied) {
 
-            const disc = Number((total * 0.2).toFixed(2));
+            const disc = Number((getTotal() * 0.2).toFixed(2));
             setDiscount(disc);
 
         }
@@ -43,7 +43,7 @@ const OfflineOrder = () => {
 
     const fetchItems = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/category/SWEETS`);
+            const res = await axios.get(`${API_BASE_URL}/category/Ariselu`);
             setItems(res.data);
         } catch (err) {
             console.error(err);
@@ -122,7 +122,13 @@ const OfflineOrder = () => {
 
         setProduct(updated);
     };
+    const removeItem = (index) => {
 
+        const updatedOrders = orders.filter((_, i) => i !== index);
+
+        setOrders(updatedOrders);
+
+    };
     const addItem = () => {
 
         if (!product.item_id || !product.weight) return;
@@ -311,16 +317,28 @@ const OfflineOrder = () => {
                                 <th>Sweet</th>
                                 <th>Weight</th>
                                 <th>Price</th>
+                                  <th></th>
+
                             </tr>
                         </thead>
-
                         <tbody>
 
                             {orders.map((item, index) => (
                                 <tr key={index}>
+
                                     <td>{item.name}</td>
                                     <td>{item.weight}</td>
                                     <td>₹{item.price}</td>
+
+                                    <td>
+                                        <button
+                                            className="remove-btn"
+                                            onClick={() => removeItem(index)}
+                                        >
+                                            ❌
+                                        </button>
+                                    </td>
+
                                 </tr>
                             ))}
 
