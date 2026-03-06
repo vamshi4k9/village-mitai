@@ -5,6 +5,8 @@ from .models import (
     Cart,
     Address,
     Invoice,
+    OfflineOrder,
+    OfflineOrderItem,
     Transaction,
     FieldMarketingForm, AgentCustomerEntry
 )
@@ -240,3 +242,38 @@ class AgentCustomerEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = AgentCustomerEntry
         fields = "__all__"
+
+
+class OfflineOrderItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OfflineOrderItem
+        fields = [
+            "item",
+            "name",
+            "weight",
+            "price"
+        ]
+
+
+class OfflineOrderSerializer(serializers.ModelSerializer):
+
+    items = OfflineOrderItemSerializer(many=True)
+
+    class Meta:
+        model = OfflineOrder
+        fields = "__all__"
+
+    def create(self, validated_data):
+
+        items_data = validated_data.pop("items")
+
+        order = OfflineOrder.objects.create(**validated_data)
+
+        for item in items_data:
+            OfflineOrderItem.objects.create(
+                order=order,
+                **item
+            )
+
+        return order

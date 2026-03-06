@@ -16,6 +16,7 @@ export default function AppCatalogue() {
     { name: "Order Status", url: "/order_status" },
     { name: "Agent Page", url: "/agent-page" },
     { name: "Recruit Page", url: "/recruit" },
+    { name: "Offline order", url: "/offline-order" },
     ];
 
   return (

@@ -7,14 +7,14 @@ from django.core.paginator import Paginator
 
 
 from restaurant import settings
-from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
+from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Sum
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, Order, OrderItem, Address, Invoice, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, OfflineOrder, Order, OrderItem, Address, Invoice, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -754,3 +754,47 @@ def agent_dashboard(request):
         "page": page_number,
         "page_count": paginator.num_pages
     }, status=status.HTTP_200_OK)
+    
+@api_view(["POST"])
+def create_offline_order(request):
+
+    serializer = OfflineOrderSerializer(data=request.data)
+
+    if serializer.is_valid():
+
+        order = serializer.save()
+
+        return Response(
+            {
+                "message": "Order created",
+                "order_id": order.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["POST"])
+def validate_coupon(request):
+
+    phone = request.data.get("phone")
+    coupon = request.data.get("coupon")
+
+    if coupon != "VAT20":
+        return Response({
+            "valid": False,
+            "message": "Invalid coupon"
+        })
+
+    order_exists = OfflineOrder.objects.filter(phone=phone).exists()
+
+    if order_exists:
+        return Response({
+            "valid": False,
+            "message": "Coupon only for new customers"
+        })
+
+    return Response({
+        "valid": True,
+        "discount": 20
+    })
