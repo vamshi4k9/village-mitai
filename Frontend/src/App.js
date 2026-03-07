@@ -9,6 +9,8 @@ import Footer from './components/Footer';
 import CartPopup from './components/CartPopup';
 import { useState } from 'react';
 import Contact from './components/Contact';
+import About from './components/About';
+import Privacy from './components/Privacy';
 import ProductDetail from './components/ProductDetail';
 import Checkout from './components/Checkout';
 import useAgentId from './components/useAgentId';
@@ -56,6 +58,8 @@ function App() {
           <Route path="/collections/:categorySlug" element={<Category />} />
           <Route path='/items' element={<Items />} />
           <Route path='/contact' element={<Contact />} />
+          <Route path='/about' element={<About />} />
+          <Route path='/privacy' element={<Privacy />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/upload" element={<UploadImage />} />

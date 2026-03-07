@@ -1,4 +1,3 @@
-import React from "react";
 
 const RazorpayButton = ({ amount, orderId }) => {
   const handlePayment = async () => {
@@ -11,7 +10,6 @@ const RazorpayButton = ({ amount, orderId }) => {
       order_id: orderId,
       handler: function (response) {
         alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
-        console.log(response);
         // API call to verify payment & store order
       },
       prefill: {

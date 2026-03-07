@@ -1,0 +1,44 @@
+.policy-wrapper{
+  width:100%;
+  max-width:900px;
+}
+
+.policy-card{
+  background:#fff;
+  border-radius:12px;
+  padding:35px 40px;
+  margin-top:30px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
+  text-align:left;
+}
+
+.policy-card h5{
+  margin-top:25px;
+  font-weight:600;
+  color:#3F2305;
+}
+
+.policy-card p{
+  line-height:1.7;
+  margin-bottom:10px;
+}
+
+/* modern bullet list */
+
+.policy-list{
+  padding-left:30px;
+  margin-top:12px;
+}
+
+.policy-list li{
+  margin-bottom:10px;
+  line-height:1.6;
+  position:relative;
+}
+
+/* custom bullet */
+
+.policy-list li::marker{
+  color:#3F2305;
+  font-size:14px;
+}

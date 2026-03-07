@@ -53,8 +53,8 @@ const ProductCard = ({ item, smallImage = false }) => {
     discounted < price;
 
   const discountPercent = hasDiscount
-  ? Math.round(((price - discounted) / price) * 100)
-  : 0;
+    ? Math.round(((price - discounted) / price) * 100)
+    : 0;
 
   return (
     <div className="bestseller-card">
@@ -63,10 +63,20 @@ const ProductCard = ({ item, smallImage = false }) => {
 
       </div>
       <p className="bestseller-info">
-        {item.name}
+        <span
+          style={{
+            fontSize:
+              item.name.length > 10
+                ? "13px"
+                : item.name.length > 15
+                  ? "10px"
+                  : "16px"
+          }}
+        >
+          {item.name}
+        </span>
         <br />
-
-        {hasDiscount ? (
+          {hasDiscount ? (
           <>
             <span className="card-original-price">Rs {price}</span>
             <span className="card-discounted-price">Rs {discounted}</span>
