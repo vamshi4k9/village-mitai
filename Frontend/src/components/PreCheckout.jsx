@@ -263,8 +263,8 @@ export default function PreCheckout() {
         key: "rzp_live_SIko6jaI9nTtOc",
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "My Shop",
-        description: "Test Transaction",
+        name: "Village Mitai",
+        description: "Order Transaction",
         order_id: orderData.id,
         handler: async (response) => {
           try {
