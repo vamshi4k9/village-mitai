@@ -43,7 +43,7 @@ const OfflineOrder = () => {
 
     const fetchItems = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/category/Ariselu`);
+            const res = await axios.get(`${API_BASE_URL}/category/SWEETS`);
             setItems(res.data);
         } catch (err) {
             console.error(err);
