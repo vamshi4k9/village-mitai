@@ -42,9 +42,19 @@ const ProductCard = ({ item, smallImage = false }) => {
     }
   };
 
-  const cartItem = cart.find((cItem) => cItem.item.id === item.id);
-  const price = item.price != null ? Number(item.price) : null;
-  const discounted = item.discounted_price != null ? Number(item.discounted_price) : null;
+  const selectedPrice =
+    item.price_quarter ??
+    item.price_half ??
+    item.price;
+
+  const selectedDiscountedPrice =
+    item.discounted_price_quarter ??
+    item.discounted_price_half ??
+    item.discounted_price;
+
+  // convert to numbers
+  const price = selectedPrice != null ? Number(selectedPrice) : null;
+  const discounted = selectedDiscountedPrice != null ? Number(selectedDiscountedPrice) : null;
 
   const hasDiscount =
     typeof price === "number" &&
@@ -57,9 +67,9 @@ const ProductCard = ({ item, smallImage = false }) => {
     : 0;
 
   return (
-    <div className="bestseller-card">
+    <div className="bestseller-card" onClick={handleClick}>
       <div className="image-container">
-        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" onClick={handleClick} />
+        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND"  />
 
       </div>
       <p className="bestseller-info">
@@ -76,7 +86,7 @@ const ProductCard = ({ item, smallImage = false }) => {
           {item.name}
         </span>
         <br />
-          {hasDiscount ? (
+        {hasDiscount ? (
           <>
             <span className="card-original-price">Rs {price}</span>
             <span className="card-discounted-price">Rs {discounted}</span>

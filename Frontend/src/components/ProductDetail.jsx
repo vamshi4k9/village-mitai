@@ -3,7 +3,6 @@ import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { CartContext } from "./CartContext";
 import ReviewSection from "./ProductPage/ReviewSection";
-import ReviewList from "./ProductPage/ReviewList";
 
 import { API_BASE_URL } from '../constants';
 
@@ -210,8 +209,12 @@ const ProductDetail = ({ productId }) => {
             )}
 
             <div className="feature-box">
-              <img src={`${process.env.PUBLIC_URL}/images/Shelf_life.avif`} alt="Vegetarian" className="feature-icon" />
-              <span>{product.shelf_life} Days Shelf Life</span>
+              {/* <img src={`${process.env.PUBLIC_URL}/images/Shelf_life.avif`} alt="Vegetarian" className="feature-icon" />
+               */}
+              <div className="shelf-life-circle">
+                {product.shelf_life}
+              </div>
+              <span> Days Shelf Life</span>
             </div>
             <div className="feature-box">
               <img src={`${process.env.PUBLIC_URL}/images/Free_Express_Delivery.avif`} alt="Vegetarian" className="feature-icon" />

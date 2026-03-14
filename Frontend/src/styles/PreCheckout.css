@@ -25,7 +25,7 @@
 .left-section h2 {
   font-size: 1.5rem;
   color: #3F2305;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 /* Cart Items */
@@ -69,11 +69,12 @@
 
 /* Summary Section */
 .cart-summary {
-  margin-bottom: 25px;
-}
-
-.cart-summary p {
-  margin: 5px 0;
+  align-items: center;
+  border: 1px solid #d8cfc4;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  margin-bottom: 10px;
 }
 
 .total-amount,
@@ -86,8 +87,8 @@
 /* Coupon Section */
 .coupon-box {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
+  /* gap: 10px; */
+  margin-bottom: 10px;
 }
 
 .coupon-box input {
@@ -101,14 +102,14 @@
 
 .coupon-box input:focus {
   outline: none;
-  background: #fff;
+  background: #f9f9f9;
   border-color: #3F2305;
 }
 
 .coupon-box button {
   padding: 10px 20px;
   background: #3F2305;
-  color: #fff;
+  color: #f9f9f9;
   border: none;
   border-radius: 6px;
   font-weight: 500;
@@ -124,17 +125,17 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .address-card {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  background: #fff;
+  /* gap: 12px; */
+  background: #f9f9f9;
   padding: 14px;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
   border: 1px solid #d8cfc4;
   border-radius: 10px;
   cursor: pointer;
@@ -202,7 +203,7 @@
 .add-address-button {
   padding: 10px 16px;
   background-color: #3F2305;
-  color: #fff;
+  color: #f9f9f9;
   border: none;
   border-radius: 6px;
   font-weight: 500;
@@ -217,8 +218,8 @@
 .payment-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 20px 0;
+  /* gap: 12px; */
+  margin: 10px 0;
 }
 
 .payment-option {
@@ -238,10 +239,10 @@
 /* Pay Button */
 .pay-button {
   width: 100%;
-  margin-top: 20px;
+  /* margin-top: 20px; */
   padding: 14px;
   background-color: #3F2305;
-  color: white;
+  color: #f9f9f9;
   font-size: 1rem;
   font-weight: 600;
   border: none;
@@ -327,7 +328,7 @@
 .apply-btn {
   padding: 8px 14px;
   background: #4b2a0d;
-  color: white;
+  color: #f9f9f9;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -344,14 +345,13 @@
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 16px;
+  /* gap: 16px; */
 }
 
 /* Left section stays left */
 .checkout-item-left {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 /* Right section pushed to extreme right */
@@ -380,8 +380,8 @@
 
 /* Price styles */
 .checkout-price-old {
-  display: block;
-  font-size: 0.85rem;
+  /* display: block; */
+  font-size: 0.75rem;
   color: #888;
   text-decoration: line-through;
 }
@@ -389,18 +389,18 @@
 .checkout-price-new {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #1b5e20;
+  /* color: #1b5e20; */
 }
 
 .checkout-discount {
   display: inline-block;
   margin-top: 4px;
-  font-size: 0.75rem;
+  font-size: 0.70rem;
   background: #fdecea;
   color: #b91c1c;
   padding: 2px 6px;
   border-radius: 6px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* ================= MOBILE ================= */
@@ -416,19 +416,10 @@
   }
 }
 
-.sticky-summary {
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  padding: 16px;
-  border-top: 1px solid #e5e5e5;
-  box-shadow: 0 -6px 16px rgba(0,0,0,0.05);
-}
-
 .add-new-address-button {
   padding: 8px 14px;
   background-color: #3F2305;
-  color: #fff;
+  color: #f9f9f9;
   border: none;
   border-radius: 6px;
   font-weight: 500;
@@ -439,7 +430,7 @@
 .save-address-button {
   padding: 8px 14px;
   background-color: #3F2305;
-  color: #fff;
+  color: #f9f9f9;
   border: none;
   border-radius: 6px;
   font-weight: 500;

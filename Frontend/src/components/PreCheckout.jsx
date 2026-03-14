@@ -31,6 +31,7 @@ export default function PreCheckout() {
     message: "",
     data: null,
     redirectUrl: "",
+    type: "",
   });
   const closePopup = () => {
     setPaymentPopup({
@@ -39,8 +40,11 @@ export default function PreCheckout() {
       message: "",
       data: null,
       redirectUrl: "",
+      type: "",
     });
   };
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const deliveryCharge = 40;
 
   const deleteCart = async () => {
     try {
@@ -71,9 +75,9 @@ export default function PreCheckout() {
 
   const applyCoupon = async () => {
     try {
-      const cartItems = cart.map(({ item, quantity }) => ({
+      const cartItems = cart.map(({ item, quantity, total_price }) => ({
         id: item.id,
-        price: item.total_price,
+        price: total_price,
         qty: quantity,
         category_id: item.category,
       }));
@@ -152,8 +156,9 @@ export default function PreCheckout() {
       // alert("Address added successfully!");
       setPaymentPopup({
         open: true,
-        status: "failure",
+        status: "success",
         message: "Address added successfully!",
+        type: "Address",
       });
 
     } catch (error) {
@@ -163,6 +168,7 @@ export default function PreCheckout() {
         open: true,
         status: "failure",
         message: "Failed to create address. Please try again.",
+        type: "Address",
       });
 
     }
@@ -214,7 +220,7 @@ export default function PreCheckout() {
       const payload = {
         payment_mode: "CASH",
         delivery_time: 1,
-        net_amount: newTotal,
+        net_amount: finalPayable,
         cgst: 0,
         sgst: 0,
         discount,
@@ -240,6 +246,7 @@ export default function PreCheckout() {
           status: "success",
           message: "Order placed successfully!",
           data: response.data.message,
+          type: "Payment",
           redirectUrl: `/invoice/${response.data.invoice_id}`,
         });
 
@@ -255,12 +262,12 @@ export default function PreCheckout() {
     } else if (paymentMode === "UPI") {
       const orderRes = await axios.post(
         `${API_BASE_URL}/create-order-razor/`,
-        { amount: newTotal },
+        { amount: finalPayable },
         { headers: { "Content-Type": "application/json" } }
       );
       const orderData = orderRes.data;
       const options = {
-        key: "rzp_live_SIko6jaI9nTtOc",
+        key: "rzp_test_YqrLQMzf9Xl7Qw",
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Village Mitai",
@@ -282,6 +289,7 @@ export default function PreCheckout() {
               message: verifyRes.data.message || "Payment verified successfully",
               data: verifyRes.data.status,
               redirectUrl: `/order/${verifyRes.data.order_id}`,
+              type: "Payment",
             });
           } catch (err) {
             setPaymentPopup({
@@ -319,18 +327,37 @@ export default function PreCheckout() {
       setPaymentPopup({
         open: true,
         status: "failure",
-        message: `Paying ₹${newTotal} via ${paymentMode}`,
+        message: `Paying ₹${finalPayable} via ${paymentMode}`,
       });
 
     }
   };
+  const packingCharge = 20;
+
+  const originalItemsTotal = cart.reduce((sum, ci) => {
+    const { price } = getPriceByWeight(ci.item, ci.weight);
+    return sum + price * ci.quantity;
+  }, 0);
+
+  const discountedItemsTotal = cart.reduce((sum, ci) => {
+    const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
+    const finalPrice = discounted && discounted < price ? discounted : price;
+    return sum + finalPrice * ci.quantity;
+  }, 0);
+
+  const itemDiscount = originalItemsTotal - discountedItemsTotal;
+
+  const finalPayable =
+    discountedItemsTotal +
+    deliveryCharge +
+    packingCharge -
+    discount;
 
   return (
     <><div className="precheckout-container mt-2">
       <div className="left-section">
         <div className="checkout-card">
-
-          <h2>Your Cart</h2>
+          <h2 >Your Cart</h2>
           <div className="cart-items-list">
             {cart.map((ci) => {
               const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
@@ -353,34 +380,41 @@ export default function PreCheckout() {
                   </Link>
 
                   <div className="cart-item-details checkout-cart-layout">
-                    <div className="checkout-item-left">
-                      <div className="item-name text-lg">{ci.item.name}</div>
+                    <div className="checkout-item-left w-full">
+                      <div className="item-name text-lg text-left">
+                        <div className="flex">
+                          <div>
+                            {ci.item.name}
+                          </div>
+                          <span className="checkout-qty ml-auto text-sm">
+                            Qty: {ci.quantity}
+                          </span>
+                        </div>
+
+                      </div>
 
                       <div className="checkout-item-meta">
-                        <span className="checkout-weight">
+                        <span className="">
                           {ci.weight >= 1000
                             ? `${ci.weight / 1000} KG`
                             : `${ci.weight} g`}
                         </span>
 
-                        <span className="checkout-qty">
-                          Qty: {ci.quantity}
-                        </span>
                       </div>
                     </div>
 
-                    <div className="checkout-item-right">
+                    <div className="checkout-item-right w-full">
                       {hasDiscount ? (
                         <>
-                          <span className="checkout-price-old">
+                          <span className="checkout-price-old mr-2">
                             ₹{price * ci.quantity}
                           </span>
 
-                          <span className="checkout-price-new">
+                          <span className="checkout-price-new mr-2 text-[#1b5e20]" >
                             Rs.{itemTotal}
                           </span>
 
-                          <span className="checkout-discount">
+                          <span className="checkout-discount mr-2">
                             {discountPercent}% OFF
                           </span>
                         </>
@@ -397,43 +431,6 @@ export default function PreCheckout() {
           </div>
 
         </div>
-        <div className="cart-summary sticky-summary">
-          <div className="price-breakup">
-            {/* <div className="row">
-      <span>Subtotal</span>
-      <span>₹{total}</span>
-    </div> */}
-
-            {discount > 0 && (
-              <div className="row discount-row">
-                <span>Coupon Discount</span>
-                <span>- ₹{discount}</span>
-              </div>
-            )}
-
-            {/* <div className="row">
-      <span>Delivery Charges</span>
-      <span className="free">FREE</span>
-    </div> */}
-
-            <div className="divider"></div>
-
-            {/* <div className="row total-row">
-      <strong>Payable Amount</strong>
-      <strong>₹{newTotal}</strong>
-    </div> */}
-          </div>
-
-          <p>Total Items: {totalItems}</p>
-          <p className="total-amount">Total: Rs.{total}</p>
-          {discount > 0 && <p className="discount">Discount: ₹{discount}</p>}
-          {discount > 0 && (
-            <p className="net-total">
-              <strong>Net Payable: ₹{newTotal}</strong>
-            </p>
-          )}
-        </div>
-
         <div className="coupon-box">
           <div className="coupon-input-wrapper w-full">
             <input
@@ -455,10 +452,69 @@ export default function PreCheckout() {
             </button>
           )}
 
-          {message && <p className="mt-2 text-sm">{message}</p>}
+          {message && <p className="mt-2 text-sm ">{message}</p>}
         </div>
-        <hr />
-        <h2>Shipping Address</h2>
+        <div className="cart-summary">
+          <div
+            className="flex justify-between items-center font-semibold cursor-pointer"
+            onClick={() => setShowBreakdown(!showBreakdown)}
+          >
+            <span>Total Items - {totalItems}</span>
+            {/* <span>{totalItems}</span> */}
+
+            <span className="text-sm">
+              {showBreakdown ? "▲" : "▼"}
+            </span>
+          </div>
+
+          <hr />
+
+          {showBreakdown && (
+            <div className="price-breakdown mt-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span>Items Total</span>
+                <span>Rs.{originalItemsTotal}</span>
+              </div>
+
+              {itemDiscount > 0 && (
+                <div className="flex justify-between items-center text-green-700">
+                  <span>Item Discount</span>
+                  <span>- Rs.{itemDiscount}</span>
+                </div>
+              )}
+
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-green-700">
+                  <span>Coupon Discount</span>
+                  <span>- Rs.{discount}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center">
+                <span>Delivery Charges</span>
+                <span>Rs.{deliveryCharge}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span>Packing & Handling</span>
+                <span>Rs.{packingCharge}</span>
+              </div>
+              <hr />
+
+            </div>
+          )}
+
+          <div className="total-payable-box">
+            <div className="flex justify-between items-center text-md font-bold">
+              <span>Total</span>
+              <span className="text-[#1b5e20]">
+                Rs.{finalPayable}
+              </span>
+            </div>
+          </div>
+
+        </div>
+        <h2 className="mt-4">Shipping Address</h2>
         {addresses.length > 0 && (
           <div className="address-list">
             {addresses.map((addr, index) => (
@@ -487,7 +543,7 @@ export default function PreCheckout() {
           className="add-new-address-button"
           onClick={() => setShowAddAddressForm(!showAddAddressForm)}
         >
-          {showAddAddressForm ? "Cancel" : "+ Add New Address"}
+          {showAddAddressForm ? "Cancel" : "Add New Address"}
         </button>
 
         {showAddAddressForm && (
@@ -545,11 +601,9 @@ export default function PreCheckout() {
           </div>
         )}
 
-        <hr />
-
-        <h2>Payment Method</h2>
+        <h2 className="mt-4">Payment Method</h2>
         <div className="payment-options">
-          {["UPI", "Cash On Delivery","Take Away"].map((mode) => (
+          {["UPI"].map((mode) => (
             <label
               key={mode}
               className={`payment-option ${paymentMode === mode ? "selected" : ""}`}
@@ -566,7 +620,7 @@ export default function PreCheckout() {
           ))}
         </div>
         <button className="pay-button" onClick={handlePayment}>
-          Pay Rs.{total}
+          Pay Rs.{finalPayable}
         </button>
       </div>
     </div><PaymentResultModal
@@ -575,9 +629,10 @@ export default function PreCheckout() {
         message={paymentPopup.message}
         data={paymentPopup.data}
         redirectUrl={paymentPopup.redirectUrl}
+        type={paymentPopup.type}
         onClose={() => {
           closePopup();
-          if (paymentPopup.status === "success") navigate("/");
+          if (paymentPopup.status === "success" && paymentPopup.type === "Payment") navigate("/");
         }} /></>
 
   );

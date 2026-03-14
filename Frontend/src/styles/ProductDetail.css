@@ -247,3 +247,19 @@
     font-size: 1.9rem;
   }
 }
+
+.shelf-life-circle {
+  width: 22px;
+  height: 22px;
+  background-color: #3F2305; /* warm brown (matches your theme) */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  margin-right: 4px;
+  justify-content: center;
+
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
