@@ -357,7 +357,7 @@ export default function PreCheckout() {
     <><div className="precheckout-container mt-2">
       <div className="left-section">
         <div className="checkout-card">
-          <h2 >Your Cart</h2>
+          <h2 className="font-semibold">Your Cart</h2>
           <div className="cart-items-list">
             {cart.map((ci) => {
               const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
@@ -467,7 +467,7 @@ export default function PreCheckout() {
             </span>
           </div>
 
-          <hr />
+          <hr className="my-[1rem]" />
 
           {showBreakdown && (
             <div className="price-breakdown mt-3 text-sm">
@@ -499,7 +499,7 @@ export default function PreCheckout() {
                 <span>Packing & Handling</span>
                 <span>Rs.{packingCharge}</span>
               </div>
-              <hr />
+              <hr className="my-[1rem]" />
 
             </div>
           )}
@@ -514,7 +514,7 @@ export default function PreCheckout() {
           </div>
 
         </div>
-        <h2 className="mt-4">Shipping Address</h2>
+        <h2 className="mt-4 font-semibold">Shipping Address</h2>
         {addresses.length > 0 && (
           <div className="address-list">
             {addresses.map((addr, index) => (
@@ -601,7 +601,7 @@ export default function PreCheckout() {
           </div>
         )}
 
-        <h2 className="mt-4">Payment Method</h2>
+        <h2 className="mt-4 font-semibold">Payment Method</h2>
         <div className="payment-options">
           {["UPI"].map((mode) => (
             <label

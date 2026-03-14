@@ -52,7 +52,7 @@ const ReviewSection = ({ itemId, token, triggerToast }) => {
             <strong>{rev.user}</strong>
             <p>Rating: {rev.rating}/5</p>
             <p>{rev.comment}</p>
-            <hr />
+            <hr className="my-[1rem]" />
           </div>
         ))
       )}
