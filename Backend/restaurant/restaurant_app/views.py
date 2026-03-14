@@ -584,7 +584,6 @@ def apply_coupon(request):
         if not coupon.is_valid():
             return Response({"error": "Coupon expired or inactive"}, status=400)
 
-        # Filter eligible items by category
         if coupon.category:
             eligible_items = [i for i in cart_items if i["category_id"] == coupon.category.id]
         else:
@@ -594,8 +593,8 @@ def apply_coupon(request):
             return Response({"error": "Coupon not applicable to selected items"}, status=400)
 
         # Convert to Decimal for safe arithmetic
-        eligible_subtotal = sum(Decimal(i["price"]) * i["qty"] for i in eligible_items)
-        total_cart_value = sum(Decimal(i["price"]) * i["qty"] for i in cart_items)
+        eligible_subtotal = sum(Decimal(i["price"])  for i in eligible_items)
+        total_cart_value = sum(Decimal(i["price"]) for i in cart_items)
 
         if eligible_subtotal < coupon.min_order_value:
             return Response({"error": f"Minimum order value ₹{coupon.min_order_value} required"}, status=400)
@@ -615,7 +614,7 @@ def apply_coupon(request):
                 item_price = Decimal(item["price"]) * item["qty"]
                 if item in eligible_items:
                     item_discount = (item_price / eligible_subtotal) * discount
-                    new_price = (Decimal(item["price"]) * item["qty"]) - item_discount
+                    new_price = (Decimal(item["price"])) - item_discount
                     discounted_items.append({
                         "id": item["id"],
                         "original_price": str(item["price"]),

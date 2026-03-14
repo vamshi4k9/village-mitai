@@ -4,7 +4,6 @@
     gap: 0px;
     width: 100%;
     align-items: stretch; /* makes grid items equal height */
-
   }
   
   .flex-item {
@@ -15,36 +14,6 @@
       grid-template-columns: repeat(2, 1fr);
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   .category-banner {
     position: relative;

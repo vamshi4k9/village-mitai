@@ -3,6 +3,7 @@ import "../styles/PaymentResultModal.css";
 
 export default function PaymentResultModal({
   open,
+  type,
   status, // "success" | "failure"
   message,
   data,
@@ -14,15 +15,18 @@ export default function PaymentResultModal({
   return (
     <div className="modal-backdrop">
       <div className={`modal-card ${status}`}>
-        <h2>{status === "success" ? "Payment Successful" : "Payment Failed"}</h2>
-
+        <h2>
+          {status === "success"
+            ? `${type} Successful`
+            : `${type} Failed`}
+        </h2>
         <p className="modal-message">{message}</p>
 
-        {data && (
+        {/* {data && (
           <pre className="modal-data">
             {JSON.stringify(data, null, 2)}
           </pre>
-        )}
+        )} */}
 
         {redirectUrl && (
           <a href={redirectUrl} className="modal-link">
