@@ -175,6 +175,19 @@ class Banner(models.Model):
 
     def __str__(self):
         return f"Banner #{self.id}"
+    
+class Address(models.Model):
+    session_key = models.CharField(max_length=40, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses', null=True, blank=True)
+    name = models.CharField(max_length=100)
+    address1 = models.TextField()
+    address2 = models.TextField(blank=True, null=True)
+    phone_number = models.CharField(max_length=15)
+    longitude = models.FloatField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.user}"
 
 class Invoice(models.Model):
     PAYMENT_CHOICES = [
@@ -183,27 +196,39 @@ class Invoice(models.Model):
         ('UPI', 'UPI'),
         ('ONLINE', 'Online'),
     ]
+
+    STATUS_CHOICES = [
+        ('ORDERED', 'Ordered'),
+        ('IN_PROGRESS', 'In Progress'),
+        ('SHIPPING', 'Shipping'),
+        ('OUT_FOR_DELIVERY', 'Out for Delivery'),
+        ('DELIVERED', 'Delivered'),
+    ]
+
     order_date = models.DateTimeField(auto_now_add=True)
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
-    delivery_time = models.IntegerField() 
+    delivery_time = models.IntegerField()
     session_key = models.CharField(max_length=40, db_index=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+
+    # 🔥 IMPORTANT
+    address = models.ForeignKey(
+        Address,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices"
+    )
+
     net_amount = models.DecimalField(max_digits=10, decimal_places=2)
     cgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     sgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     discount = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
-    STATUS_CHOICES = [
-        ('ORDERED', 'Ordered'),
-        ('PACKED', 'Packed'),
-        ('SHIPPED', 'Shipped'),
-        ('DELIVERED','Delivered'),
-    ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORDERED')
 
     def __str__(self):
-        return f"Invoice #{self.id} - {self.user}"
-
-
+        return f"Invoice #{self.id}"
 class Transaction(models.Model):
     session_key = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
@@ -216,20 +241,6 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.item.name} for Invoice #{self.invoice.id}"
-    
-
-class Address(models.Model):
-    session_key = models.CharField(max_length=40, db_index=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='addresses',null=True, blank=True)
-    name = models.CharField(max_length=100)  # e.g., "Home", "Office", or contact person's name
-    address1 = models.TextField()
-    address2 = models.TextField(blank=True, null=True)
-    phone_number = models.CharField(max_length=15)
-    longitude = models.FloatField(blank=True, null=True)
-    latitude = models.FloatField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.name} - {self.user}"
     
 class Rating(models.Model):
     item = models.ForeignKey('Item', on_delete=models.CASCADE)

@@ -144,6 +144,7 @@ class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
         fields = [
+            "id",
             "name",
             "address1",
             "address2",
@@ -194,6 +195,7 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
     transactions = TransactionDetailSerializer(many=True, read_only=True)
+    address = AddressSerializer(read_only=True)  
 
     class Meta:
         model = Invoice
@@ -207,6 +209,7 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "discount",
             "status",
             "transactions",
+            "address",
         ]
 
 
