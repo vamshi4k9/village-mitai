@@ -1,150 +1,267 @@
-/* TableView.css */
 .invoice-container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f8fafc;
-  padding: 1rem;
-  border-radius: 8px;
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 16px;
+  background: #f4f2f1;
+  color: #3F2305;
 }
 
-.invoice-container h2 {
-  text-align: center;
-  color: #1e293b;
-  margin-bottom: 2rem;
-  font-size: 1.5rem;
-  font-weight: 600;
+.dashboard-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 16px;
 }
 
-.invoice-table {
-  background-color: white;
+/* Tabs */
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.invoice-table-header,
-.invoice-row {
-  display: grid;
-  grid-template-columns: 50px 1fr 1fr 1fr 1fr;
-  padding: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 0.875rem;
-  align-items: center;
-}
-
-.invoice-table-header {
+  border: 1px solid #d8cfc4;
+  background: #f9f9f9;
+  cursor: pointer;
   font-weight: 600;
-  color: #475569;
-  background-color: #f1f5f9;
 }
 
+.tab-button.active {
+  background: #4b2a0d;
+  color: white;
+}
+
+/* Table */
+.invoice-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card */
+.invoice-block {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e6ded6;
+  padding: 12px;
+}
+
+/* Row */
 .invoice-row {
-  background-color: white;
   cursor: pointer;
-  transition: background 0.3s ease;
 }
 
-.invoice-row.expanded {
-  background-color: #f9fafb;
-}
-
-.expand-btn {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  color: #64748b;
+.invoice-main {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
 }
 
+.invoice-id {
+  font-weight: 700;
+}
+
+.invoice-date {
+  font-size: 0.75rem;
+  color: #7a6a58;
+}
+
+.invoice-amount {
+  font-weight: 700;
+}
+
+/* Status */
 .status-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  margin-top: 4px;
 }
 
 .status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
-.status-select {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  background-color: white;
-  cursor: pointer;
-}
-
+/* Status colors */
 .status-badge.ordered {
-  color: #8b5cf6;
-  background-color: #ede9fe;
+  background: #f3e9e2;
 }
 
 .status-badge.in-progress {
-  color: #f59e0b;
-  background-color: #fef3c7;
+  background: #fde68a;
 }
 
 .status-badge.shipping {
-  color: #3b82f6;
-  background-color: #dbeafe;
+  background: #bfdbfe;
+}
+
+.status-badge.out-for-delivery {
+  background: #c7d2fe;
 }
 
 .status-badge.delivered {
-  color: #10b981;
-  background-color: #d1fae5;
+  background: #bbf7d0;
 }
 
+.status-select {
+  display: block;
+  margin-top: 4px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+/* Expanded */
 .invoice-details {
-  background-color: #f1f5f9;
-  padding: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f4f1;
+  border-radius: 10px;
 }
 
 .invoice-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  margin-bottom: 10px;
 }
 
-.transaction-list {
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.transaction-header {
-  display: grid;
-  grid-template-columns: 80px 2fr 1fr 1fr;
-  padding: 0.75rem 1rem;
-  background-color: #f3f4f6;
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-}
-
+/* Transactions */
 .transaction-row {
-  display: grid;
-  grid-template-columns: 80px 2fr 1fr 1fr;
-  padding: 0.75rem 1rem;
+  display: flex;
   align-items: center;
-  border-top: 1px solid #f1f5f9;
-  font-size: 0.875rem;
-  color: #374151;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid #eee;
 }
 
 .transaction-row img {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
+  width: 50px;
+  height: 50px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .invoice-main {
+    flex-direction: row;
+  }
+
+  .invoice-right {
+    text-align: right;
+  }
+}
+
+/* 🔥 Delivery Address Box */
+.delivery-address-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f4f1;
+  border: 1px solid #e6ded6;
+  border-radius: 10px;
+}
+
+.address-title {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #3F2305;
+}
+
+/* Map button */
+.map-btn {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #4b2a0d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.map-btn:hover {
+  background: #3a210a;
+}
+
+/* 🔥 Compact Delivery UI */
+.delivery-compact {
+  margin-top: 8px;
+  padding: 10px;
+  background: #f8f4f1;
+  border-radius: 10px;
+  border: 1px solid #e6ded6;
+}
+
+/* Top row */
+.delivery-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.delivery-name {
+  color: #3F2305;
+}
+
+.delivery-phone {
+  font-size: 0.8rem;
+  color: #5c4033;
+}
+
+/* Address */
+.delivery-address {
+  font-size: 0.8rem;
+  margin-top: 4px;
+  color: #6b5e52;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 🔥 single line */
+}
+
+/* Actions */
+.delivery-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.action-btn {
+  flex: 1;
+  text-align: center;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Map button */
+.action-btn.map {
+  background: #4b2a0d;
+  color: white;
+}
+
+/* Call button */
+.action-btn.call {
+  background: #e7e1dc;
+  color: #3F2305;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .delivery-top {
+    font-size: 0.8rem;
+  }
+
+  .delivery-address {
+    font-size: 0.75rem;
+  }
+
+  .action-btn {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
 }

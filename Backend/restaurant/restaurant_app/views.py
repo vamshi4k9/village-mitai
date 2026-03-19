@@ -310,9 +310,19 @@ class CreateOrderView(APIView):
         sgst = Decimal(data.get("sgst", 0))
         discount = Decimal(data.get("discount", 0))
         cart_items = data.get("cart_items", [])
+        address_id = data.get("address_id")
 
         if not payment_mode or not cart_items:
             return Response({"error": "Payment mode and cart items are required"}, status=status.HTTP_400_BAD_REQUEST)
+        address = None
+        if address_id:
+            try:
+                address = Address.objects.get(id=address_id)
+            except Address.DoesNotExist:
+                return Response(
+                    {"error": "Invalid address"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         if request.user.is_authenticated:
             invoice = Invoice.objects.create(
@@ -324,7 +334,8 @@ class CreateOrderView(APIView):
                 cgst=cgst,
                 sgst=sgst,
                 discount=discount,
-                status='ORDERED'
+                status='ORDERED',
+                address=address
             )
         else:
             invoice = Invoice.objects.create(
@@ -335,7 +346,8 @@ class CreateOrderView(APIView):
                 cgst=cgst,
                 sgst=sgst,
                 discount=discount,
-                status='ORDERED'
+                status='ORDERED',
+                address=address
             )
 
         # Create Transactions for each cart item
@@ -448,7 +460,7 @@ class SubmitRatingView(generics.CreateAPIView):
 
 @api_view(['GET'])
 def get_all_transactions_and_invoices(request):
-    invoices = Invoice.objects.prefetch_related('transactions', 'transactions__item').all()
+    invoices = Invoice.objects.prefetch_related('transactions', 'transactions__item').all().order_by("-order_date")   
     serializer = InvoiceDetailSerializer(invoices, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -32,7 +32,8 @@ function DeliveryDashboard() {
   return (
     <div className="ordering-container">
       <h2>Order Management</h2>
-      <TableView invoices={invoices} userRole='Delivery'  />
+      
+      <TableView invoices={invoices} setInvoices={setInvoices} userRole='Delivery'  />
     </div>
   );
 }

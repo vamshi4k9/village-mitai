@@ -200,54 +200,60 @@ export default function PreCheckout() {
 
   const handlePayment = async () => {
     if (!selectedAddress || !paymentMode) {
-      // alert("Please select an address and payment method");
+      setPaymentPopup({
+        open: true,
+        status: "failure",
+        message: "Please select address and payment method",
+      });
       return;
     }
 
     const address = addresses[parseInt(selectedAddress)];
+
     if (!address) {
-      // alert("Invalid address selected");
       setPaymentPopup({
         open: true,
         status: "failure",
         message: "Invalid address selected",
       });
-
       return;
     }
 
-    if (paymentMode === "Cash On Delivery" || paymentMode === "Take Away") {
-      const payload = {
-        payment_mode: "CASH",
-        delivery_time: 1,
-        net_amount: finalPayable,
-        cgst: 0,
-        sgst: 0,
-        discount,
-        cart_items: cart.map(({ item, quantity }) => ({
-          id: item.id,
-          price: item.discounted_total || item.price,
-          quantity,
-          weight: item.weight || "",
-          discounted: item.discounted_total ? 1 : 0,
-        })),
-        address,
-      };
+    const token = localStorage.getItem("access_token");
 
+    const payload = {
+      payment_mode: paymentMode === "UPI" ? "UPI" : "CASH",
+      delivery_time: 1,
+      net_amount: finalPayable,
+      cgst: 0,
+      sgst: 0,
+      discount,
+      address_id: address.id,
+      cart_items: cart.map(({ item, quantity }) => ({
+        id: item.id,
+        price: item.discounted_total || item.price,
+        quantity,
+        weight: item.weight || "",
+        discounted: item.discounted_total ? 1 : 0,
+      })),
+    };
+
+    if (paymentMode === "Cash On Delivery" || paymentMode === "Take Away") {
       try {
-        const token = localStorage.getItem("access_token");
         const response = await axios.post(
           `${API_BASE_URL}/create-order/`,
-          payload, token ? SESSION_TOKEN : SESSION_KEY
+          payload,
+          token ? SESSION_TOKEN : SESSION_KEY
         );
+
         await deleteCart();
+
         setPaymentPopup({
           open: true,
           status: "success",
           message: "Order placed successfully!",
-          data: response.data.message,
-          type: "Payment",
           redirectUrl: `/invoice/${response.data.invoice_id}`,
+          type: "Payment",
         });
 
       } catch (error) {
@@ -257,79 +263,105 @@ export default function PreCheckout() {
           message: error.response?.data?.message || "Order failed",
           data: error.response?.data,
         });
-
       }
-    } else if (paymentMode === "UPI") {
-      const orderRes = await axios.post(
-        `${API_BASE_URL}/create-order-razor/`,
-        { amount: finalPayable },
-        { headers: { "Content-Type": "application/json" } }
-      );
-      const orderData = orderRes.data;
-      const options = {
-        key: "rzp_test_YqrLQMzf9Xl7Qw",
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "Village Mitai",
-        description: "Order Transaction",
-        order_id: orderData.id,
-        handler: async (response) => {
-          try {
-            const verifyRes = await axios.post(
-              `${API_BASE_URL}/verify-payment/`,
-              response,
-              { headers: { "Content-Type": "application/json" } }
-            );
+    }
 
-            await deleteCart();
+    else if (paymentMode === "UPI") {
+      try {
+        const orderRes = await axios.post(
+          `${API_BASE_URL}/create-order-razor/`,
+          { amount: finalPayable },
+          { headers: { "Content-Type": "application/json" } }
+        );
 
-            setPaymentPopup({
-              open: true,
-              status: "success",
-              message: verifyRes.data.message || "Payment verified successfully",
-              data: verifyRes.data.status,
-              redirectUrl: `/order/${verifyRes.data.order_id}`,
-              type: "Payment",
-            });
-          } catch (err) {
-            setPaymentPopup({
-              open: true,
-              status: "failure",
-              message: "Payment verification failed",
-              data: err.response?.data,
-            });
-          }
-        },
+        const orderData = orderRes.data;
 
-        prefill: {
-          name: "Vishnu Vamshi",
-          email: "test@example.com",
-          contact: "9999999999",
-        },
-        theme: {
-          color: "#4b2a0d",
-        },
-      };
+        const options = {
+          key: "rzp_test_YqrLQMzf9Xl7Qw",
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "Village Mitai",
+          description: "Order Transaction",
+          order_id: orderData.id,
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-      rzp.on("payment.failed", (response) => {
+          handler: async (response) => {
+            try {
+              await axios.post(
+                `${API_BASE_URL}/verify-payment/`,
+                response,
+                { headers: { "Content-Type": "application/json" } }
+              );
+
+              const createOrderRes = await axios.post(
+                `${API_BASE_URL}/create-order/`,
+                payload,
+                token ? SESSION_TOKEN : SESSION_KEY
+              );
+
+              await deleteCart();
+
+              setPaymentPopup({
+                open: true,
+                status: "success",
+                message: "Payment & Order placed successfully!",
+                redirectUrl: `/order/${createOrderRes.data.invoice_id}`,
+                type: "Payment",
+              });
+            } catch (err) {
+              setPaymentPopup({
+                open: true,
+                status: "failure",
+                message: "Payment successful but order creation failed",
+                data: err.response?.data,
+              });
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setPaymentPopup({
+                open: true,
+                status: "failure",
+                message: "Payment cancelled",
+              });
+            },
+          },
+
+          prefill: {
+            name: "Vishnu Vamshi",
+            email: "test@example.com",
+            contact: "9999999999",
+          },
+          theme: {
+            color: "#4b2a0d",
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        rzp.on("payment.failed", (response) => {
+          setPaymentPopup({
+            open: true,
+            status: "failure",
+            message: response.error.description,
+            data: response.error,
+          });
+        });
+
+      } catch (error) {
         setPaymentPopup({
           open: true,
           status: "failure",
-          message: response.error.description,
-          data: response.error,
+          message: "Failed to initiate payment",
+          data: error.response?.data,
         });
-      });
-
-    } else {
-      // alert(`Paying ₹${newTotal} via ${paymentMode}`);
+      }
+    }
+    else {
       setPaymentPopup({
         open: true,
         status: "failure",
-        message: `Paying ₹${finalPayable} via ${paymentMode}`,
+        message: `Unsupported payment mode: ${paymentMode}`,
       });
-
     }
   };
   const packingCharge = 20;
@@ -525,8 +557,8 @@ export default function PreCheckout() {
                 <input
                   type="radio"
                   name="address"
-                  value={index.toString()}
-                  onChange={() => setSelectedAddress(index.toString())} />
+                  value={addr.id}
+                  onChange={() => setSelectedAddress(addr.id)} />
                 <div className="address-details w-full">
                   <p className="address-name">{addr.name}</p>
                   <p>

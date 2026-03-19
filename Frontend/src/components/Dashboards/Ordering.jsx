@@ -31,7 +31,7 @@ function Ordering() {
   return (
     <div className="ordering-container">
       <h2>Order Management</h2>
-      <TableView invoices={invoices} userRole='Admin' /> {/* Pass invoices as props */}
+      <TableView invoices={invoices} setInvoices={setInvoices}  userRole='Admin' /> {/* Pass invoices as props */}
     </div>
   );
 }
