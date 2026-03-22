@@ -169,7 +169,8 @@ const CartPopup = ({ isOpen, toggleCart }) => {
                                   style={{
                                     textDecoration: "line-through",
                                     color: "#888",
-                                    marginRight: "6px"
+                                    marginRight: "6px",
+                                    fontSize: "12px"
                                   }}
                                 >
                                   Rs.{price * item.quantity}
@@ -180,7 +181,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
                                 </span>
                               </div>
 
-                              <div style={{ fontSize: "12px", color: "#d32f2f" }}>
+                              <div style={{ fontSize: "8px", color: "#d32f2f" }}>
                                 ({discountPercent}% OFF)
                               </div>
                             </>

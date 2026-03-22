@@ -148,14 +148,23 @@ const ProductDetail = ({ productId }) => {
   return (
     <div>
       <div className="product-detail-container">
-        {/* Left Section - Image & Description Toggle */}
         <div className="left-section grid place-items-center">
           <img src={product.image} alt={product.name} className="product-image" />
         </div>
 
-        {/* Right Section - Product Details */}
         <div className="right-detailed">
-          <div className="detailed_name">{product.name}</div>
+          <div className="flex justify-between w-full">
+            <div className="detailed_name">{product.name}</div>
+            {product.total_reviews > 0 && (
+              <div
+                className={`rating-badge-menu ${product.avg_rating >= 4 ? "high" : ""
+                  }`}
+              >
+                ⭐ {product.avg_rating} | {product.total_reviews}
+              </div>
+            )}
+          </div>
+
           <div className="detailed_price">
             {hasDiscount ? (
               <>
@@ -314,7 +323,7 @@ const ProductDetail = ({ productId }) => {
 
       {/* <ReviewList productId={productId} key={refresh} /> */}
 
-      <ReviewSection itemId={id} token={localStorage.getItem("token")} triggerToast={triggerToast} />
+      {/* <ReviewSection itemId={id} token={localStorage.getItem("token")} triggerToast={triggerToast} /> */}
       {/* <div className="full-width-features">
         <div className="feature-card">
           <img src={`${process.env.PUBLIC_URL}/images/Authentic_Recipe.avif`} alt="Authentic Recipe" />

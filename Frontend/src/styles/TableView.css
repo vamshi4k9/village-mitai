@@ -86,7 +86,7 @@
 }
 
 /* Status colors */
-.status-badge.ordered {
+/* .status-badge.ordered {
   background: #f3e9e2;
 }
 
@@ -104,7 +104,7 @@
 
 .status-badge.delivered {
   background: #bbf7d0;
-}
+} */
 
 .status-select {
   display: block;

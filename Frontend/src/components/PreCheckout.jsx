@@ -304,7 +304,7 @@ export default function PreCheckout() {
                 open: true,
                 status: "success",
                 message: "Payment & Order placed successfully!",
-                redirectUrl: `/order/${createOrderRes.data.invoice_id}`,
+                redirectUrl: `/order_status?invoice_id=${createOrderRes.data.invoice_id}`,
                 type: "Payment",
               });
             } catch (err) {
@@ -447,7 +447,7 @@ export default function PreCheckout() {
                           </span>
 
                           <span className="checkout-discount mr-2">
-                            {discountPercent}% OFF
+                            ({discountPercent}% OFF)
                           </span>
                         </>
                       ) : (

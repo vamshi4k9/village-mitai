@@ -263,3 +263,25 @@
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 }
+
+
+.rating-badge-menu {
+  /* position: absolute; */
+  /* top: 12px;
+  right: 4px; */
+  /* background: rgba(255, 255, 255, 0.85); */
+  color: #3F2305;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 4px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* box-shadow: 0 2px 6px rgba(0,0,0,0.1); */
+}
+
+.rating-badge-menu.high {
+  /* background: #e8f5e9; */
+  /* color: #1b5e20; */
+}

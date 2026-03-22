@@ -69,7 +69,12 @@ const ProductCard = ({ item, smallImage = false }) => {
   return (
     <div className="bestseller-card" onClick={handleClick}>
       <div className="image-container">
-        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND"  />
+        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" />
+        {item.total_reviews > 0 && (
+          <div className="rating-badge">
+            ⭐ {item.avg_rating} | {item.total_reviews}
+          </div>
+        )}
 
       </div>
       <p className="bestseller-info">

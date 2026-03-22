@@ -81,19 +81,19 @@
 }
   
   .address-card,
-  .order-card {
+  /* .order-card {
     background: #fff;
     padding: 6px;
     margin-bottom: 6px;
     border: 1px solid #3F2305;
     border-radius: 5px;
-  }
+  } */
   
   .address-card p,
-  .order-card p {
+  /* .order-card p {
     margin: 5px 0;
     font-size: 0.9rem;
-  }
+  } */
   .address-card input[type="radio"] {
   display: none;
 }
