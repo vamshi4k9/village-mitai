@@ -9,12 +9,12 @@ from django.core.paginator import Paginator
 from restaurant import settings
 from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Sum
+from django.db.models import Avg, Count, Sum
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, OfflineOrder, Order, OrderItem, Address, Invoice, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -190,8 +190,18 @@ class ItemViewSet(ModelViewSet):
 class ItemsByCategoryAPIView(APIView):
     def get(self, request, category_name):
         category = get_object_or_404(Category, name=category_name)
-        items = Item.objects.filter(category=category.id)
-        serializer = ItemSerializer(items, many=True ,context={'request': request})
+
+        items = Item.objects.filter(category=category).annotate(
+            avg_rating=Avg("reviews__rating"),
+            total_reviews=Count("reviews", distinct=True)
+        )
+
+        serializer = ItemSerializer(
+            items,
+            many=True,
+            context={'request': request}
+        )
+
         return Response(serializer.data)
     
 
@@ -298,7 +308,7 @@ class AddressView(APIView):
 
 class CreateOrderView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = [OptionalJWTAuthentication]
+    # authentication_classes = [OptionalJWTAuthentication]
 
     def post(self, request):
         data = request.data
@@ -809,3 +819,72 @@ def validate_coupon(request):
         "valid": True,
         "discount": 20
     })
+
+class CreateReviewView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        data = request.data
+        session_key = request.headers.get("x-session-key")
+
+        item_id = data.get("item_id")
+        invoice_id = data.get("invoice_id")
+        rating = data.get("rating")
+        review_text = data.get("review", "")
+
+        if not item_id or not invoice_id or not rating:
+            return Response({"error": "Missing fields"}, status=400)
+
+        try:
+            item = Item.objects.get(id=item_id)
+            invoice = Invoice.objects.get(id=invoice_id)
+        except:
+            return Response({"error": "Invalid item/order"}, status=400)
+
+        if not invoice.transactions.filter(item=item).exists():
+            return Response({"error": "Item not in this order"}, status=400)
+
+        if invoice.status != "DELIVERED":
+            return Response({"error": "Order not delivered"}, status=400)
+
+        obj, created = Review.objects.update_or_create(
+            item=item,
+            invoice=invoice,
+            defaults={
+                "user": request.user if request.user.is_authenticated else None,
+                "session_key": session_key,
+                "rating": rating,
+                "review": review_text
+            }
+        )
+
+        return Response({
+            "message": "Review saved",
+            "created": created
+        })
+        
+         
+class ReviewSummaryView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, item_id):
+        data = Review.objects.filter(item_id=item_id).aggregate(
+            avg_rating=Avg("rating"),
+            total_reviews=Count("id")
+        )
+
+        return Response({
+            "avg_rating": round(data["avg_rating"] or 0, 1),
+            "total_reviews": data["total_reviews"]
+        })
+
+class OrderReviewStatus(APIView):
+    def get(self, request, invoice_id):
+        reviews = Review.objects.filter(invoice_id=invoice_id)
+
+        return Response({
+            r.item_id: {
+                "rating": r.rating,
+                "review": r.review
+            } for r in reviews
+        })

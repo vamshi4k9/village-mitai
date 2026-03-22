@@ -7,12 +7,14 @@ from .models import (
     Invoice,
     OfflineOrder,
     OfflineOrderItem,
+    Review,
     Transaction,
     FieldMarketingForm, AgentCustomerEntry
 )
 from .models import OTP
 from django.contrib.auth.models import User
 from .models import UserProfile, Banner
+from django.db.models import Avg
 
 
 class FieldMarketingFormSerializer(serializers.ModelSerializer):
@@ -43,33 +45,24 @@ class ItemDetailSerializer(serializers.ModelSerializer):
         ]
 
 class ItemSerializer(serializers.ModelSerializer):
-    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    avg_rating = serializers.SerializerMethodField()
+    total_reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
-        fields = [
-            "id",
-            "category",
-            "name",
-            "description",
-            "image",
+        fields = "__all__"  # or your fields
 
-            # pricing
-            "price",
-            "discounted_price",
-            "price_half",
-            "discounted_price_half",
-            "price_quarter",
-            "discounted_price_quarter",
+    def get_avg_rating(self, obj):
+        if hasattr(obj, "avg_rating"):
+            return round(obj.avg_rating or 0, 1)
 
-            "available",
-            "bestseller",
-            "veg",
+        return round(obj.reviews.aggregate(avg=Avg("rating"))["avg"] or 0, 1)
 
-            "shelf_life",
-            "delivery_time",
-        ]
+    def get_total_reviews(self, obj):
+        if hasattr(obj, "total_reviews"):
+            return obj.total_reviews or 0
 
+        return obj.reviews.count()
 
 
 # class CartSerializer(serializers.ModelSerializer):
@@ -280,3 +273,8 @@ class OfflineOrderSerializer(serializers.ModelSerializer):
             )
 
         return order
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ["id", "item", "rating", "review", "created_at"]

@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User 
 from django.db import models
+from django.db.models import Q
+
 
 class FieldMarketingForm(models.Model):
     GENDER_CHOICES = [
@@ -327,3 +329,32 @@ class OfflineOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.weight}"
+
+
+class Review(models.Model):
+    item = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    invoice = models.ForeignKey("Invoice", on_delete=models.CASCADE,default=1)  
+    session_key = models.CharField(max_length=40, null=True, blank=True)
+
+    rating = models.IntegerField()  # 1 to 5
+    review = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["item", "user"],
+                condition=Q(user__isnull=False),
+                name="unique_user_review"
+            ),
+            models.UniqueConstraint(
+                fields=["item", "session_key"],
+                condition=Q(session_key__isnull=False),
+                name="unique_session_review"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.item.name} - {self.rating}"
