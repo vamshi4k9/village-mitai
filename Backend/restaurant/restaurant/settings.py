@@ -160,8 +160,9 @@ STATIC_ROOT = '/var/www/village-mitai/static/'
 
 MEDIA_URL = '/media/'
 
-RAZORPAY_KEY_ID = "rzp_test_YqrLQMzf9Xl7Qw" 
-RAZORPAY_KEY_SECRET = "8JjT4lm90P1F0TMn1M0bvt31"
+
+RAZORPAY_KEY_ID = "rzp_live_SIko6jaI9nTtOc" 
+RAZORPAY_KEY_SECRET = "phfGo11Z6hVZ5lbXret1rrK3"
 # AUTH_USER_MODEL = 'restaurant_app.User'
 
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

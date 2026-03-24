@@ -277,7 +277,7 @@ export default function PreCheckout() {
         const orderData = orderRes.data;
 
         const options = {
-          key: "rzp_test_YqrLQMzf9Xl7Qw",
+          key: "rzp_live_SIko6jaI9nTtOc",
           amount: orderData.amount,
           currency: orderData.currency,
           name: "Village Mitai",
