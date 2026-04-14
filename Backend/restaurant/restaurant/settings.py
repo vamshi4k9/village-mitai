@@ -140,6 +140,9 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "https://villagemitai.in",
     "https://www.villagemitai.in",
+    "https://www.villagemitai.com",
+    "https://villagemitai.com",
+    # "http://localhost:3000",
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-session-key",
@@ -152,7 +155,7 @@ PHONEPE_CALLBACK_URL = 'http://localhost:8000/payment/callback/'  # Callback URL
 SALT_INDEX = 1
 
 DEBUG = False
-ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.in','www.villagemitai.in']
+ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.in','www.villagemitai.in','villagemitai.com','www.villagemitai.com']
 # ALLOWED_HOSTS = ['147.93.106.101', 'villagemitai.zapto.org', 'localhost:3000', '127.0.0.1', 'localhost']
 
 STATIC_ROOT = '/var/www/village-mitai/static/'
