@@ -1,6 +1,10 @@
 // API URLs
-export const API_BASE_URL = 'https://villagemitai.in/api';
-export const API_BASE_URL_MEDIA = 'https://villagemitai.in';
+// export const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// export const API_BASE_URL_MEDIA = 'http://127.0.0.1:8000';
+export const API_BASE_URL = `${window.location.origin}/api`;
+export const API_BASE_URL_MEDIA = `${window.location.origin}`;
+// export const API_BASE_URL = 'https://villagemitai.zapto.org/api';
+// export const API_BASE_URL_MEDIA = 'https://villagemitai.zapto.org';
 
 const getSessionKey = () => {
   let sessionKey = localStorage.getItem("cart_session_key");
