@@ -160,7 +160,7 @@ const ProductDetail = ({ productId }) => {
                 className={`rating-badge-menu ${product.avg_rating >= 4 ? "high" : ""
                   }`}
               >
-                ⭐ {product.avg_rating} | {product.total_reviews}
+                ⭐ {product.avg_rating}
               </div>
             )}
           </div>

@@ -108,7 +108,7 @@ export default function Header({ toggleCart }) {
 
               {/* Logo */}
               <a
-                className="navbar-brand logo-mobile mb-0 flex justify-center"
+                className="navbar-brand logo-mobile mb-0"
                 href={getUrlWithAgentId("/")}
               >
                 <img

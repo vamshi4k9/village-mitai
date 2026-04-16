@@ -13,6 +13,9 @@
 .logo-mobile {
   font-size: 1.9rem;
   color: #854c10 !important;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .logo {
@@ -42,6 +45,10 @@
 .mobile i {
   font-size: 24px;
   color: #3F2305;
+}
+
+.navbar .container-fluid {
+  position: relative;
 }
 
 .desktop span,
