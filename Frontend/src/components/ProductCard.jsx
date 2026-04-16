@@ -72,7 +72,7 @@ const ProductCard = ({ item, smallImage = false }) => {
         <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" />
         {item.total_reviews > 0 && (
           <div className="rating-badge">
-            ⭐ {item.avg_rating} | {item.total_reviews}
+            ⭐ {item.avg_rating}
           </div>
         )}
 

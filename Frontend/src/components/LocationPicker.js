@@ -1,203 +1,183 @@
-import React, { useState, useRef, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import Map, { Marker } from 'react-map-gl/mapbox'
+import 'mapbox-gl/dist/mapbox-gl.css'
+import { useState } from 'react'
 
-// Fix Leaflet marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: require("leaflet/dist/images/marker-icon.png"),
-  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
-  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
-});
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN
 
-// Location marker that responds to clicks & updates map center
-function LocationMarker({ position, setPosition, onLocationSelect, mapRef }) {
-  useMapEvents({
-    click(e) {
-      setPosition(e.latlng);
-      onLocationSelect(e.latlng);
-      mapRef.current?.flyTo(e.latlng, 16);
-    },
-  });
+function LocationPicker({ onLocationSelect }) {
+  const [viewState, setViewState] = useState({
+    latitude: 12.9716,
+    longitude: 77.5946,
+    zoom: 12
+  })
 
-  return position ? (
-    <Marker position={position}>
-      <Popup>
-        Selected Location:
-        <br />
-        {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-      </Popup>
-    </Marker>
-  ) : null;
-}
+  const [selectedLocation, setSelectedLocation] = useState(null)
+  const [search, setSearch] = useState('')
+  const [results, setResults] = useState([])
 
-export default function LocationPicker({ onLocationSelect }) {
-  const [position, setPosition] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [mapCenter, setMapCenter] = useState([12.9716, 77.5946]); // Default Bangalore
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const mapRef = useRef();
+  // 🔍 SEARCH
+  const handleSearch = async (value) => {
+    setSearch(value)
 
-  // Get current location on mount
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
+    if (!value) {
+      setResults([])
+      return
+    }
 
-  // Function to get current location
+    const res = await fetch(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${value}.json?access_token=${MAPBOX_TOKEN}`
+    )
+    const data = await res.json()
+    setResults(data.features || [])
+  }
+
+  const selectPlace = (place) => {
+    const [lng, lat] = place.center
+
+    setViewState({
+      latitude: lat,
+      longitude: lng,
+      zoom: 14
+    })
+
+    setSelectedLocation({ lat, lng })
+    setSearch(place.place_name)
+    setResults([])
+
+    onLocationSelect && onLocationSelect({ lat, lng })
+  }
+
   const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      console.warn("Geolocation not supported");
-      return;
-    }
-    setIsLoadingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setPosition(latlng);
-        setMapCenter([latlng.lat, latlng.lng]);
-        onLocationSelect(latlng);
-        setIsLoadingLocation(false);
-        mapRef.current?.flyTo(latlng, 16);
-      },
-      (err) => {
-        console.warn("Unable to get location:", err);
-        setIsLoadingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
-    );
-  };
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const lat = pos.coords.latitude
+      const lng = pos.coords.longitude
 
-  // Search location
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery
-        )}&limit=1`
-      );
-      const data = await res.json();
-      if (data.length > 0) {
-        const latlng = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-        setPosition(latlng);
-        setMapCenter([latlng.lat, latlng.lng]);
-        onLocationSelect(latlng);
-        mapRef.current?.flyTo(latlng, 16);
-      } else {
-        alert("No results found");
-      }
-    } catch (err) {
-      console.error("Search error:", err);
-      alert("Search failed");
-    }
-  };
+      setViewState({
+        latitude: lat,
+        longitude: lng,
+        zoom: 14
+      })
 
-  // Handle Enter key
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
+      setSelectedLocation({ lat, lng })
+      onLocationSelect && onLocationSelect({ lat, lng })
+    })
+  }
+
+  const handleClick = (e) => {
+    const { lng, lat } = e.lngLat
+
+    setSelectedLocation({ lat, lng })
+
+    onLocationSelect && onLocationSelect({ lat, lng })
+  }
 
   return (
-    <div>
-      {/* Search & Current Location controls */}
-      <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+    <div style={{ position: 'relative' }}>
+
+      <div style={{
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        right: 10,
+        zIndex: 2
+      }}>
         <input
-          type="text"
+          value={search}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search location..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyPress={handleSearchKeyPress}
           style={{
-            flex: 1,
-            padding: "8px 12px",
-            border: "1px solid #ccc",
-            borderRadius: "4px",
-            fontSize: "14px",
+            width: '100%',
+            padding: '10px',
+            borderRadius: '8px',
+            border: '1px solid #ccc',
+            outline: 'none'
           }}
         />
-        <button
-          onClick={handleSearch}
-          disabled={!searchQuery.trim()}
-          style={{
-            background: "#4b2a0d",
-            color: "white",
-            border: "none",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            cursor: searchQuery.trim() ? "pointer" : "not-allowed",
-            opacity: searchQuery.trim() ? 1 : 0.6,
-          }}
-        >
-          Search
-        </button>
-        <button
-          onClick={getCurrentLocation}
-          disabled={isLoadingLocation}
-          style={{
-            background: "#4b2a0d",
-            color: "white",
-            border: "none",
-            padding: "8px 12px",
-            borderRadius: "4px",
-            cursor: isLoadingLocation ? "not-allowed" : "pointer",
-            opacity: isLoadingLocation ? 0.6 : 1,
-          }}
-        >
-          {isLoadingLocation ? "Getting..." : "Current"}
-        </button>
+
+        {results.length > 0 && (
+          <div style={{
+            background: 'white',
+            maxHeight: 200,
+            overflowY: 'auto',
+            borderRadius: '8px',
+            marginTop: '5px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+          }}>
+            {results.map((r) => (
+              <div
+                key={r.id}
+                onClick={() => selectPlace(r)}
+                style={{
+                  padding: '10px',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #eee'
+                }}
+              >
+                {r.place_name}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Show selected coordinates */}
-      {position && (
-        <div
-          style={{
-            marginBottom: "8px",
-            fontSize: "12px",
-            color: "#666",
-            padding: "4px 8px",
-            background: "#f5f5f5",
-            borderRadius: "4px",
-          }}
-        >
-        </div>
-      )}
-
-      {/* Map */}
-      <MapContainer
-        center={mapCenter}
-        zoom={position ? 16 : 13}
-        style={{ height: "300px", width: "100%" }}
-        whenCreated={(mapInstance) => {
-          mapRef.current = mapInstance;
-          if (position) {
-            mapInstance.flyTo(position, 16);
-          }
-        }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-        <LocationMarker
-          position={position}
-          setPosition={setPosition}
-          onLocationSelect={onLocationSelect}
-          mapRef={mapRef}
-        />
-      </MapContainer>
-
-      {/* Instructions */}
-      <div
+      <button
+        onClick={getCurrentLocation}
         style={{
-          marginTop: "8px",
-          fontSize: "12px",
-          color: "#888",
-          fontStyle: "italic",
+          position: 'absolute',
+          bottom: 10,
+          right: 6,
+          zIndex: 2,
+          padding: '5px',
+          borderRadius: '50%',
+          background: 'white',
+          border: '1px solid #ddd',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
         }}
       >
-        Click on the map to select a location, search for an address, or use your current location.
-      </div>
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <path
+            d="M12 2L19 21L12 17L5 21L12 2Z"
+            fill="#4b2a0d"
+          />
+        </svg>
+
+      </button>
+
+      <Map
+        {...viewState}
+        onMove={(evt) => setViewState(evt.viewState)}
+        onClick={handleClick}
+        style={{
+          width: '100%',
+          height: 300,
+          borderRadius: '10px'
+        }}
+        attributionControl={false}
+        mapStyle="mapbox://styles/mapbox/streets-v11"
+        mapboxAccessToken={MAPBOX_TOKEN}
+      >
+
+        {selectedLocation && (
+          <Marker
+            longitude={selectedLocation.lng}
+            latitude={selectedLocation.lat}
+            anchor="bottom"
+          >
+            <svg width="28" height="28" viewBox="0 0 24 24">
+              <path
+                d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"
+                fill="#4b2a0d"
+              />
+              <circle cx="12" cy="9" r="3" fill="white" />
+            </svg>
+          </Marker>
+        )}
+
+      </Map>
+
     </div>
-  );
+  )
 }
+
+export default LocationPicker
