@@ -51,6 +51,10 @@ jobs:
             cd /opt/villagemitai/Frontend
             pnpm install
 
+            echo "🔐 Injecting environment variables"
+            echo "REACT_APP_MAPBOX_TOKEN=${{ secrets.REACT_APP_MAPBOX_TOKEN }}" > .env
+
+
             echo "🔨 Building React app"
             CI=false pnpm run build
 
