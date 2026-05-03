@@ -14,7 +14,7 @@ from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -888,3 +888,25 @@ class OrderReviewStatus(APIView):
                 "review": r.review
             } for r in reviews
         })
+        
+@api_view(['POST'])
+def save_mobile(request):
+    mobile = request.data.get('mobile')
+
+    # Validation
+    if not mobile:
+        return Response({"error": "Mobile number is required"}, status=400)
+
+    if not mobile.isdigit() or len(mobile) != 10:
+        return Response({"error": "Invalid mobile number"}, status=400)
+
+    if mobile[0] not in ['6', '7', '8', '9']:
+        return Response({"error": "Enter valid Indian mobile number"}, status=400)
+
+    # Save or ignore duplicates
+    obj, created = MobileNumber.objects.get_or_create(mobile=mobile)
+
+    return Response({
+        "status": "success",
+        "is_new": created
+    })

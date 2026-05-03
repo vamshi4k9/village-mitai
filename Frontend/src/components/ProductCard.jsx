@@ -26,6 +26,7 @@ const ProductCard = ({ item, smallImage = false }) => {
     navigate(getUrlWithAgentId(`/product/${item.id}`));
   };
 
+  const isSoldOut = item.available === false;
   const handleCart = async () => {
     try {
       const payload = { item: item.id, quantity: 1 };
@@ -67,9 +68,17 @@ const ProductCard = ({ item, smallImage = false }) => {
     : 0;
 
   return (
-    <div className="bestseller-card" onClick={handleClick}>
+    <div
+      className={`bestseller-card ${isSoldOut ? "sold-out-card" : ""}`}
+      onClick={!isSoldOut ? handleClick : undefined}
+    >
       <div className="image-container">
         <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" />
+        {isSoldOut && (
+          <div className="sold-out-overlay">
+            SOLD OUT
+          </div>
+        )}
         {item.total_reviews > 0 && (
           <div className="rating-badge">
             ⭐ {item.avg_rating}

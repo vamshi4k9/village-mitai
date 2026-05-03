@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import BannerListView, CategoryViewSet, CreateReviewView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, create_offline_order,upload_image, search_items ,admin_login, agent_submit, validate_coupon
+from .views import BannerListView, CategoryViewSet, CreateReviewView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, create_offline_order, save_mobile,upload_image, search_items ,admin_login, agent_submit, validate_coupon
 from rest_framework.routers import DefaultRouter
 from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices, create_order, verify_payment
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -46,4 +46,5 @@ urlpatterns = [
     path("api/create-review/", CreateReviewView.as_view()),
     path("api/review-summary/<int:item_id>/", ReviewSummaryView.as_view()),
     path("api/order-reviews/<int:invoice_id>/", OrderReviewStatus.as_view()),
+    path('api/save-mobile/', save_mobile),
 ]

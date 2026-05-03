@@ -5,6 +5,7 @@ from .models import (
     Cart,
     Address,
     Invoice,
+    MobileNumber,
     OfflineOrder,
     OfflineOrderItem,
     Review,
@@ -278,3 +279,9 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ["id", "item", "rating", "review", "created_at"]
+        
+
+class MobileNumberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MobileNumber
+        fields = ['mobile']

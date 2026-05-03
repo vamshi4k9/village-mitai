@@ -20,6 +20,10 @@ export default function CategorySection({ categoryName, categoryImageUrl }) {
     };
     fetchItems();
   }, [categoryName]);
+  
+    const sortedItems = items.sort((a, b) => {
+    return (a.available === false) - (b.available === false);
+  });
 
   return (
     <div className="container mt-3">
@@ -36,7 +40,7 @@ export default function CategorySection({ categoryName, categoryImageUrl }) {
         </div> */}
 
         {/* Items */}
-        {items.map((item) => (
+        {sortedItems.map((item) => (
           <div key={item.id} className="flex-item">
             <ProductCard item={item} />
           </div>
