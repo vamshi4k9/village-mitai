@@ -358,3 +358,10 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.item.name} - {self.rating}"
+    
+class MobileNumber(models.Model):
+    mobile = models.CharField(max_length=16, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.mobile

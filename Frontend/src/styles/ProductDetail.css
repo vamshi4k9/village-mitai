@@ -281,7 +281,26 @@
   /* box-shadow: 0 2px 6px rgba(0,0,0,0.1); */
 }
 
-.rating-badge-menu.high {
-  /* background: #e8f5e9; */
-  /* color: #1b5e20; */
+/* Grey out full page */
+.sold-out-page {
+  opacity: 0.6;
+  filter: grayscale(80%);
+}
+
+/* Disable interactions */
+.sold-out-page * {
+  pointer-events: none;
+}
+
+/* But allow button styling override */
+.sold-out-page button {
+  pointer-events: none;
+}
+.disabled-btn {
+  background-color: #ccc !important;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: #9e9e9e;
+  color: black !important;
+  
 }

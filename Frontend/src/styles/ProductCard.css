@@ -121,3 +121,27 @@
   background: #e8f5e9;
   color: #1b5e20;
 }
+/* Greyed out card */
+.sold-out-card {
+  opacity: 0.6;
+  filter: grayscale(70%);
+}
+
+/* Overlay label */
+.sold-out-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-weight: 600;
+  z-index: 2;
+}
+
+/* Ensure positioning works */
+.image-container {
+  position: relative;
+}

@@ -32,6 +32,7 @@ const ProductDetail = ({ productId }) => {
     ]
     : [];
 
+  const isSoldOut = product && product.available === false;
 
   // keep only available weights
   const availableWeights = weightOptions.filter(w => w.price !== null);
@@ -118,6 +119,8 @@ const ProductDetail = ({ productId }) => {
   };
   // Handle add to cart
   const handleCart = async () => {
+    if (isSoldOut) return;
+
     const config = {
       headers: { 'X-Session-Key': getSessionKey() }
     };
@@ -147,7 +150,7 @@ const ProductDetail = ({ productId }) => {
 
   return (
     <div>
-      <div className="product-detail-container">
+      <div className={`product-detail-container ${isSoldOut ? "sold-out-page" : ""}`}>
         <div className="left-section grid place-items-center">
           <img src={product.image} alt={product.name} className="product-image" />
         </div>
@@ -274,9 +277,11 @@ const ProductDetail = ({ productId }) => {
 
           {/* Add to Cart Button */}
           <button
-            className="add-to-cart-btn-detail mt-3"
-            onClick={handleCart}>
-            Add to Cart
+            className={`add-to-cart-btn-detail mt-3 ${isSoldOut ? "disabled-btn" : ""}`}
+            onClick={handleCart}
+            disabled={isSoldOut}
+          >
+            {isSoldOut ? "Sold Out" : "Add to Cart"}
           </button>
           {/* "Tax Included" Section */}
           <p className="tax-info">
