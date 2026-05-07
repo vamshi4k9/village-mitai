@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Item, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile
+from .models import Category, Item, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile, Coupon
 
 # Register your models here.
 admin.site.register(Category)
@@ -15,6 +15,8 @@ admin.site.register(Transaction)
 admin.site.register(Address)
 
 admin.site.register(Cart)
+    
+admin.site.register(Coupon)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
