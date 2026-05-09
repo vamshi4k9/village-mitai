@@ -37,20 +37,20 @@
     color: #3F2305;
     margin-bottom: 10px;
   }
-
-  .address-card {
+.address-card {
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  background: #fff;
+  /* gap: 12px; */
+  background: #f9f9f9;
   padding: 14px;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */
   border: 1px solid #d8cfc4;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
 .address-card.selected::after {
   content: "✓";
   position: absolute;
@@ -59,7 +59,7 @@
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background-color: #4b2a0d;   /* your theme color */
+  background-color: #4b2a0d;
   color: #ffffff;
   font-size: 13px;
   font-weight: bold;
@@ -90,13 +90,11 @@
   } */
   
   .address-card p,
-  /* .order-card p {
+  .order-card p {
     margin: 5px 0;
     font-size: 0.9rem;
-  } */
-  .address-card input[type="radio"] {
-  display: none;
-}
+  }
+
   
   .logout-button {
     margin-top: 30px;

@@ -124,7 +124,7 @@
 .address-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  /* gap: 12px; */
   margin-bottom: 10px;
 }
 
@@ -153,9 +153,10 @@
   border: 2px solid #4b2a0d;
   background: #f8f4f1;
 }
-
 .address-card input[type="radio"] {
-  display: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
 }
 .address-details p {
   margin: 3px 0;
@@ -169,8 +170,9 @@
 
 /* Address Form */
 .add-address-form {
-  margin-top: 15px;
+  /* margin-top: 5px; */
   padding: 20px;
+  margin-bottom: 15px;
   background-color: #f9f9f9;
   border: 1px solid #d8cfc4;
   border-radius: 8px;
@@ -198,6 +200,12 @@
   padding: 10px;
   border: 1px solid #aaa;
   border-radius: 6px;
+}
+
+.form-group input,
+.save-address-button,
+.add-new-address-button {
+  box-sizing: border-box;
 }
 
 .add-address-button {
@@ -273,17 +281,22 @@
   } */
 
   .coupon-box {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
   }
 
-  .coupon-box input,
-  .coupon-box button {
-    width: 100%;
+  .coupon-input-wrapper {
+    flex: 1;
+  }
+
+  .apply-btn {
+    white-space: nowrap;
   }
 
   .payment-options {
     flex-direction: column;
   }
+
 }
 
 .payment-option input[type="radio"] {
@@ -309,6 +322,12 @@
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.coupon-input-wrapper input,
+.apply-btn {
+  height: 40px;
+  box-sizing: border-box;
 }
 
 .remove-coupon {
@@ -430,4 +449,136 @@
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
+}
+
+
+.coupon-success {
+  border: 1px solid #1b5e20 !important;
+  background: #edf7ed !important;
+  color: #1b5e20 !important;
+}
+
+.coupon-error {
+  border: 1px solid #d32f2f !important;
+  background: #fdecec !important;
+  color: #d32f2f !important;
+}
+
+.coupon-input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.coupon-input-wrapper input,
+.apply-btn {
+  height: 40px;
+  box-sizing: border-box;
+}
+
+/* SUCCESS */
+.coupon-success {
+  border: 1px solid #2e7d32 !important;
+  background: #edf7ed !important;
+  color: #1b5e20 !important;
+}
+
+/* ERROR */
+.coupon-error {
+  border: 1px solid #d32f2f !important;
+  background: #fdecec !important;
+  color: #b71c1c !important;
+}
+
+/* INLINE MESSAGE */
+.coupon-inline-message {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+
+  max-width: 120px;
+  text-align: right;
+  line-height: 1.1;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Long text handling */
+.coupon-inline-message.long-text {
+  font-size: 10px;
+  line-height: 1.05;
+}
+
+.coupon-inline-message.success {
+  margin-right: 20px;
+  color: #1b5e20;
+  align-items: center;
+}
+
+.coupon-inline-message.error {
+  color: #b71c1c;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .coupon-box {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .coupon-input-wrapper {
+    flex: 1;
+  }
+
+  .apply-btn {
+    white-space: nowrap;
+  }
+}
+
+/* INPUTS */
+.form-group input,
+.coupon-input-wrapper input {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* BUTTONS */
+.save-address-button,
+.add-new-address-button,
+.apply-btn,
+.pay-button {
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* PAYMENT OPTIONS */
+.payment-option {
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+  .form-group input,
+  .coupon-input-wrapper input {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .save-address-button,
+  .add-new-address-button,
+  .apply-btn,
+  .pay-button {
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 13px;
+  }
 }

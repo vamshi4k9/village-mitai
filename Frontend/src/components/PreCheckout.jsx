@@ -11,7 +11,7 @@ import PaymentResultModal from "./PaymentResultModal";
 export default function PreCheckout() {
   const { cart, total, totalItems, setCart } = useContext(CartContext);
   const [addresses, setAddresses] = useState([]);
-  const [selectedAddress, setSelectedAddress] = useState("0");
+  const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMode, setPaymentMode] = useState("");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -23,8 +23,9 @@ export default function PreCheckout() {
     address1: "",
     address2: "",
     phone_number: "",
+    latitude: "",
+    longitude: "",
   });
-
   const [paymentPopup, setPaymentPopup] = useState({
     open: false,
     status: "",
@@ -58,28 +59,51 @@ export default function PreCheckout() {
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
   useEffect(() => {
+    if (discount > 0) {
+      removeCoupon();
+    }
+  }, [cart.length, total]);
+
+  useEffect(() => {
     const fetchAddresses = async () => {
       const token = localStorage.getItem("access_token");
-      if (token) {
-        try {
-          const res = await axios.get(`${API_BASE_URL}/addresses/`, SESSION_TOKEN);
-          setAddresses(res.data);
-          if (res.data.length > 0) setSelectedAddress("0");
-        } catch (err) {
-          console.error("Failed to fetch addresses", err);
+
+      try {
+        const res = await axios.get(
+          `${API_BASE_URL}/addresses/`,
+          token ? SESSION_TOKEN : SESSION_KEY
+        );
+
+        setAddresses(res.data);
+
+        if (res.data.length > 0) {
+          setSelectedAddress(res.data[0].id);
         }
+
+      } catch (err) {
+        console.error("Failed to fetch addresses", err);
       }
     };
+    
     fetchAddresses();
   }, []);
 
   const applyCoupon = async () => {
     try {
+      if (!selectedAddress || selectedAddress === "0") {
+        setMessage("Select address before applying coupon");
+        setDiscount(0);
+        return;
+      }
+      const address = addresses.find(
+        (addr) => addr.id === selectedAddress
+      );
       const cartItems = cart.map(({ item, quantity, total_price }) => ({
         id: item.id,
         price: total_price,
         qty: quantity,
         category_id: item.category,
+        phone_number: address?.phone_number || "",
       }));
 
       const response = await axios.post(
@@ -144,6 +168,32 @@ export default function PreCheckout() {
 
   const handleAddAddress = async () => {
     try {
+      if (
+        !newAddress.name ||
+        !newAddress.address1 ||
+        !newAddress.address2 ||
+        !newAddress.phone_number
+      ) {
+        setPaymentPopup({
+          open: true,
+          status: "failure",
+          message: "Please fill all address fields",
+          type: "Address",
+        });
+
+        return;
+      }
+
+      if (!newAddress.latitude || !newAddress.longitude) {
+        setPaymentPopup({
+          open: true,
+          status: "failure",
+          message: "Please select location from map",
+          type: "Address",
+        });
+
+        return;
+      }
       const response = await axios.post(
         `${API_BASE_URL}/create-address/`,
         newAddress,
@@ -151,7 +201,7 @@ export default function PreCheckout() {
       );
       setAddresses((prev) => [...prev, response.data]);
       setNewAddress({ name: "", address1: "", address2: "", phone_number: "" });
-      setSelectedAddress(addresses.length.toString());
+      setSelectedAddress(response.data.id);
       setShowAddAddressForm(false);
       // alert("Address added successfully!");
       setPaymentPopup({
@@ -208,7 +258,9 @@ export default function PreCheckout() {
       return;
     }
 
-    const address = addresses[parseInt(selectedAddress)];
+    const address = addresses.find(
+      (addr) => addr.id === selectedAddress
+    );
 
     if (!address) {
       setPaymentPopup({
@@ -225,15 +277,16 @@ export default function PreCheckout() {
       payment_mode: paymentMode === "UPI" ? "UPI" : "CASH",
       delivery_time: 1,
       net_amount: finalPayable,
+      coupon_code: coupon || "",
       cgst: 0,
       sgst: 0,
       discount,
       address_id: address.id,
-      cart_items: cart.map(({ item, quantity }) => ({
+      cart_items: cart.map(({ item, quantity, weight }) => ({
         id: item.id,
         price: item.discounted_total || item.price,
         quantity,
-        weight: item.weight || "",
+        weight,
         discounted: item.discounted_total ? 1 : 0,
       })),
     };
@@ -268,6 +321,24 @@ export default function PreCheckout() {
 
     else if (paymentMode === "UPI") {
       try {
+        // // TEST MODE START
+        // const createOrderRes = await axios.post(
+        //   `${API_BASE_URL}/create-order/`,
+        //   payload,
+        //   token ? SESSION_TOKEN : SESSION_KEY
+        // );
+
+        // // await deleteCart();
+
+        // setPaymentPopup({
+        //   open: true,
+        //   status: "success",
+        //   message: "Payment & Order placed successfully!",
+        //   redirectUrl: `/order_status?invoice=${createOrderRes.data.invoice_id}`,
+        //   type: "Payment",
+        // });
+
+        // return;
         const orderRes = await axios.post(
           `${API_BASE_URL}/create-order-razor/`,
           { amount: finalPayable },
@@ -336,6 +407,7 @@ export default function PreCheckout() {
           },
         };
 
+
         const rzp = new window.Razorpay(options);
         rzp.open();
         rzp.on("payment.failed", (response) => {
@@ -382,7 +454,7 @@ export default function PreCheckout() {
   const finalPayable =
     discountedItemsTotal +
     deliveryCharge +
-    packingCharge -
+    -
     discount;
 
   return (
@@ -461,104 +533,22 @@ export default function PreCheckout() {
               );
             })}
           </div>
-
         </div>
-        <div className="coupon-box">
-          <div className="coupon-input-wrapper w-full">
-            <input
-              type="text"
-              placeholder="Enter Coupon Code"
-              value={coupon}
-              onChange={(e) => setCoupon(e.target.value)}
-              disabled={discount > 0} />
-            {discount > 0 && (
-              <span className="remove-coupon" onClick={removeCoupon}>
-                ✕
-              </span>
-            )}
-          </div>
-
-          {discount === 0 && (
-            <button className="apply-btn" onClick={applyCoupon}>
-              Apply
-            </button>
-          )}
-
-          {message && <p className="mt-2 text-sm ">{message}</p>}
-        </div>
-        <div className="cart-summary">
-          <div
-            className="flex justify-between items-center font-semibold cursor-pointer"
-            onClick={() => setShowBreakdown(!showBreakdown)}
-          >
-            <span>Total Items - {totalItems}</span>
-            {/* <span>{totalItems}</span> */}
-
-            <span className="text-sm">
-              {showBreakdown ? "▲" : "▼"}
-            </span>
-          </div>
-
-          <hr className="my-[1rem]" />
-
-          {showBreakdown && (
-            <div className="price-breakdown mt-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span>Items Total</span>
-                <span>Rs.{originalItemsTotal}</span>
-              </div>
-
-              {itemDiscount > 0 && (
-                <div className="flex justify-between items-center text-green-700">
-                  <span>Item Discount</span>
-                  <span>- Rs.{itemDiscount}</span>
-                </div>
-              )}
-
-              {discount > 0 && (
-                <div className="flex justify-between items-center text-green-700">
-                  <span>Coupon Discount</span>
-                  <span>- Rs.{discount}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center">
-                <span>Delivery Charges</span>
-                <span>Rs.{deliveryCharge}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span>Packing & Handling</span>
-                <span>Rs.{packingCharge}</span>
-              </div>
-              <hr className="my-[1rem]" />
-
-            </div>
-          )}
-
-          <div className="total-payable-box">
-            <div className="flex justify-between items-center text-md font-bold">
-              <span>Total</span>
-              <span className="text-[#1b5e20]">
-                Rs.{finalPayable}
-              </span>
-            </div>
-          </div>
-
-        </div>
-        <h2 className="mt-4 font-semibold">Shipping Address</h2>
+        <h2 className="mt-2 font-semibold">Shipping Address</h2>
         {addresses.length > 0 && (
           <div className="address-list">
             {addresses.map((addr, index) => (
               <label
                 key={index}
-                className={`address-card w-full ${selectedAddress === index.toString() ? "selected" : ""}`}
+                className={`address-card w-full ${selectedAddress === addr.id ? "selected" : ""}`}
               >
                 <input
                   type="radio"
                   name="address"
                   value={addr.id}
-                  onChange={() => setSelectedAddress(addr.id)} />
+                  checked={selectedAddress === addr.id}
+                  onChange={() => setSelectedAddress(addr.id)}
+                />
                 <div className="address-details w-full">
                   <p className="address-name">{addr.name}</p>
                   <p>
@@ -570,14 +560,12 @@ export default function PreCheckout() {
             ))}
           </div>
         )}
-
         <button
-          className="add-new-address-button"
+          className="add-new-address-button mb-4"
           onClick={() => setShowAddAddressForm(!showAddAddressForm)}
         >
           {showAddAddressForm ? "Cancel" : "Add New Address"}
         </button>
-
         {showAddAddressForm && (
           <div className="add-address-form">
             {/* <h3 className="form-title">Add New Address</h3> */}
@@ -632,6 +620,124 @@ export default function PreCheckout() {
             </button>
           </div>
         )}
+        <div className="coupon-box">
+          <div className="coupon-input-wrapper w-full">
+            <input
+              type="text"
+              placeholder="Enter Coupon Code"
+              value={coupon}
+              onChange={(e) => {
+                setCoupon(e.target.value);
+
+                if (message) {
+                  setMessage("");
+                }
+              }} className={
+                discount > 0
+                  ? "coupon-success"
+                  : message
+                    ? "coupon-error"
+                    : ""
+              }
+              disabled={discount > 0}
+            />
+
+            {message && (
+              <span
+                className={`coupon-inline-message 
+                  ${discount > 0 ? "success" : "error"}
+                  ${message?.length > 10 ? "long-text" : ""}
+                `}
+              >
+                {message}
+              </span>
+            )}
+            {discount > 0 && (
+              <span className="remove-coupon" onClick={removeCoupon}>
+                ✕
+              </span>
+            )}
+          </div>
+
+          {discount === 0 && (
+            <button className="apply-btn" onClick={applyCoupon}>
+              Apply
+            </button>
+          )}
+
+          {/* {message && <p className="mt-2 text-sm ">{message}</p>} */}
+        </div>
+        <div className="cart-summary">
+          <div
+            className="flex justify-between items-center font-semibold cursor-pointer"
+            onClick={() => setShowBreakdown(!showBreakdown)}
+          >
+            <span>Total Items - {totalItems}</span>
+            {/* <span>{totalItems}</span> */}
+
+            <span className="text-sm">
+              {showBreakdown ? "▲" : "▼"}
+            </span>
+          </div>
+
+          <hr className="my-[1rem]" />
+
+          {showBreakdown && (
+            <div className="price-breakdown mt-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span>Items Total</span>
+                <span>Rs.{originalItemsTotal}</span>
+              </div>
+
+              {itemDiscount > 0 && (
+                <div className="flex justify-between items-center text-green-700">
+                  <span>Item Discount</span>
+                  <span>- Rs.{itemDiscount}</span>
+                </div>
+              )}
+
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-green-700">
+                  <span>Coupon Discount</span>
+                  <span>- Rs.{discount}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center">
+                <span>Delivery Charges</span>
+                <span>Rs.{deliveryCharge}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span>Packing & Handling</span>
+
+                <span className="flex items-center gap-2">
+                  <span className="line-through text-gray-400">
+                    Rs.{packingCharge}
+                  </span>
+
+                  <span className="text-green-700 font-semibold">
+                    Rs.0
+                  </span>
+                </span>
+              </div>
+              <hr className="my-[1rem]" />
+
+            </div>
+          )}
+
+          <div className="total-payable-box">
+            <div className="flex justify-between items-center text-md font-bold">
+              <span>Total</span>
+              <span className="text-[#1b5e20]">
+                Rs.{finalPayable}
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+
 
         <h2 className="mt-4 font-semibold">Payment Method</h2>
         <div className="payment-options">
