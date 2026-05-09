@@ -319,6 +319,14 @@ class CreateOrderView(APIView):
         cgst = Decimal(data.get("cgst", 0))
         sgst = Decimal(data.get("sgst", 0))
         discount = Decimal(data.get("discount", 0))
+        coupon_code = data.get("coupon_code")
+        coupon = None
+
+        if coupon_code:
+            coupon = Coupon.objects.filter(
+                code=coupon_code,
+                is_active=True
+            ).first()
         cart_items = data.get("cart_items", [])
         address_id = data.get("address_id")
 
@@ -345,7 +353,8 @@ class CreateOrderView(APIView):
                 sgst=sgst,
                 discount=discount,
                 status='ORDERED',
-                address=address
+                address=address,
+                coupon=coupon
             )
         else:
             invoice = Invoice.objects.create(
@@ -357,7 +366,8 @@ class CreateOrderView(APIView):
                 sgst=sgst,
                 discount=discount,
                 status='ORDERED',
-                address=address
+                address=address,
+                coupon=coupon
             )
 
         # Create Transactions for each cart item
@@ -603,8 +613,43 @@ def apply_coupon(request):
     cart_items = request.data.get("cart_items", [])
     try:
         coupon = Coupon.objects.get(code=code)
+        phone_number = None
+
+        if cart_items and len(cart_items) > 0:
+            phone_number = cart_items[0].get("phone_number")
+
+        address_ids = []
+
+        if phone_number:
+            address_ids = Address.objects.filter(
+                phone_number=phone_number
+            ).values_list("id", flat=True)
+            
         if not coupon.is_valid():
             return Response({"error": "Coupon expired or inactive"}, status=400)
+        
+        # Check if coupon already used
+        already_used = Invoice.objects.filter(
+            address_id__in=address_ids,
+            coupon=coupon
+        ).exists()
+
+        if already_used:
+            return Response({
+                "error": "Coupon already used"
+            }, status=400)
+            
+        # New customer coupon validation
+        if coupon.is_new_customer_only:
+
+            existing_orders = Invoice.objects.filter(
+                address_id__in=address_ids
+            ).exists()
+
+            if existing_orders:
+                return Response({
+                    "error": "Coupon valid only for new customers"
+                }, status=400)
 
         if coupon.category:
             eligible_items = [i for i in cart_items if i["category_id"] == coupon.category.id]

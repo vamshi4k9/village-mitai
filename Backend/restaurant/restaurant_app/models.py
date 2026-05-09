@@ -106,6 +106,29 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True)
+    discount_type = models.CharField(
+        max_length=10,
+        choices=[("percent", "Percent"), ("fixed", "Fixed Amount")],
+        default="percent"
+    )
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
+    valid_from = models.DateTimeField()
+    valid_to = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    is_new_customer_only = models.BooleanField(default=False)
+    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.is_active and self.valid_from < now <= self.valid_to
+
+    def __str__(self):
+        return f"{self.code} | {self.discount_type} {self.discount_value}"
 
 class OTP(models.Model):
     phone = models.CharField(max_length=15, unique=True)
@@ -213,9 +236,16 @@ class Invoice(models.Model):
     session_key = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
-    # 🔥 IMPORTANT
     address = models.ForeignKey(
         Address,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices"
+    )
+    
+    coupon = models.ForeignKey(
+        Coupon,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -231,6 +261,7 @@ class Invoice(models.Model):
 
     def __str__(self):
         return f"Invoice #{self.id}"
+    
 class Transaction(models.Model):
     session_key = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
@@ -255,28 +286,6 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.rating}★ by {self.user} on {self.item.name}"
-    
-class Coupon(models.Model):
-    code = models.CharField(max_length=50, unique=True)
-    discount_type = models.CharField(
-        max_length=10,
-        choices=[("percent", "Percent"), ("fixed", "Fixed Amount")],
-        default="percent"
-    )
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
-    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
-    valid_from = models.DateTimeField()
-    valid_to = models.DateTimeField()
-    is_active = models.BooleanField(default=True)
-    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
-
-    def is_valid(self):
-        now = timezone.now()
-        return self.is_active and self.valid_from < now <= self.valid_to
-
-    def __str__(self):
-        return f"{self.code} | {self.discount_type} {self.discount_value}"
 
 
 class AgentCustomerEntry(models.Model):
