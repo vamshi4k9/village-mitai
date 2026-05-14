@@ -47,8 +47,8 @@ function LocationPicker({ onLocationSelect }) {
     onLocationSelect && onLocationSelect({ lat, lng })
   }
 
-  const getCurrentLocation = () => {
-    navigator.geolocation.getCurrentPosition((pos) => {
+  const getCurrentLocation = async () => {
+    navigator.geolocation.getCurrentPosition(async (pos) => {
       const lat = pos.coords.latitude
       const lng = pos.coords.longitude
 
@@ -60,6 +60,18 @@ function LocationPicker({ onLocationSelect }) {
 
       setSelectedLocation({ lat, lng })
       onLocationSelect && onLocationSelect({ lat, lng })
+      try {
+        const res = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+        )
+        const data = await res.json()
+
+        if (data.features && data.features.length > 0) {
+          setSearch(data.features[0].place_name)
+        }
+      } catch (err) {
+        console.error("Location fetch failed", err)
+      }
     })
   }
 
@@ -135,13 +147,13 @@ function LocationPicker({ onLocationSelect }) {
           boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
         }}
       >
-        <svg width="20" height="20" viewBox="0 0 24 24">
+        {/* <svg width="20" height="20" viewBox="0 0 24 24">
           <path
             d="M12 2L19 21L12 17L5 21L12 2Z"
             fill="#4b2a0d"
           />
-        </svg>
-
+        </svg> */}
+        <img src={`${process.env.PUBLIC_URL}/images/target.png`} alt="Current Location" style={{ width: 20, height: 20 }} />
       </button>
 
       <Map

@@ -14,8 +14,23 @@ admin.site.register(Transaction)
 
 admin.site.register(Address)
 
-admin.site.register(Cart)
-    
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        # 'user',
+        # 'session_key',
+        'item',
+        # 'quantity',
+        # 'weight',
+        'created_at',
+        # 'updated_at',
+    )
+
+    readonly_fields = (
+        'created_at',
+        'updated_at',
+    )    
 admin.site.register(Coupon)
 
 @admin.register(UserProfile)

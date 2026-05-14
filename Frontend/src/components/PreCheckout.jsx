@@ -12,7 +12,7 @@ export default function PreCheckout() {
   const { cart, total, totalItems, setCart } = useContext(CartContext);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [paymentMode, setPaymentMode] = useState("");
+  const [paymentMode, setPaymentMode] = useState("UPI");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
   const [newTotal, setNewTotal] = useState(total);
@@ -564,7 +564,7 @@ export default function PreCheckout() {
           className="add-new-address-button mb-4"
           onClick={() => setShowAddAddressForm(!showAddAddressForm)}
         >
-          {showAddAddressForm ? "Cancel" : "Add New Address"}
+          {showAddAddressForm ? "Cancel" : "Click to add new Address"}
         </button>
         {showAddAddressForm && (
           <div className="add-address-form">

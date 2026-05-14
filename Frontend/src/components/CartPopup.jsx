@@ -235,22 +235,22 @@ const CartPopup = ({ isOpen, toggleCart }) => {
         <div className="auth-popup-overlay">
           <div className="auth-popup">
             <h3 className="auth-title">Continue to Checkout</h3>
-            <p className="auth-subtitle">
+            {/* <p className="auth-subtitle">
               Login for faster checkout or continue as a guest
-            </p>
+            </p> */}
 
             <div className="auth-actions">
               <button className="auth-btn guest" onClick={handleGuest}>
                 Continue as Guest
               </button>
 
-              <button className="auth-btn login" onClick={handleLogin}>
+              {/* <button className="auth-btn login" onClick={handleLogin}>
                 Login
               </button>
 
               <button className="auth-btn signup" onClick={handleSignup}>
                 Sign Up
-              </button>
+              </button> */}
             </div>
 
             <button className="auth-cancel" onClick={() => setShowAuthPopup(false)}>
