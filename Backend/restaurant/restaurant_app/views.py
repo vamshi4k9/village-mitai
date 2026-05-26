@@ -14,7 +14,7 @@ from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -955,3 +955,13 @@ def save_mobile(request):
         "status": "success",
         "is_new": created
     })
+
+class DeliveryConfigAPIView(APIView):
+    def get(self, request):
+        config = DeliveryFeeConfig.objects.first()
+        if not config:
+            config = DeliveryFeeConfig.objects.create()
+        return Response({
+            "free_delivery_above": config.free_delivery_above
+        })
+

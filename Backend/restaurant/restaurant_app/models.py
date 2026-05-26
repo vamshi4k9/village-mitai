@@ -376,3 +376,41 @@ class MobileNumber(models.Model):
 
     def __str__(self):
         return self.mobile
+    
+class DeliveryFeeConfig(models.Model):
+    free_delivery_above = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=499
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Delivery Fee Configuration"
+        verbose_name_plural = "Delivery Fee Configuration"
+
+    def __str__(self):
+        return f"Free Delivery Above ₹{self.free_delivery_above}"
+
+class APIRequestLog(models.Model):
+    session_id = models.CharField(max_length=255, null=True, blank=True)
+    user_id = models.IntegerField(null=True, blank=True)
+
+    api_path = models.TextField()
+    method = models.CharField(max_length=10)
+
+    status_code = models.IntegerField(null=True, blank=True)
+
+    response_time_ms = models.FloatField()
+
+    ip_address = models.CharField(max_length=100, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "api_request_logs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.method} {self.api_path}"
