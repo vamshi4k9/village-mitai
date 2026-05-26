@@ -79,6 +79,17 @@ const ProductCard = ({ item, smallImage = false }) => {
             SOLD OUT
           </div>
         )}
+        {item.bestseller && (
+          <div className="bestseller-badge">
+            🔥 Bestseller
+          </div>
+        )}
+
+        {item.delivery_time === 0 && (
+          <div className="instant-delivery-badge">
+            ⚡ Instant Delivery
+          </div>
+        )}
         {item.total_reviews > 0 && (
           <div className="rating-badge">
             ⭐ {item.avg_rating}

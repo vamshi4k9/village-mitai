@@ -26,7 +26,7 @@ export default function CategorySection({ categoryName, categoryImageUrl }) {
   });
 
   return (
-    <div className="container mt-3">
+    <div className="container">
      
 
       <div className="flex-grid">

@@ -232,7 +232,7 @@ const ProductDetail = ({ productId }) => {
               <img src={`${process.env.PUBLIC_URL}/images/Free_Express_Delivery.avif`} alt="Vegetarian" className="feature-icon" />
               <span>
                 {product.delivery_time === 0
-                  ? 'Free Express Delivery'
+                  ? 'Instant Delivery'
                   : `${product.delivery_time} Day${product.delivery_time > 1 ? 's' : ''} Delivery`}
               </span>
 

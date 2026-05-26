@@ -305,7 +305,7 @@ export default function PreCheckout() {
           open: true,
           status: "success",
           message: "Order placed successfully!",
-          redirectUrl: `/invoice/${response.data.invoice_id}`,
+          redirectUrl: `/order_status?invoice_id=${response.data.invoice_id}`,
           type: "Payment",
         });
 
@@ -741,10 +741,10 @@ export default function PreCheckout() {
 
         <h2 className="mt-4 font-semibold">Payment Method</h2>
         <div className="payment-options">
-          {["UPI"].map((mode) => (
+          {["UPI","Cash On Delivery"].map((mode) => (
             <label
               key={mode}
-              className={`payment-option ${paymentMode === mode ? "selected" : ""}`}
+              className={`payment-option ${paymentMode === mode ? "selected" : ""} mb-2`}
             >
               <input
                 type="radio"

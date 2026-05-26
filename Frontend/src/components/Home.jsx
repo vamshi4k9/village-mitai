@@ -8,10 +8,21 @@ import { useNavigate } from "react-router-dom";
 export default function Home() {
   const [categories, setCategories] = useState([]);
   const [banners, setBanners] = useState([]);
-
+  const [freeDeliveryAmount, setFreeDeliveryAmount] = useState(null);
   const [showMobilePopup, setShowMobilePopup] = useState(false);
   const [mobile, setMobile] = useState("");
+  useEffect(() => {
+    const fetchDeliveryConfig = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/delivery-config/`);
+        setFreeDeliveryAmount(res.data.free_delivery_above);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
+    fetchDeliveryConfig();
+  }, []);
   useEffect(() => {
     const completed = localStorage.getItem("mobile_prompt_done");
 
@@ -21,44 +32,44 @@ export default function Home() {
   }, []);
   const [error, setError] = useState("");
 
-const handleSubmitMobile = async () => {
-  setError("");
+  const handleSubmitMobile = async () => {
+    setError("");
 
-  if (!mobile) {
-    setError("Mobile number is required");
-    return;
-  }
-
-  if (!/^\d+$/.test(mobile)) {
-    setError("Only numbers are allowed");
-    return;
-  }
-
-  if (mobile.length !== 10) {
-    setError("Mobile number must be 10 digits");
-    return;
-  }
-
-  if (!/^[6-9]/.test(mobile)) {
-    setError("Enter valid Indian mobile number");
-    return;
-  }
-
-  try {
-    await axios.post(`${API_BASE_URL}/save-mobile/`, {
-      mobile: mobile,
-    });
-
-    localStorage.setItem("mobile_prompt_done", "true");
-    setShowMobilePopup(false);
-  } catch (err) {
-    if (err.response?.data?.error) {
-      setError(err.response.data.error);
-    } else {
-      setError("Something went wrong. Try again.");
+    if (!mobile) {
+      setError("Mobile number is required");
+      return;
     }
-  }
-};
+
+    if (!/^\d+$/.test(mobile)) {
+      setError("Only numbers are allowed");
+      return;
+    }
+
+    if (mobile.length !== 10) {
+      setError("Mobile number must be 10 digits");
+      return;
+    }
+
+    if (!/^[6-9]/.test(mobile)) {
+      setError("Enter valid Indian mobile number");
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/save-mobile/`, {
+        mobile: mobile,
+      });
+
+      localStorage.setItem("mobile_prompt_done", "true");
+      setShowMobilePopup(false);
+    } catch (err) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Something went wrong. Try again.");
+      }
+    }
+  };
 
   const handleSkipMobile = () => {
     localStorage.setItem("mobile_prompt_done", "true");
@@ -162,6 +173,14 @@ const handleSubmitMobile = async () => {
           <span className="carousel-control-next-icon" aria-hidden="true"></span>
         </button>
       </div>
+
+      {freeDeliveryAmount && (
+        <div className="w-full bg-[#4b2a0d] text-white px-4 py-1 text-center shadow-sm">
+          <p className="m-0 text-sm md:text-base font-medium">
+            Free Delivery on orders above Rs.{freeDeliveryAmount}
+          </p>
+        </div>
+      )}
 
       {/* Category Sections */}
       {categories.map((cat) => (
