@@ -180,7 +180,7 @@ SESSION_COOKIE_HTTPONLY = True
 
 BREVO_SENDER = {
     "name": "Village Mitai",
-    "email": "villagemitai@gmail.com"
+    "email": "potha.vishnu222@gmail.com"
 }
 
 BREVO_API_KEY = config("BREVO_API_KEY")
