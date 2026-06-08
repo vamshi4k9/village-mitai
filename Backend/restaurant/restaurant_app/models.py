@@ -414,3 +414,9 @@ class APIRequestLog(models.Model):
 
     def __str__(self):
         return f"{self.method} {self.api_path}"
+    
+class NotificationEmail(models.Model):
+    email = models.EmailField(unique=True)
+
+    def __str__(self):
+        return self.email

@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+from threading import Thread
 from django.shortcuts import get_object_or_404
 import razorpay
 from rest_framework.response import Response
@@ -7,6 +8,7 @@ from django.core.paginator import Paginator
 
 
 from restaurant import settings
+from .utils.email import send_order_confirmation_email
 from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Avg, Count, Sum
@@ -304,21 +306,22 @@ class AddressView(APIView):
                 serializer.save(session_key=session_key)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class CreateOrderView(APIView):
     permission_classes = [AllowAny]
-    # authentication_classes = [OptionalJWTAuthentication]
 
     def post(self, request):
         data = request.data
+
         session_key = request.headers.get("x-session-key")
         payment_mode = data.get("payment_mode")
         delivery_time = data.get("delivery_time", 1)
+
         net_amount = Decimal(data.get("net_amount", 0))
         cgst = Decimal(data.get("cgst", 0))
         sgst = Decimal(data.get("sgst", 0))
         discount = Decimal(data.get("discount", 0))
+
         coupon_code = data.get("coupon_code")
         coupon = None
 
@@ -327,12 +330,18 @@ class CreateOrderView(APIView):
                 code=coupon_code,
                 is_active=True
             ).first()
+
         cart_items = data.get("cart_items", [])
         address_id = data.get("address_id")
 
         if not payment_mode or not cart_items:
-            return Response({"error": "Payment mode and cart items are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Payment mode and cart items are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         address = None
+
         if address_id:
             try:
                 address = Address.objects.get(id=address_id)
@@ -342,6 +351,7 @@ class CreateOrderView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+        # Create Invoice
         if request.user.is_authenticated:
             invoice = Invoice.objects.create(
                 user=request.user,
@@ -352,7 +362,7 @@ class CreateOrderView(APIView):
                 cgst=cgst,
                 sgst=sgst,
                 discount=discount,
-                status='ORDERED',
+                status="ORDERED",
                 address=address,
                 coupon=coupon
             )
@@ -365,17 +375,20 @@ class CreateOrderView(APIView):
                 cgst=cgst,
                 sgst=sgst,
                 discount=discount,
-                status='ORDERED',
+                status="ORDERED",
                 address=address,
                 coupon=coupon
             )
 
-        # Create Transactions for each cart item
+        # Create Transactions
+        created_transactions = []
+
         for item_data in cart_items:
             try:
                 item = Item.objects.get(id=item_data["id"])
+
                 if request.user.is_authenticated:
-                    Transaction.objects.create(
+                    txn = Transaction.objects.create(
                         user=request.user,
                         session_key=session_key,
                         item=item,
@@ -383,21 +396,50 @@ class CreateOrderView(APIView):
                         item_amount=Decimal(item_data["price"]),
                         quantity=int(item_data["quantity"]),
                         weight=item_data.get("weight", ""),
-                        discounted=Decimal(item_data.get("discounted", 0))
+                        discounted=Decimal(
+                            item_data.get("discounted", 0)
+                        )
                     )
                 else:
-                    Transaction.objects.create(
+                    txn = Transaction.objects.create(
                         session_key=session_key,
                         item=item,
                         invoice=invoice,
                         item_amount=Decimal(item_data["price"]),
                         quantity=int(item_data["quantity"]),
                         weight=item_data.get("weight", ""),
-                        discounted=Decimal(item_data.get("discounted", 0))
+                        discounted=Decimal(
+                            item_data.get("discounted", 0)
+                        )
                     )
+
+                created_transactions.append(txn)
+
             except Item.DoesNotExist:
                 continue
-        return Response({"message": "Order created successfully", "invoice_id": invoice.id}, status=status.HTTP_201_CREATED)
+        
+        try:
+            if True:
+                print("Sending order confirmation email to:")
+                Thread(
+                    target=send_order_confirmation_email,
+                    kwargs={
+                        "invoice": invoice,
+                        "transactions": created_transactions
+                    }
+                ).start()
+                print("Email thread started")
+
+        except Exception as e:
+            print(f"EMAIL ERROR: {str(e)}")
+
+        return Response(
+            {
+                "message": "Order created successfully",
+                "invoice_id": invoice.id
+            },
+            status=status.HTTP_201_CREATED
+        )
 
 
 @api_view(['GET'])
