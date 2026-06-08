@@ -51,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'restaurant_app.middleware.api_logger.APILoggingMiddleware',
 ]
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),    
@@ -120,11 +121,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -177,5 +178,9 @@ SESSION_COOKIE_NAME = 'cart_session'
 SESSION_COOKIE_AGE = 1209600 
 SESSION_COOKIE_HTTPONLY = True
 
+BREVO_SENDER = {
+    "name": "Village Mitai",
+    "email": "villagemitai@gmail.com"
+}
 
-
+BREVO_API_KEY = config("BREVO_API_KEY")
