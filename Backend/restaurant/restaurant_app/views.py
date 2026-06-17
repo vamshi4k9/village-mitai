@@ -16,7 +16,7 @@ from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction
+from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction , SiteConfig
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -1007,3 +1007,10 @@ class DeliveryConfigAPIView(APIView):
             "free_delivery_above": config.free_delivery_above
         })
 
+@api_view(["GET"])
+def get_site_config(request):
+    config = SiteConfig.objects.first()
+
+    return Response({
+        "whatsapp_number": config.whatsapp_number if config else ""
+    })

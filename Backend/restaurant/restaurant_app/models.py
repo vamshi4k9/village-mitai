@@ -420,3 +420,9 @@ class NotificationEmail(models.Model):
 
     def __str__(self):
         return self.email
+
+class SiteConfig(models.Model):
+    whatsapp_number = models.CharField(max_length=20)
+
+    class Meta:
+        db_table = "whatsapp_config"

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Category, DeliveryFeeConfig, Item, NotificationEmail, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile, Coupon
-from .models import APIRequestLog
+from .models import APIRequestLog, SiteConfig
 from django.utils.html import format_html
 # Register your models here.
 admin.site.register(Category)
@@ -108,3 +108,4 @@ class APIRequestLogAdmin(admin.ModelAdmin):
     colored_status.short_description = "Status"
 
 admin.site.register(NotificationEmail)
+admin.site.register(SiteConfig)
