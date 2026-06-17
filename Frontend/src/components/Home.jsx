@@ -76,6 +76,25 @@ export default function Home() {
     setShowMobilePopup(false);
   };
 
+  const [whatsappNumber, setWhatsappNumber] = useState("");
+  useEffect(() => {
+    const fetchSiteConfig = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/site-config/`);
+        setWhatsappNumber(res.data.whatsapp_number);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchSiteConfig();
+  }, []);
+
+  const whatsappUrl = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      "Hi Village Mitai, I need a help."
+    )}`
+    : "#";
+
   useEffect(() => {
     const fetchBanners = async () => {
       try {
@@ -110,6 +129,15 @@ export default function Home() {
 
     fetchCategories();
   }, []);
+
+  const getColumns = (count) => {
+    if (count <= 4) return count;
+    if (count <= 8) return Math.ceil(count / 2);
+    if (count <= 15) return 5;
+    return 6;
+  };
+
+  const columns = getColumns(categories.length);
 
   const bannerImages = [
     `${process.env.PUBLIC_URL}/images/top_img_1.webp`,
@@ -181,6 +209,48 @@ export default function Home() {
           </p>
         </div>
       )}
+      {/* Shop By Category */}
+      <div className="py-2 bg-[#fffaf5]">
+        <h2 className="text-xl md:text-2xl font-bold text-center text-[#4b2a0d] mb-4">
+          Shop By Category
+        </h2>
+
+        <div
+          className="grid gap-4 px-4"
+          style={{
+            gridTemplateColumns: `repeat(${columns}, 1fr)`,
+          }}
+        >
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              onClick={() => navigate(`/collections/${cat.name}`)}
+              className="cursor-pointer text-center"
+            >
+              <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-[#f3e3d3] shadow-sm">
+                <img
+                  src={cat.image}
+                  alt={cat.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <p className="mt-2 text-sm font-medium text-[#4b2a0d]">
+                {cat.name}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Category Sections */}
+      {categories.map((cat) => (
+        <CategorySection
+          key={cat.id}
+          categoryName={cat.name}
+          categoryImageUrl={cat.image}
+        />
+      ))}
 
       {/* Category Sections */}
       {categories.map((cat) => (
@@ -253,6 +323,20 @@ export default function Home() {
 
           </div>
         </div>
+      )}
+      {whatsappNumber && (
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-5 right-5 z-[9998] rounded-full shadow-lg p-2 hover:scale-110 transition-transform"
+        >
+          <img
+            src={`${process.env.PUBLIC_URL}/images/whatsapplogo.png`}
+            alt="WhatsApp"
+            className="w-8 h-8"
+          />
+        </a>
       )}
     </div>
   );
