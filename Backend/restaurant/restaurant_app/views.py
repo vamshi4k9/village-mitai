@@ -649,15 +649,15 @@ class BannerListView(generics.ListAPIView):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
 
-@api_view(['POST'])
+@api_view(["POST"])
 def apply_coupon(request):
     code = request.data.get("code")
     cart_items = request.data.get("cart_items", [])
     try:
         coupon = Coupon.objects.get(code=code)
-        phone_number = None
 
-        if cart_items and len(cart_items) > 0:
+        phone_number = None
+        if cart_items:
             phone_number = cart_items[0].get("phone_number")
 
         address_ids = []
@@ -666,91 +666,224 @@ def apply_coupon(request):
             address_ids = Address.objects.filter(
                 phone_number=phone_number
             ).values_list("id", flat=True)
-            
         if not coupon.is_valid():
-            return Response({"error": "Coupon expired or inactive"}, status=400)
-        
-        # Check if coupon already used
+            return Response({"error": "Coupon expired or inactive"},status=400)
         already_used = Invoice.objects.filter(
             address_id__in=address_ids,
             coupon=coupon
         ).exists()
 
         if already_used:
-            return Response({
-                "error": "Coupon already used"
-            }, status=400)
-            
-        # New customer coupon validation
-        if coupon.is_new_customer_only:
+            return Response(
+                {"error": "Coupon already used"},
+                status=400
+            )
 
+        if coupon.is_new_customer_only:
             existing_orders = Invoice.objects.filter(
                 address_id__in=address_ids
             ).exists()
 
             if existing_orders:
-                return Response({
-                    "error": "Coupon valid only for new customers"
-                }, status=400)
+                return Response(
+                    {"error": "Coupon valid only for new customers"},
+                    status=400
+                )
 
-        if coupon.category:
-            eligible_items = [i for i in cart_items if i["category_id"] == coupon.category.id]
-        else:
+        price_key = (
+            "original_price"
+            if coupon.price_basis == "mrp"
+            else "price"
+        )
+        
+        if coupon.apply_on == "order":
             eligible_items = cart_items
 
-        if not eligible_items:
-            return Response({"error": "Coupon not applicable to selected items"}, status=400)
+        elif coupon.apply_on == "category":
 
-        # Convert to Decimal for safe arithmetic
-        eligible_subtotal = sum(Decimal(i["price"])  for i in eligible_items)
-        total_cart_value = sum(Decimal(i["price"]) for i in cart_items)
+            category_ids = set(
+                coupon.categories.values_list("id", flat=True)
+            )
+
+            eligible_items = [
+                item for item in cart_items
+                if item["category_id"] in category_ids
+            ]
+
+        elif coupon.apply_on == "item":
+
+            item_ids = set(
+                coupon.items.values_list("id", flat=True)
+            )
+
+            eligible_items = [
+                item for item in cart_items
+                if item["id"] in item_ids
+            ]
+
+        else:
+            eligible_items = []
+
+        if not eligible_items:
+            return Response(
+                {"error": "Coupon not applicable to selected items"},
+                status=400
+            )
+
+        eligible_item_ids = {
+            item["id"] for item in eligible_items
+        }
+
+        eligible_subtotal = sum(
+            Decimal(str(item[price_key]))
+            for item in eligible_items
+        )
+
+        # ALWAYS current selling price
+        total_cart_value = sum(
+            Decimal(str(item["price"]))
+            for item in cart_items
+        )
 
         if eligible_subtotal < coupon.min_order_value:
-            return Response({"error": f"Minimum order value ₹{coupon.min_order_value} required"}, status=400)
-        if coupon.discount_type.lower() == "percent" :
-            discount = eligible_subtotal * (coupon.discount_value / Decimal("100"))
+            return Response(
+                {
+                    "error": f"Minimum order value ₹{coupon.min_order_value} required"
+                },
+                status=400,
+            )
+            
+        if coupon.discount_type == "percent":
+
+            discount = (
+                eligible_subtotal
+                * coupon.discount_value
+                / Decimal("100")
+            )
+
         else:
+
             discount = coupon.discount_value
 
         if coupon.max_discount:
-            discount = min(discount, coupon.max_discount)
-        
-        
-        new_total = max(total_cart_value - discount, Decimal("0"))
+            discount = min(
+                discount,
+                coupon.max_discount
+            )
+
+        discount = min(
+            discount,
+            eligible_subtotal
+        )
+
+        discount = discount.quantize(
+            Decimal("0.01")
+        )
+
+        new_total = max(total_cart_value - discount,Decimal("0"))
+
         discounted_items = []
-        if eligible_subtotal > 0:
-            for item in cart_items:
-                item_price = Decimal(item["price"]) * item["qty"]
-                if item in eligible_items:
-                    item_discount = (item_price / eligible_subtotal) * discount
-                    new_price = (Decimal(item["price"])) - item_discount
-                    discounted_items.append({
-                        "id": item["id"],
-                        "original_price": str(item["price"]),
-                        "qty": item["qty"],
-                        "discounted_total": round(new_price, 2)
-                    })
-                else:
-                    discounted_items.append({
-                        "id": item["id"],
-                        "original_price": str(item["price"]),
-                        "qty": item["qty"],
-                        "discounted_total": str(item["price"] * item["qty"])
-                    })
+        for item in cart_items:
+            current_total = Decimal(
+                str(item["price"])
+            )
+            discount_base = Decimal(
+                str(item[price_key])
+            )
+            if item["id"] in eligible_item_ids:
+
+                item_discount = (
+                    discount_base
+                    / eligible_subtotal
+                ) * discount
+                item_discount = item_discount.quantize(
+                    Decimal("0.01")
+                )
+                discounted_total = max(
+                    current_total - item_discount,
+                    Decimal("0")
+                )
+                discounted_unit_price = (
+                    discounted_total / item["qty"]
+                    if item["qty"] > 0
+                    else Decimal("0")
+                )
+                discounted_items.append({
+                    "id": item["id"],
+                    "qty": item["qty"],
+
+                    "current_total": round(
+                        current_total,
+                        2
+                    ),
+                    "original_total": round(
+                        Decimal(str(item["original_price"])),
+                        2
+                    ),
+                    "discount": round(
+                        item_discount,
+                        2
+                    ),
+
+                    "discounted_unit_price": round(
+                        discounted_unit_price,
+                        2
+                    ),
+
+                    "discounted_total": round(
+                        discounted_total,
+                        2
+                    ),
+                })
+
+            else:
+                discounted_items.append({
+                    "id": item["id"],
+                    "qty": item["qty"],
+                    "current_total": round(
+                        current_total,
+                        2
+                    ),
+                    "original_total": round(
+                        Decimal(str(item["original_price"])),
+                        2
+                    ),
+                    "discount": Decimal("0.00"),
+                    "discounted_unit_price": round(
+                        current_total / item["qty"]
+                        if item["qty"] > 0
+                        else Decimal("0"),
+                        2
+                    ),
+                    "discounted_total": round(
+                        current_total,
+                        2
+                    ),
+                })
 
         return Response({
             "success": True,
-            "discount": float(discount),
-            "new_total": float(new_total),
             "coupon_id": coupon.id,
-            "discounted_items": discounted_items
+            "price_basis": coupon.price_basis,
+            "discount": round(discount, 2),
+            "new_total": round(new_total, 2),
+            "discounted_items": discounted_items,
         })
+
+    except Coupon.DoesNotExist:
+        return Response(
+            {"error": "Invalid coupon"},
+            status=400
+        )
 
     except Exception as e:
         print(e)
-        return Response({"error": "Invalid coupon"}, status=400)
 
-
+        return Response(
+            {"error": "Something went wrong"},
+            status=500
+        )
+        
 
 @api_view(["POST"])
 # If you want only logged-in agents → use IsAuthenticated
@@ -1014,3 +1147,39 @@ def get_site_config(request):
     return Response({
         "whatsapp_number": config.whatsapp_number if config else ""
     })
+    
+@api_view(["POST"])
+def cancel_order(request, invoice_id):
+    try:
+        invoice = Invoice.objects.get(id=invoice_id)
+
+        if invoice.payment_mode != "CASH":
+            return Response(
+                {"error": "Only Cash on Delivery orders can be cancelled."},
+                status=400
+            )
+
+        if invoice.status in [
+            "SHIPPING",
+            "OUT_FOR_DELIVERY",
+            "DELIVERED",
+            "CANCELLED"
+        ]:
+            return Response(
+                {"error": "Order can no longer be cancelled."},
+                status=400
+            )
+
+        invoice.status = "CANCELLED"
+        invoice.save(update_fields=["status"])
+
+        return Response({
+            "success": True,
+            "message": "Order cancelled successfully."
+        })
+
+    except Invoice.DoesNotExist:
+        return Response(
+            {"error": "Invalid order."},
+            status=404
+        )

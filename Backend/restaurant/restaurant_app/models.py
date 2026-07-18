@@ -108,27 +108,71 @@ class Item(models.Model):
         return self.name
     
 class Coupon(models.Model):
+    DISCOUNT_CHOICES = [
+        ("percent", "Percent"),
+        ("fixed", "Fixed Amount"),
+    ]
+    APPLY_ON_CHOICES = [
+        ("order", "Entire Order"),
+        ("category", "Category"),
+        ("item", "Item"),
+    ]
     code = models.CharField(max_length=50, unique=True)
     discount_type = models.CharField(
         max_length=10,
-        choices=[("percent", "Percent"), ("fixed", "Fixed Amount")],
+        choices=DISCOUNT_CHOICES,
         default="percent"
     )
     discount_value = models.DecimalField(max_digits=10, decimal_places=2)
-    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    max_discount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True) 
+    min_order_value = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+    max_discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
     valid_from = models.DateTimeField()
     valid_to = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     is_new_customer_only = models.BooleanField(default=False)
-    category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
+    apply_on = models.CharField(
+        max_length=20,
+        choices=APPLY_ON_CHOICES,
+        default="order"
+    )
+    categories = models.ManyToManyField(
+        Category,
+        blank=True,
+        related_name="coupons"
+    )
+    items = models.ManyToManyField(
+        Item,
+        blank=True,
+        related_name="coupons"
+    )
+    PRICE_TYPE_CHOICES = [
+        ("current", "Current Price"),
+        ("mrp", "MRP"),
+    ]
 
+    price_basis = models.CharField(
+        max_length=10,
+        choices=PRICE_TYPE_CHOICES,
+        default="current",
+    )
+    
     def is_valid(self):
         now = timezone.now()
-        return self.is_active and self.valid_from < now <= self.valid_to
-
+        return (
+            self.is_active and
+            self.valid_from <= now <= self.valid_to
+        )
     def __str__(self):
-        return f"{self.code} | {self.discount_type} {self.discount_value}"
+        return self.code
 
 class OTP(models.Model):
     phone = models.CharField(max_length=15, unique=True)
@@ -230,6 +274,7 @@ class Invoice(models.Model):
         ('SHIPPING', 'Shipping'),
         ('OUT_FOR_DELIVERY', 'Out for Delivery'),
         ('DELIVERED', 'Delivered'),
+        ("CANCELLED", "Cancelled"),
     ]
 
     order_date = models.DateTimeField(auto_now_add=True)
