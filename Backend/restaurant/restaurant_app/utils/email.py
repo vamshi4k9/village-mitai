@@ -19,6 +19,7 @@ def send_order_confirmation_email(
     items_html = ""
     address_html = ""
     coupon_html = ""
+    tracking_url = (f"https://villagemitai.com/order_status?invoice={invoice.id}")
 
     if invoice.coupon:
         coupon_html = f"""
@@ -287,6 +288,30 @@ table.items td {{
                     <td><strong>Order Total</strong></td>
                     <td>₹{invoice.net_amount}</td>
                 </tr>
+                <tr>
+    <td><strong>Track Order</strong></td>
+    <td>
+        <a
+            href="{tracking_url}"
+            style="
+                background:#3F2305;
+                color:#fff;
+                padding:8px 14px;
+                text-decoration:none;
+                border-radius:6px;
+                display:inline-block;
+            "
+        >
+            Track Order
+        </a>
+        <br><br>
+        <small>
+            <a href="{tracking_url}">
+                {tracking_url}
+            </a>
+        </small>
+    </td>
+</tr>
             </table>
 
         </div>

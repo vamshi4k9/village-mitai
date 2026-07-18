@@ -15,6 +15,8 @@ export default function OrderStatus() {
   const queryParams = new URLSearchParams(location.search);
   const invoice = queryParams.get("invoice");
   const [reviews, setReviews] = useState({});
+  const [showCancelPopup, setShowCancelPopup] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   useEffect(() => {
     if (invoice) {
       axios
@@ -63,7 +65,11 @@ export default function OrderStatus() {
     "OUT_FOR_DELIVERY",
     "DELIVERED",
   ];
-
+  const totalItemCount =
+    order?.transactions?.reduce(
+      (sum, t) => sum + t.quantity,
+      0
+    ) || 0;
   const submitReview = async (itemId) => {
     const data = reviews[itemId];
 
@@ -104,6 +110,36 @@ export default function OrderStatus() {
           loading: false,
         },
       }));
+    }
+  };
+  const cancelOrder = async () => {
+
+    setCancelLoading(true);
+
+    try {
+
+      await axios.post(
+        `${API_BASE_URL}/cancel-order/${order.id}/`
+      );
+
+      setOrder({
+        ...order,
+        status: "CANCELLED"
+      });
+
+      setShowCancelPopup(false);
+
+    } catch (err) {
+
+      alert(
+        err.response?.data?.error ||
+        "Unable to cancel order."
+      );
+
+    } finally {
+
+      setCancelLoading(false);
+
     }
   };
 
@@ -248,7 +284,69 @@ export default function OrderStatus() {
                 <p>{order.address.address1}</p>
                 <p>{order.address.address2}</p>
                 <p>{order.address.phone_number}</p>
+                {order}
+              </div>
+            )}
+            {
+              order.payment_mode === "CASH" &&
+              order.status !== "SHIPPING" &&
+              order.status !== "OUT_FOR_DELIVERY" &&
+              order.status !== "DELIVERED" &&
+              order.status !== "CANCELLED" && (
 
+                <button
+                  className="cancel-order-btn"
+                  onClick={() => setShowCancelPopup(true)}
+                >
+                  Cancel Order
+                </button>
+
+              )
+            }
+            {showCancelPopup && (
+              <div className="popup-overlay">
+                <div className="popup-card">
+
+                  <h3>Cancel Order?</h3>
+
+                  <p>
+                    Are you sure you want to cancel this order?
+                  </p>
+
+                  <div className="popup-warning">
+                    <p>
+                      <strong>Total Items:</strong> {totalItemCount}
+                    </p>
+
+                    <p>
+                      <strong>Order ID:</strong> #{order.id}
+                    </p>
+
+                    <p>
+                      This action cannot be undone.
+                    </p>
+                  </div>
+
+                  <div className="popup-actions">
+
+                    <button
+                      className="popup-btn popup-btn-secondary"
+                      onClick={() => setShowCancelPopup(false)}
+                    >
+                      Keep Order
+                    </button>
+
+                    <button
+                      className="popup-btn popup-btn-danger"
+                      disabled={cancelLoading}
+                      onClick={cancelOrder}
+                    >
+                      {cancelLoading ? "Cancelling..." : "Cancel Order"}
+                    </button>
+
+                  </div>
+
+                </div>
               </div>
             )}
           </>

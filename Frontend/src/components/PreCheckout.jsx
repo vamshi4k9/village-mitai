@@ -44,8 +44,21 @@ export default function PreCheckout() {
       type: "",
     });
   };
-  const [showBreakdown, setShowBreakdown] = useState(false);
-  const deliveryCharge = 40;
+  // const [showBreakdown, setShowBreakdown] = useState(false);
+  const [freeDeliveryAmount, setFreeDeliveryAmount] = useState(0);
+  useEffect(() => {
+    const fetchDeliveryConfig = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/delivery-config/`);
+        setFreeDeliveryAmount(res.data.free_delivery_above);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchDeliveryConfig();
+  }, []);
+
 
   const deleteCart = async () => {
     try {
@@ -84,7 +97,7 @@ export default function PreCheckout() {
         console.error("Failed to fetch addresses", err);
       }
     };
-    
+
     fetchAddresses();
   }, []);
 
@@ -98,13 +111,26 @@ export default function PreCheckout() {
       const address = addresses.find(
         (addr) => addr.id === selectedAddress
       );
-      const cartItems = cart.map(({ item, quantity, total_price }) => ({
-        id: item.id,
-        price: total_price,
-        qty: quantity,
-        category_id: item.category,
-        phone_number: address?.phone_number || "",
-      }));
+      const cartItems = cart.map(({ item, quantity, total_price, weight }) => {
+
+        const { price, discounted } = getPriceByWeight(item, weight);
+
+        const currentPrice =
+          discounted && discounted < price
+            ? discounted * quantity
+            : price * quantity;
+
+        const originalPrice = price * quantity;
+
+        return {
+          id: item.id,
+          qty: quantity,
+          price: currentPrice,              // Current total
+          original_price: originalPrice,    // MRP total
+          category_id: item.category,
+          phone_number: address?.phone_number || "",
+        };
+      });
 
       const response = await axios.post(
         `${API_BASE_URL}/apply-coupon/`,
@@ -223,6 +249,7 @@ export default function PreCheckout() {
 
     }
   };
+
 
   const getPriceByWeight = (item, weight) => {
     const w = Number(weight);
@@ -444,17 +471,33 @@ export default function PreCheckout() {
   }, 0);
 
   const discountedItemsTotal = cart.reduce((sum, ci) => {
+
+    if (ci.item.discounted_total !== undefined) {
+      return sum + Number(ci.item.discounted_total);
+    }
+
     const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
-    const finalPrice = discounted && discounted < price ? discounted : price;
-    return sum + finalPrice * ci.quantity;
+
+    const finalPrice =
+      discounted && discounted < price
+        ? discounted * ci.quantity
+        : price * ci.quantity;
+
+    return sum + finalPrice;
+
   }, 0);
+  const DEFAULT_DELIVERY_CHARGE = 40;
+
+  const deliveryCharge =
+    discountedItemsTotal >= freeDeliveryAmount
+      ? 0
+      : DEFAULT_DELIVERY_CHARGE;
 
   const itemDiscount = originalItemsTotal - discountedItemsTotal;
 
   const finalPayable =
     discountedItemsTotal +
-    deliveryCharge +
-    -
+    deliveryCharge -
     discount;
 
   return (
@@ -471,7 +514,10 @@ export default function PreCheckout() {
                 discounted < price;
 
               const finalPrice = hasDiscount ? discounted : price;
-              const itemTotal = finalPrice * ci.quantity;
+              const itemTotal =
+                ci.item.discounted_total !== undefined
+                  ? Number(ci.item.discounted_total)
+                  : finalPrice * ci.quantity;
 
               const discountPercent = hasDiscount
                 ? Math.round(((price - discounted) / price) * 100)
@@ -668,71 +714,73 @@ export default function PreCheckout() {
           {/* {message && <p className="mt-2 text-sm ">{message}</p>} */}
         </div>
         <div className="cart-summary">
-          <div
-            className="flex justify-between items-center font-semibold cursor-pointer"
-            onClick={() => setShowBreakdown(!showBreakdown)}
-          >
-            <span>Total Items - {totalItems}</span>
-            {/* <span>{totalItems}</span> */}
 
-            <span className="text-sm">
-              {showBreakdown ? "▲" : "▼"}
-            </span>
+          <div className="flex justify-between mb-2">
+            <span>Items ({totalItems})</span>
+            <span>Rs.{originalItemsTotal}</span>
           </div>
 
-          <hr className="my-[1rem]" />
-
-          {showBreakdown && (
-            <div className="price-breakdown mt-3 text-sm">
-              <div className="flex justify-between items-center">
-                <span>Items Total</span>
-                <span>Rs.{originalItemsTotal}</span>
-              </div>
-
-              {itemDiscount > 0 && (
-                <div className="flex justify-between items-center text-green-700">
-                  <span>Item Discount</span>
-                  <span>- Rs.{itemDiscount}</span>
-                </div>
-              )}
-
-              {discount > 0 && (
-                <div className="flex justify-between items-center text-green-700">
-                  <span>Coupon Discount</span>
-                  <span>- Rs.{discount}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center">
-                <span>Delivery Charges</span>
-                <span>Rs.{deliveryCharge}</span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span>Packing & Handling</span>
-
-                <span className="flex items-center gap-2">
-                  <span className="line-through text-gray-400">
-                    Rs.{packingCharge}
-                  </span>
-
-                  <span className="text-green-700 font-semibold">
-                    Rs.0
-                  </span>
-                </span>
-              </div>
-              <hr className="my-[1rem]" />
-
+          {itemDiscount > 0 && (
+            <div className="flex justify-between mb-2 text-green-700">
+              <span>Item Discount</span>
+              <span>- Rs.{itemDiscount}</span>
             </div>
           )}
 
-          <div className="total-payable-box">
-            <div className="flex justify-between items-center text-md font-bold">
-              <span>Total</span>
-              <span className="text-[#1b5e20]">
-                Rs.{finalPayable}
-              </span>
+          {discount > 0 && (
+            <div className="flex justify-between mb-2 text-green-700">
+              <span>Coupon Discount</span>
+              <span>- Rs.{discount}</span>
             </div>
+          )}
+
+          <div className="flex justify-between mb-2">
+            <span>Delivery Charges</span>
+
+            {deliveryCharge === 0 ? (
+              <span className="text-green-700 font-semibold">
+                <span className="line-through text-gray-400 mr-2">
+                  Rs.40
+                </span>
+
+                FREE
+              </span>
+            ) : (
+              <span>Rs.{deliveryCharge}</span>
+            )}
+          </div>
+
+          {deliveryCharge > 0 && (
+            <div className="text-xs text-orange-600 mb-2">
+              Add items worth Rs.
+              {Math.max(
+                0,
+                freeDeliveryAmount - discountedItemsTotal
+              ).toFixed(0)}
+              {" "}more to get FREE delivery.
+            </div>
+          )}
+
+          <div className="flex justify-between mb-2">
+            <span>Packing & Handling</span>
+
+            <span className="text-green-700 font-semibold">
+              <span className="line-through text-gray-400 mr-2">
+                Rs.{packingCharge}
+              </span>
+
+              FREE
+            </span>
+          </div>
+
+          <hr className="my-4" />
+
+          <div className="flex justify-between font-bold text-lg">
+            <span>Total</span>
+
+            <span className="text-[#1b5e20]">
+              Rs.{Number(finalPayable).toFixed(2)}
+            </span>
           </div>
 
         </div>
@@ -741,7 +789,7 @@ export default function PreCheckout() {
 
         <h2 className="mt-4 font-semibold">Payment Method</h2>
         <div className="payment-options">
-          {["UPI","Cash On Delivery"].map((mode) => (
+          {["UPI", "Cash On Delivery"].map((mode) => (
             <label
               key={mode}
               className={`payment-option ${paymentMode === mode ? "selected" : ""} mb-2`}
