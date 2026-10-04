@@ -1,95 +1,223 @@
-.logo-header,
-.logo-mobile {
-  font-family: "Verdana";
-  font-weight: 600;
-  color: #854c10;
-  text-shadow: 1px 1px 1px rgb(68, 48, 35);
-}
-
-.logo-header {
-  font-size: 2rem;
-}
-
-.logo-mobile {
-  font-size: 1.9rem;
-  color: #854c10 !important;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.logo {
-  font-family: "Ruthie", cursive;
-  font-size: 2.9rem;
-  font-weight: 600;
-  color: #3F2305;
-  text-shadow: 3px 3px 2px rgb(153, 91, 53);
-}
-
-.nav-link {
-  color: #7e4f34 !important;
-}
-
-.navbar-collapse {
-  margin-right: 15px;
-}
-
-.desktop,
-.mobile {
+/* ================= TOP BAR ================= */
+/* Height stays 4rem: --header-offset in App.css depends on it */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4rem;
+  z-index: 1000;
   background-color: white;
-  border: none;
+  border-bottom: 1px solid #eee;
 }
 
-.desktop i,
-.nav-link i,
-.mobile i {
-  font-size: 24px;
+.site-nav-row {
+  height: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+}
+
+/* the mobile row has no d-*-flex helper, so it sets its own display */
+.site-nav-row.d-md-none {
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.site-nav-logo {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.site-nav-logo img {
+  width: 8rem;
+  max-height: 3rem;
+  object-fit: contain;
+}
+
+/* search sits in the middle and takes the free space */
+.site-nav-search {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.site-nav-search .search-box {
+  width: 100%;
+  max-width: 460px;
+}
+
+.site-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* icon button: one size and one hover for every header action */
+.site-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: #3F2305;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.site-nav-btn:hover {
+  background-color: #f4f2f1;
   color: #3F2305;
 }
 
-.navbar .container-fluid {
+.site-nav-btn i {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.site-nav-btn-label {
+  margin-top: 2px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.site-nav-icon {
   position: relative;
+  display: flex;
 }
 
-.desktop span,
-.mobile span {
+.site-nav-count {
+  position: absolute;
+  top: -6px;
+  right: -9px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: #3F2305;
-  border-radius: 50%;
+  border-radius: 9px;
   color: white;
-  padding: 2px 5px;
   font-size: 0.6rem;
-  margin-right: -6px;
+  font-weight: 600;
+  line-height: 1;
 }
 
-.mobile-links a {
+/* Mobile: equal-width sides keep the logo exactly centred */
+.site-nav-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.site-nav-side.end {
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .site-nav-logo img {
+    width: 7rem;
+  }
+
+  .site-nav-btn {
+    padding: 0;
+  }
+}
+
+/* ================= CATEGORY BAR (laptop) ================= */
+.category-nav-sticky {
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  width: 100%;
+  /* below the top bar so the search results can drop over it */
+  z-index: 999;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  /* fixed height keeps it in sync with --header-offset in App.css */
+  height: 42px;
+  padding: 0 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+
+.category-nav-sticky::-webkit-scrollbar {
+  display: none;
+}
+
+/* auto margins centre the links, and fall back to left-aligned
+   scrolling when there are too many to fit */
+.category-nav-inner {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  width: max-content;
+  height: 100%;
+  margin: 0 auto;
+}
+
+.category-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
   color: #3F2305;
-}
-
-.list-unstyled a {
-  color: #dfd7bf;
   font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
-.navbar-toggler {
-  border: none;
+.category-link:hover {
+  color: #c77b00;
 }
 
-.navbar-toggler-icon {
-  filter: invert(40%) sepia(57%) saturate(500%) hue-rotate(20deg);
+/* underline marks the page you are on */
+.category-link.active {
+  font-weight: 600;
 }
 
-/* Mobile Sidebar */
+.category-link.active::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 0;
+  height: 2px;
+  background-color: #3F2305;
+  border-radius: 2px 2px 0 0;
+}
+
+/* ================= SIDE MENU (mobile) ================= */
 .mobile-sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  max-width: 350px;
+  width: 290px;
+  max-width: 85%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
   background-color: white;
   z-index: 1051;
-  padding: 1.5rem 1rem;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   animation: slideInLeft 0.3s ease forwards;
+  text-align: left;
 }
 
 @keyframes slideInLeft {
@@ -101,16 +229,95 @@
   }
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  /* font-size: 2rem; */
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  cursor: pointer;
-  color :#3f2305;
-  line-height: 1;
+.mobile-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 4rem;
+  padding: 0 8px 0 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-sidebar-head img {
+  width: 7rem;
+  max-height: 3rem;
+  object-fit: contain;
+}
+
+.mobile-sidebar-head .site-nav-btn i {
+  font-size: 18px;
+}
+
+/* the list scrolls, the account link stays at the bottom */
+.mobile-sidebar-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.mobile-sidebar-title {
+  margin: 8px 8px 6px;
+  color: #3F2305;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.mobile-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #3F2305;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-sidebar-link:hover {
+  background-color: #f4f2f1;
+  color: #3F2305;
+}
+
+.mobile-sidebar-link.active {
+  background-color: #eae2da;
+  font-weight: 600;
+}
+
+.mobile-sidebar-thumb {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #f4f2f1;
+  object-fit: cover;
+  font-size: 18px;
+}
+
+.mobile-sidebar-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.mobile-sidebar-link .bi-chevron-right {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.mobile-sidebar-foot {
+  flex-shrink: 0;
+  padding: 8px;
+  border-top: 1px solid #eee;
 }
 
 .sidebar-backdrop {
@@ -123,243 +330,132 @@
   z-index: 1050;
 }
 
-.mobile-sidebar-main {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: flex-end;
-  margin-top: 35px;
-}
-
-.mobile-sidebar-main a {
-  color: #3f2305;
-  font-size: 18px;
-}
-
-.mobile-sidebar a {
-  width: 100%;
-  display: block;
-  padding: 10px 12px;
-  border-bottom: 1px solid #ddd;
-  color: #3f2305;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-}
-
-.mobile-sidebar a:hover {
-  background-color: #f2f2f2;
-}
-
-.mobile-sidebar {
-  padding: 0;
-}
-
-/* Category Bar */
-.category-nav {
-  position: fixed;
-  top: 0;
-  z-index: 999;
-  width: 100%;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #ddd;
-  overflow-x: auto;
-  white-space: nowrap;
-}
-
-.category-nav-sticky {
-  position: sticky;
-  top: 65px;
-  z-index: 999;
-  background-color: white;
-  border-bottom: 1px solid #ddd;
-}
-
-.category-bar {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-}
-
-.category-link {
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.category-link:hover {
-  color: #c77b00;
-}
-
-/* Search Input */
-.search-box input {
-  padding-left: 12px;
-}
-
-.search-wrapper {
-  position: relative;
-  height: 36px;
-  width: 36px;
-  transition: width 0.3s ease;
-  overflow: hidden;
-}
-
-.search-wrapper.expanded {
-  width: 200px;
-}
-
-.search-input {
-  width: 100%;
-  height: 100%;
-  padding: 5px 35px 5px 10px;
-  border: 1px solid #3f2305;
-  outline: none;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.search-icon-inside {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #555;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.search-box-wrapper {
-  position: relative;
-  width: 95%;
-  height: 43px;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  margin: 10px 0 10px 6px;
-}
-
-.search-wrapper-mobile.expanded .search-input {
-  opacity: 1;
-}
-
-.search-wrapper-mobile .search-input {
-  width: 60%;
-  height: 100%;
-  padding: 0 35px 0 10px;
-  outline: none;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.search-wrapper-mobile .search-icon-inside {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #555;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.search-box-wrapper input:focus {
-  outline: none;
-  box-shadow: none;
-  border-color: #3f2305;
-}
-
-/* Header Wrapper */
-.main-header-wrapper {
-  background-color: white;
-  border-bottom: 1px solid #eee;
-  z-index: 998;
-}
-
-/* Cart Button and Count */
-.cart-btn {
-  background: none;
-  border: none;
-  position: relative;
-  padding: 0;
-}
-
-.cart-count {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background-color: #3F2305;
-  border-radius: 50%;
-  color: white;
-  padding: 2px 6px;
-  font-size: 0.6rem;
-  line-height: 1;
-  min-width: 18px;
-  text-align: center;
-}
-
-/* Optional adjustment for small screens */
-@media (max-width: 360px) {
-  .cart-count {
-    top: -4px;
-    right: -4px;
-    font-size: 0.55rem;
-  }
-  .navbar-brand{
-    font-size: 10px;
-  }
-}
-.mobile-search-top {
-  position: sticky;
-  top: 64px; /* header height */
-  z-index: 999;
-  background: #edede9;
-  padding: 8px 12px;
-}
-
-.mobile-search-top input {
-  padding-left: 32px;
-  font-size: 0.9rem;
-}
-
-.mobile-search-top .search-icon-inside {
-  position: absolute;
-  left: 22px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #666;
-}
-
-/* Mobile Search Overlay */
+/* ================= MOBILE SEARCH ================= */
 .mobile-search-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  background: white;
-  z-index: 2000;
-  padding: 0.75rem;
-}
-
-/* Search bar container */
-.mobile-search-bar {
+  /* covers only the header, so the page stays visible while typing */
+  height: 4rem;
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: #f4f4f4;
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: white;
+  z-index: 2000;
+  padding: 0 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Input */
-.mobile-search-input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 1rem;
+.mobile-search-overlay .search-box {
+  width: 100%;
 }
 
-/* Close button */
-.mobile-search-close {
+/* tap anywhere outside the search to close it */
+.mobile-search-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1999;
+}
+
+/* ================= SHARED ================= */
+/* close button of the cart drawer */
+.close-btn {
   background: none;
   border: none;
-  font-size: 1.2rem;
+  position: absolute;
+  top: 10px;
+  right: 15px;
   cursor: pointer;
+  color :#3f2305;
+  line-height: 1;
+}
+
+/* ================= FOOTER ================= */
+.site-footer {
+  margin-top: 32px;
+  background-color: #3F2305;
+  color: #dfd7bf;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+/* brand on the left, the two link lists on the right */
+.site-footer-inner {
+  /* same width as the page content above it */
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 28px 24px 22px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.site-footer-brand img {
+  width: 10rem;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.site-footer-brand p {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+}
+
+/* same size and weight as the section headings on every page */
+.site-footer-col h5 {
+  margin: 0 0 10px;
+  color: #f2ead3;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.site-footer-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.site-footer-links a {
+  color: #dfd7bf;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.site-footer-links a:hover {
+  color: #f2ead3;
+  text-decoration: underline;
+}
+
+.site-footer-bottom {
+  padding: 12px 24px;
+  border-top: 1px solid rgba(223, 215, 191, 0.2);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Mobile: logo centred on top, the two lists side by side below it */
+@media (max-width: 767px) {
+  .site-footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 16px;
+    padding: 24px 16px 18px;
+  }
+
+  .site-footer-brand {
+    grid-column: 1 / -1;
+    text-align: center;
+  }
+
+  .site-footer-brand img {
+    margin: 0 auto;
+  }
 }

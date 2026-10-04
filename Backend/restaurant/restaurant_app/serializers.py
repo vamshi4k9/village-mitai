@@ -157,9 +157,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class InvoiceListSerializer(serializers.ModelSerializer):
+    can_cancel = serializers.ReadOnlyField()
+
     class Meta:
         model = Invoice
-        fields = ["id", "order_date", "payment_mode", "net_amount", "status"]
+        fields = ["id", "order_date", "payment_mode", "net_amount", "status", "tracking_token",
+                  "can_cancel", "refund_status", "refund_amount"]
 
 
 class ItemDetailSerializer(serializers.ModelSerializer):
@@ -188,6 +191,7 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
 
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
+    can_cancel = serializers.ReadOnlyField()
     transactions = TransactionDetailSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)  
 
@@ -204,6 +208,9 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "status",
             "transactions",
             "address",
+            "can_cancel",
+            "refund_status",
+            "refund_amount",
         ]
 
 

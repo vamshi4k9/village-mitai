@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import CategorySection from "./CategorySection";
+import ProductCard from "./ProductCard";
+import "../styles/CategorySection.css";
+import "../styles/Home.css";
 import { API_BASE_URL } from '../constants';
 import { useNavigate } from "react-router-dom";
 
@@ -130,142 +132,140 @@ export default function Home() {
     fetchCategories();
   }, []);
 
-  const getColumns = (count) => {
-    if (count <= 4) return count;
-    if (count <= 8) return Math.ceil(count / 2);
-    if (count <= 15) return 5;
-    return 6;
-  };
+  const [items, setItems] = useState([]);
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/items/`);
+        setItems(res.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-  const columns = getColumns(categories.length);
-
-  const bannerImages = [
-    `${process.env.PUBLIC_URL}/images/top_img_1.webp`,
-    `${process.env.PUBLIC_URL}/images/top_img_2.webp`,
-    `${process.env.PUBLIC_URL}/images/top_img_3.webp`,
-  ];
+    fetchItems();
+  }, []);
 
   return (
-    <div className="mt-[4rem]">
-      <div
-        id="homeCarousel"
-        className="carousel slide"
-        data-bs-ride="carousel"
-        data-bs-interval="3000"
-      >
-        {/* Indicator dots */}
-        <div className="carousel-indicators">
-          {bannerImages.map((_, index) => (
-            <button
-              key={index}
-              type="button"
-              data-bs-target="#homeCarousel"
-              data-bs-slide-to={index}
-              className={index === 0 ? "active" : ""}
-              aria-current={index === 0 ? "true" : undefined}
-              aria-label={`Slide ${index + 1}`}
-            />
-          ))}
-        </div>
-        <div className="carousel-inner">
-          {banners.map((banner, index) => (
-            <div
-              key={banner.id}
-              className={`carousel-item ${index === 0 ? "active" : ""}`}
-              onClick={() => handleBannerClick(banner)}
-              style={{ cursor: "pointer" }}
-            >
-              <img
-                src={banner.image}
-                className="d-block w-100 carousel-img"
-                alt={`Banner ${index + 1}`}
-              />
+    <div className="home">
+      {/* Banner */}
+      {banners.length > 0 && (
+        <div className="home-banner">
+          <div
+            id="homeCarousel"
+            className="carousel slide"
+            data-bs-ride="carousel"
+            data-bs-interval="3000"
+          >
+            {/* Indicator dots */}
+            {banners.length > 1 && (
+              <div className="carousel-indicators">
+                {banners.map((banner, index) => (
+                  <button
+                    key={banner.id}
+                    type="button"
+                    data-bs-target="#homeCarousel"
+                    data-bs-slide-to={index}
+                    className={index === 0 ? "active" : ""}
+                    aria-current={index === 0 ? "true" : undefined}
+                    aria-label={`Slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+            <div className="carousel-inner">
+              {banners.map((banner, index) => (
+                <div
+                  key={banner.id}
+                  className={`carousel-item ${index === 0 ? "active" : ""}`}
+                  onClick={() => handleBannerClick(banner)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <img
+                    src={banner.image}
+                    className="d-block w-100 carousel-img"
+                    alt={`Banner ${index + 1}`}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <button
-          className="carousel-control-prev"
-          type="button"
-          data-bs-target="#homeCarousel"
-          data-bs-slide="prev"
-        >
-          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-        </button>
-        <button
-          className="carousel-control-next"
-          type="button"
-          data-bs-target="#homeCarousel"
-          data-bs-slide="next"
-        >
-          <span className="carousel-control-next-icon" aria-hidden="true"></span>
-        </button>
-      </div>
-
-      {freeDeliveryAmount && (
-        <div className="w-full bg-[#4b2a0d] text-white px-4 py-1 text-center shadow-sm">
-          <p className="m-0 text-sm md:text-base font-medium">
-            Free Delivery on orders above Rs.{freeDeliveryAmount}
-          </p>
+            {banners.length > 1 && (
+              <>
+                <button
+                  className="carousel-control-prev"
+                  type="button"
+                  data-bs-target="#homeCarousel"
+                  data-bs-slide="prev"
+                >
+                  <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+                </button>
+                <button
+                  className="carousel-control-next"
+                  type="button"
+                  data-bs-target="#homeCarousel"
+                  data-bs-slide="next"
+                >
+                  <span className="carousel-control-next-icon" aria-hidden="true"></span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
-      {/* Shop By Category */}
-      <div className="py-2 bg-[#fffaf5]">
-        <h2 className="text-xl md:text-2xl font-bold text-center text-[#4b2a0d] mb-4">
-          Shop By Category
-        </h2>
 
-        <div
-          className="grid gap-4 px-4"
-          style={{
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          }}
-        >
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => navigate(`/collections/${cat.name}`)}
-              className="cursor-pointer text-center"
-            >
-              <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-2 border-[#f3e3d3] shadow-sm">
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <p className="mt-2 text-sm font-medium text-[#4b2a0d]">
-                {cat.name}
-              </p>
-            </div>
-          ))}
+      {freeDeliveryAmount && (
+        <div className="home-strip">
+          <i className="bi bi-truck"></i>
+          <p>Free Delivery on orders above Rs.{freeDeliveryAmount}</p>
         </div>
-      </div>
+      )}
 
-      {/* Category Sections */}
-      {categories.map((cat) => (
-        <CategorySection
-          key={cat.id}
-          categoryName={cat.name}
-          categoryImageUrl={cat.image}
-        />
-      ))}
+      {/* Shop By Category */}
+      {categories.length > 0 && (
+        <div className="home-section">
+          <h2 className="page-title">Shop By Category</h2>
 
-      {/* Category Sections */}
-      {categories.map((cat) => (
-        <CategorySection
-          key={cat.id}
-          categoryName={cat.name}
-          categoryImageUrl={cat.image}
-        />
-      ))}
+          <div className="home-categories">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => navigate(`/collections/${cat.name}`)}
+                className="home-category"
+              >
+                <div className="home-category-img">
+                  <img src={cat.image} alt={cat.name} />
+                </div>
+                <p>{cat.name}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All items in one continuous grid, in the order the backend sends
+          (sort order, then bestsellers, out of stock last) */}
+      {items.length > 0 && (
+        <div className="home-section">
+          <h2 className="page-title">Our Collection</h2>
+
+          <div className="container">
+            <div className="flex-grid">
+              {items.map((item) => (
+                <div key={item.id} className="flex-item">
+                  <ProductCard item={item} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showMobilePopup && (
         <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center px-3">
 
           {/* Popup */}
-          <div className="relative w-full max-w-sm bg-white rounded-xl shadow-xl p-5">
+          <div className="relative w-full max-w-sm bg-white rounded-md shadow-xl p-5">
 
             {/* Skip */}
             <button

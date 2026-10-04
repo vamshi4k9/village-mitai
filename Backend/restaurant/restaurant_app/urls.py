@@ -1,8 +1,8 @@
 from django.urls import path, include
-from .views import BannerListView, CategoryViewSet, CreateReviewView, DeliveryConfigAPIView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, cancel_order, create_offline_order, save_mobile,upload_image, search_items ,admin_login, agent_submit, validate_coupon, get_site_config
+from .views import BannerListView, CategoryViewSet, CreateReviewView, DeliveryConfigAPIView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, cancel_order, create_offline_order, save_mobile,upload_image, search_items ,admin_login, agent_submit, validate_coupon, get_site_config, delivery_quote_view
 from rest_framework.routers import DefaultRouter
-from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, AddressView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices, create_order, verify_payment
-from rest_framework_simplejwt.views import TokenObtainPairView
+from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, GoogleLoginView, AddressView, AddressDetailView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices, create_order, verify_payment
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 
@@ -23,6 +23,8 @@ urlpatterns = [
     path('api/addresses/', AddressView.as_view()),
     path('api/register/', RegisterView.as_view()),
     path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/google-login/', GoogleLoginView.as_view(), name='google_login'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/admin-login/', admin_login, name='admin_login'),
     path('api/profile/', ProfileView.as_view()),
     path("api/create-order/", CreateOrderView.as_view(), name="create-order"),
@@ -33,6 +35,8 @@ urlpatterns = [
     path('api/order-detail/<int:invoice_id>/', InvoiceDetailView.as_view(), name='invoice-detail'),
     path('api/submit-rating/', SubmitRatingView.as_view(), name='submit-rating'),
     path('api/create-address/', AddressView.as_view(), name='create-address'),
+    path('api/update-address/<int:address_id>/', AddressDetailView.as_view(), name='update-address'),
+    path('api/delete-address/<int:address_id>/', AddressDetailView.as_view(), name='delete-address'),
     path('api/all-transactions-invoices/', get_all_transactions_and_invoices, name='all-transactions-invoices'),
     path('api/submit-recruit/', FieldMarketingFormCreateView.as_view(), name='submit-form'),
     path('api/create-order-razor/', create_order, name='create_order'),
@@ -48,6 +52,7 @@ urlpatterns = [
     path("api/order-reviews/<int:invoice_id>/", OrderReviewStatus.as_view()),
     path('api/save-mobile/', save_mobile),
     path("api/delivery-config/",DeliveryConfigAPIView.as_view(),name="delivery-config"),
+    path("api/delivery-quote/", delivery_quote_view, name="delivery-quote"),
     path("api/site-config/", get_site_config),
     path("api/cancel-order/<int:invoice_id>/", cancel_order, name="cancel-order"),
 ]

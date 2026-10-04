@@ -4,6 +4,7 @@ import "../styles/PaymentResultModal.css";
 export default function PaymentResultModal({
   open,
   type,
+  title,
   status,
   message,
   data,
@@ -23,9 +24,12 @@ export default function PaymentResultModal({
         </div>
 
         <h2 className="payment-modal-title">
-          {isSuccess
-            ? `${type} Successful`
-            : `${type} Failed`}
+          {/* an explicit title wins; a popup opened without a type still gets a readable one */}
+          {title
+            ? title
+            : type
+            ? `${type} ${isSuccess ? "Successful" : "Failed"}`
+            : isSuccess ? "Success" : "Something went wrong"}
         </h2>
 
         <p className="payment-modal-message">

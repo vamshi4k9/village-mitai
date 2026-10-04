@@ -63,9 +63,7 @@ export default function AgentDashboard() {
 
         <h2 className="dash-title">Agent Dashboard</h2>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
+        {loading ? null : (
           <>
             {/* ✅ Summary Stats */}
             <div className="summary-grid">

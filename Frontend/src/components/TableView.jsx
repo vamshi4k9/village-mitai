@@ -2,6 +2,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import "../styles/TableView.css";
 import { API_BASE_URL, API_BASE_URL_MEDIA } from "../constants";
+import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
 
 function TableView({ invoices = [], userRole, setInvoices }) {
   const [expandedInvoiceId, setExpandedInvoiceId] = useState(null);
@@ -131,7 +132,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                   {/* RIGHT */}
                   <div className="invoice-right">
                     <div className="invoice-amount">
-                      ₹{parseFloat(invoice.net_amount).toFixed(2)}
+                      Rs.{parseFloat(invoice.net_amount).toFixed(2)}
                     </div>
 
                     <div className="status-wrapper">
@@ -230,9 +231,13 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                           <strong>{t.item.name}</strong>
                           {/* <p>{t.item.description || "No description"}</p> */}
                         </div>
-                        <span>x{t.quantity}</span>
                         <span>
-                          ₹{(parseFloat(t.item_amount) * t.quantity).toFixed(2)}
+                          {isPiece(t.weight)
+                            ? `By Piece: ${formatQuantity(t.quantity, t.weight)}`
+                            : `By Weight: ${formatWeight(t.weight)} x${t.quantity}`}
+                        </span>
+                        <span>
+                          Rs.{(parseFloat(t.item_amount) * t.quantity).toFixed(2)}
                         </span>
                       </div>
                     ))}

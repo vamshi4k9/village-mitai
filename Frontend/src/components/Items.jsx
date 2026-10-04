@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import ProductCard from "./ProductCard";
+import "../styles/CategorySection.css";
 import { API_BASE_URL} from '../constants'; 
 
 
@@ -32,19 +33,19 @@ export default function Items() {
 
     return (
         <div className="container all-items">
-            <h1 className="text-center mb-4" style={{ color: '#3F2305' }}>All Items</h1>
+            <h2 className="page-title">All Items</h2>
 
-            <div className="row justify-content-center all-items-div">
-                {allitems.length === 0 ? (
-                    <p className="text-center">No items found</p>
-                ) : (
-                    allitems.map((item) => (
-                        <div key={item.id} className="col-6 col-md-4 col-lg-3 d-flex justify-content-center">
-                            <ProductCard item={item} smallImage={true} />
+            {allitems.length === 0 ? (
+                <p className="text-center">No items found</p>
+            ) : (
+                <div className="flex-grid">
+                    {allitems.map((item) => (
+                        <div key={item.id} className="flex-item">
+                            <ProductCard item={item} />
                         </div>
-                    ))
-                )}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

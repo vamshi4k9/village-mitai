@@ -30,7 +30,7 @@ const UploadImage = () => {
   };
 
   return (
-    <div style={{ paddingTop: "160px" }}>
+    <div style={{ paddingTop: "50px" }}>
       <input type="file" onChange={handleFileChange} />
       <button onClick={handleUpload}>Upload</button>
       {imageUrl && <img src={imageUrl} alt="Uploaded" />}

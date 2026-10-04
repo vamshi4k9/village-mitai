@@ -3,15 +3,15 @@ import "../styles/Privacy.css";
 
 const PrivacyPolicy = () => {
     return (
-        <div className="container mt-4 d-flex flex-column align-items-center">
+        <div className="container page-static">
 
-            <h2 className="text-center mb-4 contact">Privacy Policy</h2>
+            <h2 className="page-title">Privacy Policy</h2>
 
-            <p className="text-center w-75">
+            <p className="page-text text-center">
                 <strong>Effective Date:</strong> 2029-12-31
             </p>
 
-            <p className="text-center w-75">
+            <p className="page-text text-center">
                 At <strong>Village Mitai</strong>, we value your trust and are committed
                 to protecting your personal information. This Privacy Policy explains how
                 we collect, use, and safeguard your data when you visit our website or

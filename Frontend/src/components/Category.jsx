@@ -27,11 +27,9 @@ export default function Category() {
 
   return (
     <div className="category-page">
-      <h2 className="category-title">{categoryName}</h2>
+      <h2 className="page-title">{categoryName}</h2>
 
-      {loading ? (
-        <p className="loading-text">Loading items...</p>
-      ) : Array.isArray(items) && items.length > 0 ? (
+      {loading ? null : Array.isArray(items) && items.length > 0 ? (
         <div className="category-grid">
           {items.map((item) => (
             <ProductCard key={item.id} item={item} />

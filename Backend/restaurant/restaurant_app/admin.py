@@ -1,10 +1,19 @@
 from django.contrib import admin
 from .models import Category, DeliveryFeeConfig, Item, NotificationEmail, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile, Coupon
-from .models import APIRequestLog, SiteConfig
+from .models import APIRequestLog, SiteConfig, StoreLocation, DeliveryCharge
 from django.utils.html import format_html
 # Register your models here.
 admin.site.register(Category)
-admin.site.register(Item)
+
+@admin.register(Item)
+class ItemAdmin(admin.ModelAdmin):
+    # sort_order, bestseller and available can be edited straight from the list
+    list_display = ("name", "category", "sort_order", "bestseller", "available", "piece_weight", "piece_price")
+    list_editable = ("sort_order", "bestseller", "available", "piece_weight", "piece_price")
+    list_filter = ("category", "bestseller", "available")
+    search_fields = ("name",)
+    ordering = ("sort_order", "name")
+
 admin.site.register(Banner)
 
 admin.site.register(Order)
@@ -33,6 +42,20 @@ class CartAdmin(admin.ModelAdmin):
         'updated_at',
     )    
 admin.site.register(Coupon)
+
+
+@admin.register(StoreLocation)
+class StoreLocationAdmin(admin.ModelAdmin):
+    list_display = ("name", "latitude", "longitude", "max_delivery_km", "is_active")
+    list_editable = ("max_delivery_km", "is_active")
+
+
+@admin.register(DeliveryCharge)
+class DeliveryChargeAdmin(admin.ModelAdmin):
+    # the charge can be edited straight from the list
+    list_display = ("__str__", "up_to_km", "charge")
+    list_editable = ("up_to_km", "charge")
+    ordering = ("up_to_km",)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):

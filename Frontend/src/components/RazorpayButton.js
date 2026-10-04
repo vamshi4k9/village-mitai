@@ -26,7 +26,7 @@ const RazorpayButton = ({ amount, orderId }) => {
     razor.open();
   };
 
-  return <button onClick={handlePayment}>Pay - ₹{amount}</button>;
+  return <button onClick={handlePayment}>Pay - Rs.{amount}</button>;
 };
 
 export default RazorpayButton;

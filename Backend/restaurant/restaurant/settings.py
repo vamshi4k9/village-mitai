@@ -57,6 +57,8 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),    
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
+MAPBOX_TOKEN = config("MAPBOX_TOKEN", default="")
+GOOGLE_CLIENT_ID = "367509210442-mm65jklfj09mg82cs9isttne3je517pq.apps.googleusercontent.com"
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',

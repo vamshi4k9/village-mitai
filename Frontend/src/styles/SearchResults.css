@@ -1,0 +1,35 @@
+.search-page {
+  padding-top: 0;
+  padding-bottom: 20px;
+  color: #3F2305;
+}
+
+.search-page-empty button {
+  padding: 8px 14px;
+  background-color: #3F2305;
+  color: #f9f9f9;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.search-page-empty button:hover {
+  background-color: #3a1e08;
+}
+
+.search-page-summary {
+  margin: 0 0 14px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.search-page-empty {
+  padding: 30px 14px;
+  text-align: center;
+}
+
+.search-page-empty p {
+  margin-bottom: 14px;
+}

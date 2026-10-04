@@ -1,0 +1,131 @@
+.search-box {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+  color: #3F2305;
+  text-align: left;
+}
+
+.search-box-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 10px;
+  height: 38px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+.search-box-bar:focus-within {
+  border-color: #3F2305;
+}
+
+.search-box-bar i {
+  font-size: 16px;
+  color: #3F2305;
+  cursor: pointer;
+}
+
+.search-box-bar input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #3F2305;
+  font-size: 14px;
+}
+
+.search-box-clear {
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: #3F2305;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* Results directly under the box */
+.search-box-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
+  z-index: 5;
+}
+
+.search-box-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #d8cfc4;
+  cursor: pointer;
+}
+
+.search-box-item:hover,
+.search-box-all:hover {
+  background: #eae2da;
+}
+
+.search-box-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.search-box-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+
+.search-box-item-price {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.search-box-item.sold-out img {
+  filter: grayscale(70%);
+  opacity: 0.6;
+}
+
+.search-box-all {
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.search-box-empty {
+  margin: 0;
+  padding: 14px 10px;
+  font-size: 14px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Laptops with a narrow window: keep room for the logo and icons */
+@media (min-width: 768px) and (max-width: 991px) {
+  .search-box {
+    width: 240px;
+  }
+}

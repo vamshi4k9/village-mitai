@@ -328,7 +328,7 @@ const OfflineOrder = () => {
 
                                     <td>{item.name}</td>
                                     <td>{item.weight}</td>
-                                    <td>₹{item.price}</td>
+                                    <td>Rs.{item.price}</td>
 
                                     <td>
                                         <button
@@ -381,19 +381,19 @@ const OfflineOrder = () => {
 
                     <div className="summary-row">
                         <span>Total</span>
-                        <span>₹{getTotal()}</span>
+                        <span>Rs.{getTotal()}</span>
                     </div>
 
                     {couponApplied && (
                         <div className="summary-row discount">
                             <span>Coupon VAT20</span>
-                            <span>-₹{discount.toFixed(2)}</span>
+                            <span>-Rs.{discount.toFixed(2)}</span>
                         </div>
                     )}
 
                     <div className="summary-row final">
                         <span>Final Total</span>
-                        <span>₹{(getTotal() - discount).toFixed(2)}</span>
+                        <span>Rs.{(getTotal() - discount).toFixed(2)}</span>
                     </div>
 
                 </div>

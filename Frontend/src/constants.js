@@ -15,15 +15,18 @@ const getSessionKey = () => {
   return sessionKey;
 };
 
-const token = localStorage.getItem("access_token") || null
-
 export const SESSION_KEY = {
   headers: { "X-Session-Key": getSessionKey() },
 };
 
+// headers is a getter so the token is read at request time, not once at page
+// load (otherwise a login without a reload would send "Bearer null")
 export const SESSION_TOKEN = {
-  headers: {
-    Authorization: `Bearer ${token}`,
-    "X-Session-Key": getSessionKey()
+  get headers() {
+    const token = localStorage.getItem("access_token");
+    return {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Session-Key": getSessionKey(),
+    };
   },
 };

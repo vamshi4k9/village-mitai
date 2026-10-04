@@ -1,10 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import "../styles/OrderStatus.css";
-import { API_BASE_URL, API_BASE_URL_MEDIA } from "../constants";
+import { API_BASE_URL, API_BASE_URL_MEDIA, SESSION_TOKEN } from "../constants";
+import { getValidAccessToken } from "../utils/auth";
+import { CartContext } from "./CartContext";
+import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
 import { Link } from "react-router-dom";
 
+
+const STEP_LABELS = {
+  ORDERED: "Order Placed",
+  IN_PROGRESS: "Being Prepared",
+  SHIPPING: "Shipped",
+  OUT_FOR_DELIVERY: "Out for Delivery",
+  DELIVERED: "Delivered",
+};
+
+const PAYMENT_LABELS = {
+  CASH: "Cash on Delivery",
+  UPI: "Paid Online",
+};
+
+const REFUND_LABELS = {
+  PENDING: "In progress",
+  PROCESSED: "Completed",
+  FAILED: "Failed",
+};
+
+const REFUND_NOTES = {
+  PENDING: "The refund has been started. It usually reaches your account in 5-7 working days.",
+  PROCESSED: "The amount has been sent back to the account you paid from.",
+  FAILED: "The refund could not be completed. Please contact us and we will sort it out.",
+};
 
 export default function OrderStatus() {
   const [order, setOrder] = useState(null);
@@ -13,27 +41,38 @@ export default function OrderStatus() {
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const invoice = queryParams.get("invoice");
+  const invoiceId = queryParams.get("invoice_id") || queryParams.get("invoice");
+  // secret from the emailed tracking link; lets the order open without a login
+  const trackingToken = queryParams.get("token") || undefined;
+  const isLoggedIn = !!localStorage.getItem("access_token");
   const [reviews, setReviews] = useState({});
   const [showCancelPopup, setShowCancelPopup] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const { triggerToast } = useContext(CartContext);
   useEffect(() => {
-    if (invoice) {
-      axios
-        .get(`${API_BASE_URL}/order-detail/${invoice}/`)
+    if (invoiceId) {
+      // the order opens for its owner (login), the browser that placed it
+      // (session key) or anyone holding the tracking link (token)
+      getValidAccessToken()
+        .then(() =>
+          axios.get(`${API_BASE_URL}/order-detail/${invoiceId}/`, {
+            ...SESSION_TOKEN,
+            params: { token: trackingToken },
+          })
+        )
         .then((res) => {
           setOrder(res.data);
           setLoading(false);
         })
         .catch(() => {
-          setError("Unable to fetch order status.");
+          setError("We couldn't find this order. Open it from your profile, or use the tracking link you received.");
           setLoading(false);
         });
     } else {
       setError("Invalid order link.");
       setLoading(false);
     }
-  }, [invoice]);
+  }, [invoiceId, trackingToken]);
 
   useEffect(() => {
     if (order?.id) {
@@ -89,7 +128,8 @@ export default function OrderStatus() {
         invoice_id: order.id,
         rating: data.rating,
         review: data.review || "",
-      });
+        token: trackingToken,
+      }, SESSION_TOKEN);
 
       setReviews((prev) => ({
         ...prev,
@@ -118,20 +158,28 @@ export default function OrderStatus() {
 
     try {
 
-      await axios.post(
-        `${API_BASE_URL}/cancel-order/${order.id}/`
+      const res = await axios.post(
+        `${API_BASE_URL}/cancel-order/${order.id}/`,
+        { token: trackingToken },
+        SESSION_TOKEN
       );
 
       setOrder({
         ...order,
-        status: "CANCELLED"
+        status: "CANCELLED",
+        can_cancel: false,
+        refund_status: res.data.refund_status,
+        refund_amount: res.data.refund_amount,
       });
 
       setShowCancelPopup(false);
+      triggerToast("Order cancelled", 2000);
 
     } catch (err) {
 
-      alert(
+      // close the confirm popup and show the reason in the small bottom popup
+      setShowCancelPopup(false);
+      triggerToast(
         err.response?.data?.error ||
         "Unable to cancel order."
       );
@@ -150,7 +198,10 @@ export default function OrderStatus() {
   return (
     <div className="order-status-container">
       <div className="order-card">
-        {loading && <p>Loading...</p>}
+        <div className="order-nav">
+          <Link to="/">← Home</Link>
+          {isLoggedIn && <Link to="/profile">My Orders</Link>}
+        </div>
         {error && <div className="error-box">{error}</div>}
 
         {order && (
@@ -170,6 +221,7 @@ export default function OrderStatus() {
               {new Date(order.order_date).toLocaleString()}
             </p>
 
+            <h4 className="order-section-title">Items</h4>
             <div className="order-items">
               {order.transactions.map((t, i) => (
                 <div key={i} className="order-item-wrapper">
@@ -182,13 +234,17 @@ export default function OrderStatus() {
                       />
                     </Link>
 
-                    <div>
+                    <div className="order-item-text">
                       <p className="item-name">{t.item.name}</p>
-                      <p className="item-meta">Qty: {t.quantity}</p>
+                      <p className="item-meta">
+                        {isPiece(t.weight)
+                          ? `By Piece · ${formatQuantity(t.quantity, t.weight)}`
+                          : `${formatWeight(t.weight)} · ${formatQuantity(t.quantity, t.weight)}`}
+                      </p>
                     </div>
 
                     <div className="item-price">
-                      ₹{(parseFloat(t.item_amount) * t.quantity).toFixed(2)}
+                      Rs.{(parseFloat(t.item_amount) * t.quantity).toFixed(2)}
                     </div>
                   </div>
 
@@ -258,6 +314,33 @@ export default function OrderStatus() {
               ))}
             </div>
 
+            <div className="order-summary">
+              <div className="order-summary-row">
+                <span>Payment</span>
+                <span>{PAYMENT_LABELS[order.payment_mode] || order.payment_mode}</span>
+              </div>
+              <div className="order-summary-row total">
+                <span>Total</span>
+                <span>Rs.{order.net_amount}</span>
+              </div>
+            </div>
+
+            {order.status === "CANCELLED" && (
+              <div className="error-box">This order has been cancelled.</div>
+            )}
+
+            {order.refund_status && (
+              <div className="refund-box">
+                <p className="refund-title">
+                  Refund of Rs.{order.refund_amount}: {REFUND_LABELS[order.refund_status] || order.refund_status}
+                </p>
+                <p>{REFUND_NOTES[order.refund_status]}</p>
+              </div>
+            )}
+
+            {order.status !== "CANCELLED" && (
+            <>
+            <h4 className="order-section-title">Order Status</h4>
             <div className="timeline">
               {steps.map((step, i) => {
                 const currentIndex = getStatusIndex();
@@ -270,29 +353,29 @@ export default function OrderStatus() {
                   <div className={`timeline-item ${className}`} key={i}>
                     <div className="timeline-marker"></div>
                     <div className="timeline-content">
-                      <p className="timeline-title">{step.replaceAll("_", " ")}</p>
+                      <p className="timeline-title">{STEP_LABELS[step]}</p>
+                      {className === "active" && (
+                        <p className="timeline-desc">Current status</p>
+                      )}
                     </div>
                   </div>
                 );
               })}
             </div>
+            </>
+            )}
 
             {order.address && (
               <div className="address-info">
-                <h4>Delivery Address</h4>
+                <h4 className="order-section-title">Delivery Address</h4>
                 <p><strong>{order.address.name}</strong></p>
                 <p>{order.address.address1}</p>
                 <p>{order.address.address2}</p>
                 <p>{order.address.phone_number}</p>
-                {order}
               </div>
             )}
             {
-              order.payment_mode === "CASH" &&
-              order.status !== "SHIPPING" &&
-              order.status !== "OUT_FOR_DELIVERY" &&
-              order.status !== "DELIVERED" &&
-              order.status !== "CANCELLED" && (
+              order.can_cancel && (
 
                 <button
                   className="cancel-order-btn"
@@ -321,6 +404,12 @@ export default function OrderStatus() {
                     <p>
                       <strong>Order ID:</strong> #{order.id}
                     </p>
+
+                    {order.payment_mode === "UPI" && (
+                      <p>
+                        Rs.{order.net_amount} will be refunded to the account you paid from.
+                      </p>
+                    )}
 
                     <p>
                       This action cannot be undone.
