@@ -18,7 +18,6 @@ import UploadImage from './components/UploadImage';
 import SearchResults from './components/SearchResults';
 import PreCheckout from './components/PreCheckout';
 import LoginPage from "./components/LoginPage";
-import PrivateRoute from "./routes/PrivateRoute";
 import Register from './components/Register';
 import RecruitForm from './components/RecruitForm';
 import OfflineOrder from './components/custOrder';
@@ -33,6 +32,7 @@ import MakerDashboard from './components/Dashboards/MakerDashboard';
 import DeliveryDashboard from './components/Dashboards/DeliveryDashboard';
 import ProtectedRoute from './ProtectedRoute';
 import ScrollToTop from "./components/ScrollToTop";
+import RouteLoader from "./components/Loader";
 
 
 function App() {
@@ -50,9 +50,11 @@ function App() {
 
   return (
     <CartProvider>
+      <RouteLoader />
       <div className="App">
         {!shouldHideLayout && <Header toggleCart={toggleCart} />}
         {!shouldHideLayout && <CartPopup isOpen={isCartOpen} toggleCart={toggleCart} />}
+        <main className={shouldHideLayout ? "" : "page-content"}>
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path="/collections/:categorySlug" element={<Category />} />
@@ -101,6 +103,7 @@ function App() {
             }
           />
         </Routes>
+        </main>
 
         {!shouldHideLayout && <Footer />}
       </div>

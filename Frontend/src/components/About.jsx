@@ -1,36 +1,33 @@
 
 const AboutUs = () => {
   return (
-    <div className="container mt-4 d-flex flex-column align-items-center">
+    <div className="container page-static">
 
-      <h2 className="text-center mb-4 contact">About Us</h2>
+      <h2 className="page-title">About Us</h2>
 
-      <h4 className="text-center mb-3"> A Sweet Legacy Since 1972</h4>
+      <h3 className="section-title text-center">A Sweet Legacy Since 1972</h3>
 
-      <p className="text-center w-75">
+      <p className="page-text text-center">
         Our story began in <strong>1972</strong>, when our elders started a traditional
         sweet-making journey built on <strong>purity, patience, and authentic recipes</strong>.
         What began as a humble family venture soon became known for its rich taste and
         handcrafted quality.
       </p>
 
-      <p className="text-center w-75">
+      <p className="page-text text-center">
         Although the earlier chapter of our business concluded in <strong>2015</strong>,
         the knowledge, techniques, and treasured recipes were carefully preserved
         within our family.
       </p>
 
-      <p className="text-center w-75">
+      <p className="page-text text-center">
         Today, with the blessings of our elders and the guidance of our mother,
         we proudly continue this legacy under a new chapter. While the brand name
         is new, the experience behind it carries over <strong>five decades of
         traditional sweet-making expertise</strong>.
       </p>
 
-      <div
-        className="row w-100 mt-4 contact-details"
-        style={{ borderTop: "1px solid #3F2305", paddingTop: "40px" }}
-      >
+      <div className="page-block">
 
         {/* <div className="col-md-6 d-flex justify-content-center">
           <img
@@ -41,9 +38,9 @@ const AboutUs = () => {
           />
         </div> */}
 
-        <div className="col-md-6 d-flex flex-column justify-content-center">
+        <div>
 
-          <h5 className="mb-3">Every Sweet We Prepare Reflects:</h5>
+          <h3 className="section-title">Every Sweet We Prepare Reflects:</h3>
 
           <ul style={{ lineHeight: "2" }}>
             <li>Authentic traditional recipes</li>

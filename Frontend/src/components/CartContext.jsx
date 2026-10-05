@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 import { API_BASE_URL, SESSION_KEY} from '../constants'; 
@@ -55,15 +55,17 @@ useEffect(() => {
   //decrease item quantity
   const decQuant = async (cartItem) => {
 
-    if (cartItem.quantity === 1) {
-        try {
-          await axios.delete(`${API_BASE_URL}cart/${cartItem.id}/`, cart ,SESSION_KEY);
-          setCart(cart.filter(item => item.id !== cartItem.id));
-        } catch (error) {
-          console.error("Error deleting item:", error);
-          alert("Could not remove item");
-        }
-      } 
+    // going below one removes the line
+    if (cartItem.quantity <= 1) {
+      try {
+        await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, SESSION_KEY);
+        setCart(cart.filter(item => item.id !== cartItem.id));
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        alert("Could not remove item");
+      }
+      return;
+    }
     try {
       const newQuantity = cartItem.quantity - 1;
       const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, SESSION_KEY);
@@ -83,12 +85,15 @@ useEffect(() => {
     }
   };
 
-  const triggerToast = (message) => {
+  const toastTimer = useRef(null);
+  const triggerToast = (message, duration = 3000) => {
     setToastMessage(message);
     setShowToast(true);
-    setTimeout(() => {
+    // a new toast restarts the timer instead of being cut short by the old one
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => {
       setShowToast(false);
-    }, 3000);
+    }, duration);
   };
   return (
     <CartContext.Provider value={{ cart, setCart, total, incQuant, decQuant, removeFromCart, totalItems , triggerToast}}>

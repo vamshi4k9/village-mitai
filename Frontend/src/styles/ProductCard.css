@@ -1,180 +1,177 @@
 .bestseller-card {
   width: 100%;
   max-width: 100%;
-  /* height: 100%; */
+  height: 100%;
   text-align: center;
   position: relative;
   overflow: hidden;
   transition: all 0.18s ease-in-out;
   background-color: #fff;
-  border: 1px solid #f3f3f3;
-  padding: 20px;
-  padding-bottom: 0px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
+  cursor: pointer;
 }
 
 .bestseller-card:hover {
-  background-color: #fafafa;
-  border: 1px solid #efefef;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border-color: #d8cfc4;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(63, 35, 5, 0.1);
 }
 
 .image-container {
   width: 100%;
   position: relative;
   overflow: hidden;
+  border-radius: 4px;
 }
 
 .bestseller-img {
-  padding-top: 5%;
-  padding-bottom: 5%;
   width: 100%;
-  height: 80%;
+  height: auto;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
+  display: block;
   transition: transform 0.25s ease-in-out;
-  border-radius: 8px;
 }
 
 .bestseller-card:hover .bestseller-img {
-  transform: scale(1.02);
+  transform: scale(1.04);
 }
 
-.add-to-cart-btn {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  transform: translateX(-50%);
-  width: 90%;
-  background-color: #3f2305;
-  /* background: rgba(255, 255, 255, 0.7); */
-  text-align: center;
-  padding: 5px 0;
-  font-size: 0.86rem;
-  text-transform: uppercase;
-  opacity: 0;
-  color: white;
-  border: 1px solid #3f2305;
-  transition: opacity 0.3s ease-in-out;
-  font-weight: 500;
-}
-
-.bestseller-card:hover .add-to-cart-btn {
-  opacity: 1;
-  cursor: pointer;
-}
-
+/* name and price; the price sits at the bottom so cards in a row line up */
 .bestseller-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 2px 2px;
+  color: #3f2305;
+}
+
+.bestseller-info p {
+  margin: 0;
+}
+
+/* at most two lines, so long names do not stretch the card */
+.card-name {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #3f2305;
-  margin-bottom: 0;
+  line-height: 1.3;
   text-transform: capitalize;
-  text-align: center;
-  padding-bottom: 5%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px 6px;
 }
 
 .card-normal-price {
   color: #3f2305;
-  font-weight: 500;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .card-original-price {
   text-decoration: line-through;
   color: #9e9e9e; /* greyish */
-  font-size: 0.7rem;
-  margin-right: 6px;
+  font-size: 0.75rem;
 }
 
 .card-discounted-price {
   color: green; /* green */
   font-weight: 600;
-  font-size: 1rem;
-  margin-right: 6px;
+  font-size: 0.95rem;
 }
 
 .card-discount-percent {
   color: #d32f2f; /* red */
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   font-weight: 600;
 }
 
-.card-normal-price {
-  color: #3f2305;
-  font-weight: 500;
+/* ---- badges on the image ---- */
+.rating-badge,
+.bestseller-badge,
+.instant-delivery-badge {
+  position: absolute;
+  z-index: 2;
+  /* small, slightly see-through white chips so the product photo stays
+     the main thing */
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  font-size: 0.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(63, 35, 5, 0.14);
 }
 
 .rating-badge {
-  position: absolute;
-  top: 12px;
-  right: 4px;
-  background: rgba(255, 255, 255, 0.85);
+  top: 5px;
+  right: 5px;
   color: #3f2305;
-  font-size: 0.5rem;
-  font-weight: 600;
-  padding: 2px 4px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .rating-badge.high {
   background: #e8f5e9;
   color: #1b5e20;
 }
+
+.bestseller-badge {
+  top: 5px;
+  left: 5px;
+  color: #3f2305;
+}
+
+.instant-delivery-badge {
+  bottom: 5px;
+  left: 5px;
+  color: #2e7d32;
+}
+
 /* Greyed out card */
 .sold-out-card {
   opacity: 0.6;
   filter: grayscale(70%);
+  cursor: default;
 }
 
 /* Overlay label */
 .sold-out-overlay {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 5px;
+  left: 5px;
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
-  font-size: 11px;
-  padding: 3px 7px;
-  border-radius: 5px;
-  font-weight: 600;
-  z-index: 2;
-}
-
-/* Ensure positioning works */
-.image-container {
-  position: relative;
-}
-
-.bestseller-badge {
-  position: absolute;
-  top: 12px;
-  left: 6px;
-  background: rgba(255,255,255);
-  color: #3f2305;
   font-size: 0.5rem;
+  line-height: 1.2;
+  padding: 2px 5px;
+  border-radius: 4px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 10px;
   z-index: 2;
 }
 
-.instant-delivery-badge {
-  position: absolute;
-  bottom: 12px;
-  left: 6px;
-  background: rgba(255,255,255,0.85);
-  color: #2e7d32;
-  font-size: 0.5rem;
-  font-weight: 600;
-  padding: 2px 4px;
-  border-radius: 10px;
-  z-index: 2;
-  border: 1px solid #ececec;
+@media (max-width: 576px) {
+  .bestseller-card {
+    padding: 8px;
+    border-radius: 4px;
+  }
+
+  .card-name {
+    font-size: 0.85rem;
+  }
 }

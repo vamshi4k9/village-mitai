@@ -1,19 +1,27 @@
 .policy-wrapper{
   width:100%;
   max-width:900px;
+  margin:0 auto;
 }
 
 .policy-card{
   background:#fff;
-  border-radius:12px;
+  border-radius:6px;
   padding:35px 40px;
   margin-top:30px;
   box-shadow:0 6px 20px rgba(0,0,0,0.08);
   text-align:left;
 }
 
+@media (max-width: 576px){
+  .policy-card{
+    padding:20px 16px;
+  }
+}
+
 .policy-card h5{
   margin-top:25px;
+  font-size:1.1rem;
   font-weight:600;
   color:#3F2305;
 }

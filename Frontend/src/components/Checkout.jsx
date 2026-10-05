@@ -37,7 +37,7 @@ const PhonePeAuth = () => {
   };
 
   return (
-    <div style={{ paddingTop: "160px" }}>
+    <div style={{ paddingTop: "50px" }}>
       <button onClick={fetchToken} className="btn btn-primary">
         Get PhonePe Access Token
       </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 import { BrowserRouter } from 'react-router';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,7 +12,9 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-         <App />
+      <GoogleOAuthProvider clientId="367509210442-mm65jklfj09mg82cs9isttne3je517pq.apps.googleusercontent.com">
+        <App />
+      </GoogleOAuthProvider>
 
     </BrowserRouter>
   </React.StrictMode>

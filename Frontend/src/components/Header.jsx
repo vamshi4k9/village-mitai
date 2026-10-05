@@ -1,33 +1,31 @@
-import React, { useState, useEffect, useContext, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { useLocation } from "react-router-dom";
 import { CartContext } from "./CartContext";
 import useAgentId from "./useAgentId";
+import SearchBox from "./SearchBox";
 import "../styles/HeaderFooter.css";
-import { useNavigate } from "react-router-dom"; // ⬅️ Added useNavigate
 
 import { API_BASE_URL } from '../constants';
+
+const slugify = (name) => name.toLowerCase().replace(/\s+/g, "-");
 
 export default function Header({ toggleCart }) {
   const [isOpen, setIsOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const inputRef = useRef(null);
 
   const [error, setError] = useState(null);
   const { totalItems } = useContext(CartContext);
   const { getUrlWithAgentId } = useAgentId();
-  const navigate = useNavigate(); // ⬅️ Initialize
-  const [showSearch, setShowSearch] = useState(false);
-
+  const [showSearch, setShowSearch] = useState(false); // mobile search bar
+  const location = useLocation();
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/categories/`)
+    // axios (not fetch) so the route loader waits for the categories too
+    axios.get(`${API_BASE_URL}/categories/`)
       .then((response) => {
-        if (!response.ok) throw new Error("Failed to fetch categories");
-        return response.json();
-      })
-      .then((data) => {
-        setCategories(data);
+        setCategories(response.data);
         setLoadingCategories(false);
       })
       .catch((err) => {
@@ -37,238 +35,157 @@ export default function Header({ toggleCart }) {
       });
   }, []);
 
+  // the side menu closes itself when the page changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
+  // used to highlight the page you are on in both menus
+  const currentPath = slugify(decodeURIComponent(location.pathname));
+  const activeClass = (path) => (currentPath === path ? "active" : "");
 
-  const handleSearchKeyDown = (e) => {
-    if (e.key === "Enter" && searchTerm.trim() !== "") {
-      const rawUrl = `/search?q=${encodeURIComponent(searchTerm.trim())}`;
-      const fullUrlWithAgent = getUrlWithAgentId(rawUrl); // 🔥 will add agentId param
-      navigate(fullUrlWithAgent);
-      setIsOpen(false);
-      setSearchTerm("");
+  const links = [
+    { key: "home", label: "Home", path: "/", icon: "bi-house" },
+    ...(!loadingCategories && !error
+      ? categories.map((cat) => ({
+          key: cat.id,
+          label: cat.name,
+          path: `/collections/${slugify(cat.name)}`,
+          image: cat.image,
+        }))
+      : []),
+  ];
 
-    }
-  };
-
+  const logo = `${process.env.PUBLIC_URL}/images/villageLogoLong.png`;
 
   return (
     <>
-      {/* Header (scrolls normally) */}
-      <div className="main-header-wrapper">
-        <nav className="navbar navbar-expand-md px-2 sticky-top" style={{
-          position: "fixed",
-          width: "100%",
-          top: 0,
-          zIndex: 1000,
-          backgroundColor: "white",
-          paddingLeft: '0',
-          height: '4rem',
-        }}>
-          <div className="container-fluid d-flex align-items-center justify-content-between">
-            <a className="navbar-brand fw-bold d-none d-md-block" href={getUrlWithAgentId("/")}>
-              <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Partner with us" className="object-scale-down w-[8rem]" />
-            </a>
-            <div className="d-none d-md-flex align-items-center">
-              <div className={`search-wrapper ${showSearch ? "expanded" : ""}`}>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  style={{ display: showSearch ? "block" : "none" }}
+      {/* Top bar */}
+      <nav className="site-nav">
+        {/* Laptop: logo | search | account + cart */}
+        <div className="site-nav-row d-none d-md-flex">
+          <a className="site-nav-logo" href={getUrlWithAgentId("/")}>
+            <img src={logo} alt="Village Mitai" />
+          </a>
 
-                />
-                <i
-                  className="bi bi-search search-icon-inside"
-                  onClick={() => setShowSearch(!showSearch)}
-                ></i>
-              </div>
-
-              <a className="nav-link" href={getUrlWithAgentId("/profile")} style={{ marginLeft: '12px', marginRight: '10px' }}>
-                <i className="bi bi-person user-icon"></i>
-              </a>
-              <button className="cart-btn desktop" onClick={toggleCart}>
-                {totalItems > 0 && <span className="cart-count">{totalItems}</span>}
-                <i className="bi bi-cart"></i>
-              </button>
-            </div>
-            {/* Mobile Header */}
-            <div className="d-md-none w-100 flex items-center justify-between ">
-
-              {/* Hamburger */}
-              <button
-                className="navbar-toggler border-0 p-0"
-                type="button"
-                onClick={() => setIsOpen(true)}
-              >
-                <span className="navbar-toggler-icon"></span>
-              </button>
-
-              {/* Logo */}
-              <a
-                className="navbar-brand logo-mobile mb-0"
-                href={getUrlWithAgentId("/")}
-              >
-                <img
-                  src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
-                  alt="Partner with us"
-                  className="object-scale-down w-[7rem]"
-                />
-              </a>
-
-              {/* Right actions */}
-              <div className="flex items-center gap-3">
-
-                {/* Search */}
-                <div className="relative">
-                  <button
-                    className="bg-transparent border-0 p-0"
-                    onClick={() => setShowSearch(true)}
-                  >
-                    <i className="bi bi-search text-xl"></i>
-                  </button>
-                  {/* {showSearch && (
-                    <input
-                      type="text"
-                      className="search-input absolute right-0 top-1/2 -translate-y-1/2"
-                      placeholder="Search..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      onKeyDown={handleSearchKeyDown}
-                      autoFocus
-                    />
-                  )} */}
-                  {/* Mobile Search Overlay */}
-                  {showSearch && (
-                    <div className="mobile-search-overlay">
-                      <div className="mobile-search-bar">
-                        <i className="bi bi-search text-muted"></i>
-
-                        <input
-                          type="text"
-                          className="mobile-search-input"
-                          placeholder="Search products..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          onKeyDown={handleSearchKeyDown}
-                          autoFocus
-                        />
-
-                        <button
-                          className="mobile-search-close"
-                          onClick={() => {
-                            setShowSearch(false);
-                            setSearchTerm("");
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-
-                {/* Cart */}
-                <button className="cart-btn mobile relative" onClick={toggleCart}>
-                  {totalItems > 0 && (
-                    <span className="cart-count absolute -top-1 -right-1">
-                      {totalItems}
-                    </span>
-                  )}
-                  <i className="bi bi-cart text-xl"></i>
-                </button>
-
-              </div>
-            </div>
-
+          <div className="site-nav-search">
+            <SearchBox />
           </div>
-        </nav>
-      </div>
 
-      {/* Sticky Category Bar */}
+          <div className="site-nav-actions">
+            <a className="site-nav-btn" href={getUrlWithAgentId("/profile")} aria-label="Account">
+              <i className="bi bi-person"></i>
+              <span className="site-nav-btn-label">Account</span>
+            </a>
+            <button className="site-nav-btn" onClick={toggleCart} aria-label="Cart">
+              <span className="site-nav-icon">
+                <i className="bi bi-cart"></i>
+                {totalItems > 0 && <span className="site-nav-count">{totalItems}</span>}
+              </span>
+              <span className="site-nav-btn-label">Cart</span>
+            </button>
+          </div>
+        </div>
 
-      <div className="d-none d-md-flex justify-content-center category-nav-sticky px-3 py-2" style={{
-        marginTop: '80px',
-        borderTop: '1px solid #f2f2f2',
-        position: "fixed",
-        width: "100%",
-        top: 0,
-        zIndex: 1000,
-        backgroundColor: "#FFFFFF",
-      }}>
-        {loadingCategories && <span>Loading...</span>}
-        {error && <span className="text-danger">Error: {error}</span>}
-        <a className="category-link text-decoration-none px-3 text-dark" href={getUrlWithAgentId("/")}>
-          Home
-        </a>
-        {!loadingCategories &&
-          !error &&
-          categories.map((cat) => (
+        {/* Mobile: menu | logo | search + cart */}
+        <div className="site-nav-row d-md-none">
+          <div className="site-nav-side">
+            <button className="site-nav-btn" onClick={() => setIsOpen(true)} aria-label="Menu">
+              <i className="bi bi-list"></i>
+            </button>
+          </div>
+
+          <a className="site-nav-logo" href={getUrlWithAgentId("/")}>
+            <img src={logo} alt="Village Mitai" />
+          </a>
+
+          <div className="site-nav-side end">
+            <button className="site-nav-btn" onClick={() => setShowSearch(true)} aria-label="Search">
+              <i className="bi bi-search"></i>
+            </button>
+            <button className="site-nav-btn" onClick={toggleCart} aria-label="Cart">
+              <span className="site-nav-icon">
+                <i className="bi bi-cart"></i>
+                {totalItems > 0 && <span className="site-nav-count">{totalItems}</span>}
+              </span>
+            </button>
+          </div>
+
+          {/* Mobile search: the same box, laid over the header. It closes
+              itself after a search, and on a tap outside */}
+          {showSearch && (
+            <>
+              <div
+                className="mobile-search-backdrop"
+                onClick={() => setShowSearch(false)}
+              ></div>
+              <div className="mobile-search-overlay">
+                <SearchBox autoFocus onClose={() => setShowSearch(false)} />
+              </div>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Category bar (laptop) */}
+      <div className="d-none d-md-block category-nav-sticky">
+        <div className="category-nav-inner">
+          {error && <span className="text-danger">Error: {error}</span>}
+          {links.map((link) => (
             <a
-              key={cat.id}
-              href={getUrlWithAgentId(`/collections/${cat.name.toLowerCase().replace(/\s+/g, "-")}`)
-              }
-              className="px-3 text-decoration-none text-dark category-link"
+              key={link.key}
+              href={getUrlWithAgentId(link.path)}
+              className={`category-link ${activeClass(link.path)}`}
             >
-              {cat.name}
+              {link.label}
             </a>
           ))}
-
-
-
-
+        </div>
       </div>
 
-
-      {/* Mobile Sidebar */}
+      {/* Side menu (mobile) */}
       {isOpen && (
         <>
           <div className="mobile-sidebar">
-            <button className="close-btn" onClick={() => setIsOpen(false)}>
-              &times;
-            </button>
-            <div className="mobile-sidebar-main w-[11rem]">
-              {/* Mobile Search Bar */}
-              {/* Mobile Search (always visible) */}
-              {/* <div className="d-flex align-items-center w-100 mt-2" style={{ backgroundColor: '#edede9' }}>
-                <div className="search-box-wrapper" style={{ position: "relative" }}>
-                  <i className="bi bi-search search-icon-inside" />
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                    style={{
-                      padding: '8px 10px',
-                      fontSize: "0.9rem",
-                    }}
-                  />
-                </div>
-              </div> */}
+            <div className="mobile-sidebar-head">
+              <img src={logo} alt="Village Mitai" />
+              <button className="site-nav-btn" onClick={() => setIsOpen(false)} aria-label="Close menu">
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
 
-              <a className="d-block py-2 text-decoration-none" href={getUrlWithAgentId("/")}>
-                Home
-              </a>
-              {loadingCategories && <p>Loading...</p>}
-              {error && <p className="text-danger">Error: {error}</p>}
-              {!loadingCategories &&
-                !error &&
-                categories.map((cat) => (
-                  <a
-                    key={cat.id}
-                    className="d-block py-2 text-decoration-none"
-                    href={getUrlWithAgentId(`/collections/${cat.name.toLowerCase().replace(/\s+/g, "-")}`)}
-                  >
-                    {cat.name}
-                  </a>
-                ))}
-              <a className="d-block py-2 text-decoration-none" href={getUrlWithAgentId("/profile")}>
-                Account
+            <div className="mobile-sidebar-main">
+              <p className="mobile-sidebar-title">Shop</p>
+              {error && <p className="text-danger px-3">Error: {error}</p>}
+              {links.map((link) => (
+                <a
+                  key={link.key}
+                  className={`mobile-sidebar-link ${activeClass(link.path)}`}
+                  href={getUrlWithAgentId(link.path)}
+                >
+                  {link.image ? (
+                    <img src={link.image} alt="" className="mobile-sidebar-thumb" />
+                  ) : (
+                    <span className="mobile-sidebar-thumb">
+                      <i className={`bi ${link.icon}`}></i>
+                    </span>
+                  )}
+                  <span className="mobile-sidebar-label">{link.label}</span>
+                  <i className="bi bi-chevron-right"></i>
+                </a>
+              ))}
+            </div>
+
+            <div className="mobile-sidebar-foot">
+              <a
+                className={`mobile-sidebar-link ${activeClass("/profile")}`}
+                href={getUrlWithAgentId("/profile")}
+              >
+                <span className="mobile-sidebar-thumb">
+                  <i className="bi bi-person"></i>
+                </span>
+                <span className="mobile-sidebar-label">My Account</span>
+                <i className="bi bi-chevron-right"></i>
               </a>
             </div>
           </div>

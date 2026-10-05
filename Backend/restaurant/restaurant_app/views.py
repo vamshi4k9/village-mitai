@@ -2,6 +2,8 @@ import hashlib
 import hmac
 from threading import Thread
 from django.shortcuts import get_object_or_404
+from django.db import transaction
+from django.utils.crypto import constant_time_compare
 import razorpay
 from rest_framework.response import Response
 from django.core.paginator import Paginator
@@ -9,9 +11,10 @@ from django.core.paginator import Paginator
 
 from restaurant import settings
 from .utils.email import send_order_confirmation_email
+from .utils.delivery import delivery_quote
 from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, Sum, Case, When, Value, IntegerField, F
 from rest_framework import generics
 from rest_framework.decorators import action
 
@@ -41,9 +44,11 @@ from rest_framework.authtoken.models import Token
 import random
 from .utils.send_sms import generate_otp, send_otp_sms
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.decorators import api_view, permission_classes
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.contrib.auth import authenticate
-from .models import UserProfile 
+from .models import UserProfile, PIECE
 from .serializers import UserSerializer
 
 
@@ -54,6 +59,67 @@ class OptionalJWTAuthentication(JWTAuthentication):
         if header is None:
             return None
         return super().authenticate(request)
+
+class LenientJWTAuthentication(JWTAuthentication):
+    """Logged-in users are identified by their JWT; a missing, expired or
+    invalid token falls back to guest instead of failing the request."""
+    def authenticate(self, request):
+        try:
+            return super().authenticate(request)
+        except Exception:
+            return None
+
+STAFF_ROLES = ("admin", "maker", "delivery")
+
+
+def can_access_invoice(request, invoice):
+    """An order can be opened, cancelled or reviewed by:
+    - the logged-in user it belongs to, or a staff member
+    - the browser that placed it as a guest (same session key)
+    - anyone holding its tracking link (secret token from the email)
+    """
+    user = request.user
+    if user.is_authenticated:
+        if invoice.user_id == user.id or user.is_staff:
+            return True
+        if UserProfile.objects.filter(user=user, role__in=STAFF_ROLES).exists():
+            return True
+
+    token = request.query_params.get("token") or request.data.get("token")
+    if token and invoice.tracking_token and constant_time_compare(str(token), invoice.tracking_token):
+        return True
+
+    session_key = request.headers.get("x-session-key")
+    if session_key and invoice.session_key == session_key:
+        return True
+
+    return False
+
+
+def razorpay_signature_valid(order_id, payment_id, signature):
+    expected = hmac.new(
+        bytes(settings.RAZORPAY_KEY_SECRET, 'utf-8'),
+        bytes(f"{order_id}|{payment_id}", 'utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return constant_time_compare(expected, str(signature))
+
+
+def sync_refund_status(invoice):
+    """Refunds start as pending at Razorpay; ask for the latest state so the
+    customer sees when the money has actually gone back."""
+    if not invoice.refund_id or invoice.refund_status != "PENDING":
+        return
+    try:
+        refund = client.refund.fetch(invoice.refund_id)
+    except Exception as e:
+        print(f"Refund status check failed for invoice {invoice.id}: {e}")
+        return
+    new_status = str(refund.get("status", "")).upper()
+    if new_status in ("PROCESSED", "FAILED") and new_status != invoice.refund_status:
+        invoice.refund_status = new_status
+        invoice.save(update_fields=["refund_status"])
+
 
 class SendOTPView(APIView):
     def post(self, request):
@@ -113,25 +179,50 @@ def upload_image(request):
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
-def search_items(request):
-    query = request.GET.get('q', '')
-    if query:
-        items = Item.objects.filter(name__icontains=query).distinct()
-    else:
-        items = Item.objects.none()
+def ordered_items(queryset, *tie_breakers):
+    """Display order for every item list:
+    1. in-stock items before out-of-stock ones (even if they are bestsellers)
+    2. the admin-set sort_order (1, 2, 3...), items without a number after those
+    3. bestsellers
+    """
+    return queryset.order_by(
+        "-available",
+        F("sort_order").asc(nulls_last=True),
+        "-bestseller",
+        *(tie_breakers or ("id",)),
+    )
 
-    data = [
-        {
-            "id": item.id,
-            "name": item.name,
-            "price": item.price,
-            "image_url": item.image,
-            "bestseller": item.bestseller,
-            "category": [cat.name for cat in item.category.all()]
-        }
-        for item in items
-    ]
-    return Response(data, safe=False)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def search_items(request):
+    """Search items across every category. Each word of the query must match
+    the item name, its description or its category name."""
+    words = request.GET.get('q', '').split()
+    if not words:
+        return Response([])
+
+    items = Item.objects.select_related("category")
+    for word in words:
+        items = items.filter(
+            Q(name__icontains=word) |
+            Q(description__icontains=word) |
+            Q(category__name__icontains=word)
+        )
+
+    # same display order as every other list; among equals, name matches come
+    # ahead of description/category matches
+    name_match = Q()
+    for word in words:
+        name_match &= Q(name__icontains=word)
+    items = ordered_items(items.annotate(
+        avg_rating=Avg("reviews__rating"),
+        total_reviews=Count("reviews", distinct=True),
+        name_hit=Case(When(name_match, then=Value(0)), default=Value(1), output_field=IntegerField()),
+    ), "name_hit", "name")
+
+    serializer = ItemSerializer(items, many=True, context={'request': request})
+    return Response(serializer.data)
 
 
 @csrf_exempt
@@ -189,14 +280,20 @@ class ItemViewSet(ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
 
+    def get_queryset(self):
+        return ordered_items(Item.objects.annotate(
+            avg_rating=Avg("reviews__rating"),
+            total_reviews=Count("reviews", distinct=True)
+        ))
+
 class ItemsByCategoryAPIView(APIView):
     def get(self, request, category_name):
         category = get_object_or_404(Category, name=category_name)
 
-        items = Item.objects.filter(category=category).annotate(
+        items = ordered_items(Item.objects.filter(category=category).annotate(
             avg_rating=Avg("reviews__rating"),
             total_reviews=Count("reviews", distinct=True)
-        )
+        ))
 
         serializer = ItemSerializer(
             items,
@@ -209,7 +306,7 @@ class ItemsByCategoryAPIView(APIView):
 
 class BestsellerItemsAPIView(APIView):
     def get(self, request):
-        bestsellers = Item.objects.filter(bestseller=True)
+        bestsellers = ordered_items(Item.objects.filter(bestseller=True))
         serializer = ItemSerializer(bestsellers, many=True)
         return Response(serializer.data)
 
@@ -233,6 +330,15 @@ class CartViewSet(ModelViewSet):
         item_id = request.data.get("item")
         quantity = int(request.data.get("quantity", 1))
         weight = request.data.get("weight", 1)
+
+        if quantity < 1:
+            return Response({"error": "Quantity must be at least 1"}, status=400)
+
+        # by-the-piece lines are only allowed for items set up to be sold that way
+        if str(weight) == PIECE:
+            item = Item.objects.filter(id=item_id).first()
+            if not item or not item.sold_by_piece:
+                return Response({"error": "This item is not sold by the piece"}, status=400)
 
         cart_item, created = Cart.objects.get_or_create(
             session_key=session_key,
@@ -271,17 +377,105 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        credential = request.data.get("credential")
+        if not credential:
+            return Response({"error": "Google credential is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            google_user = google_id_token.verify_oauth2_token(
+                credential, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+            )
+        except ValueError:
+            return Response({"error": "Invalid Google credential"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        email = google_user.get("email")
+        if not email or not google_user.get("email_verified"):
+            return Response({"error": "Google account email is not verified"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Link by Google account id first, then fall back to the email
+        google_id = google_user.get("sub")
+        profile = UserProfile.objects.filter(google_id=google_id).select_related("user").first()
+        user = profile.user if profile else User.objects.filter(email__iexact=email).first()
+        if user is None:
+            user = User(
+                username=email,
+                email=email,
+                first_name=google_user.get("given_name", ""),
+                last_name=google_user.get("family_name", ""),
+            )
+            user.set_unusable_password()
+            user.save()
+        profile, _ = UserProfile.objects.get_or_create(user=user, defaults={"role": "user"})
+        profile.google_id = google_id
+        profile.picture = google_user.get("picture")
+        profile.save()
+
+        # Addresses and orders made as a guest in this browser now belong to the account
+        session_key = request.headers.get("x-session-key")
+        if session_key:
+            Address.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
+            Invoice.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
+            Transaction.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": {
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "phone": profile.phone,
+                "picture": profile.picture,
+            },
+        }, status=status.HTTP_200_OK)
+
+
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication] 
+    authentication_classes = [JWTAuthentication]
+
+    def profile_data(self, user):
+        profile, _ = UserProfile.objects.get_or_create(user=user, defaults={"role": "user"})
+        return {
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "phone": profile.phone,
+            "picture": profile.picture,
+            "addresses": AddressSerializer(user.addresses.all(), many=True).data,
+        }
 
     def get(self, request):
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        return Response(self.profile_data(request.user), status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        user = request.user
+        profile, _ = UserProfile.objects.get_or_create(user=user, defaults={"role": "user"})
+
+        # email stays tied to the Google account, so it is not editable here
+        if "first_name" in request.data:
+            user.first_name = str(request.data["first_name"]).strip()[:150]
+        if "last_name" in request.data:
+            user.last_name = str(request.data["last_name"]).strip()[:150]
+        if "phone" in request.data:
+            phone = str(request.data["phone"] or "").strip()
+            if phone and not (phone.isdigit() and len(phone) == 10):
+                return Response({"error": "Mobile number must be 10 digits"}, status=status.HTTP_400_BAD_REQUEST)
+            profile.phone = phone or None
+            profile.save()
+        user.save()
+
+        return Response(self.profile_data(user), status=status.HTTP_200_OK)
+
 class AddressView(APIView):
     permission_classes = [AllowAny]
-    # authentication_classes = [OptionalJWTAuthentication]
+    authentication_classes = [LenientJWTAuthentication]
     def get(self, request):
         if request.user.is_authenticated:
             addresses = Address.objects.filter(user=request.user)
@@ -292,8 +486,7 @@ class AddressView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        session_key = request.headers.get("x-session-key")
-        print(session_key)
+        session_key = request.headers.get("x-session-key") or ""
         if request.user.is_authenticated:
             serializer = AddressSerializer(data=request.data)
             if serializer.is_valid():
@@ -307,13 +500,31 @@ class AddressView(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AddressDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def put(self, request, address_id):
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        serializer = AddressSerializer(address, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, address_id):
+        address = get_object_or_404(Address, id=address_id, user=request.user)
+        address.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class CreateOrderView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [LenientJWTAuthentication]
 
     def post(self, request):
         data = request.data
 
-        session_key = request.headers.get("x-session-key")
+        session_key = request.headers.get("x-session-key") or ""
         payment_mode = data.get("payment_mode")
         delivery_time = data.get("delivery_time", 1)
 
@@ -340,6 +551,30 @@ class CreateOrderView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Online payment: check the Razorpay signature and keep the ids, they
+        # are what a later refund is made against
+        razorpay_order_id = data.get("razorpay_order_id")
+        razorpay_payment_id = data.get("razorpay_payment_id")
+        if razorpay_payment_id:
+            if not razorpay_signature_valid(
+                razorpay_order_id, razorpay_payment_id, data.get("razorpay_signature", "")
+            ):
+                return Response(
+                    {"error": "Payment could not be verified"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # one payment pays for one order; a retry returns the order already made
+            existing = Invoice.objects.filter(razorpay_payment_id=razorpay_payment_id).first()
+            if existing:
+                return Response(
+                    {
+                        "message": "Order created successfully",
+                        "invoice_id": existing.id,
+                        "tracking_token": existing.tracking_token
+                    },
+                    status=status.HTTP_200_OK
+                )
+
         address = None
 
         if address_id:
@@ -348,6 +583,21 @@ class CreateOrderView(APIView):
             except Address.DoesNotExist:
                 return Response(
                     {"error": "Invalid address"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # the checkout page already says so; this stops an order to an
+            # address outside the delivery radius from being placed anyway
+            quote = delivery_quote(address.latitude, address.longitude)
+            if not quote["deliverable"]:
+                return Response(
+                    {
+                        "error": "Delivery is not available to this address",
+                        "message": (
+                            f"Sorry, we deliver within {quote['max_delivery_km']} km and this "
+                            f"address is {quote['distance_km']} km away."
+                        ),
+                    },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -379,6 +629,11 @@ class CreateOrderView(APIView):
                 address=address,
                 coupon=coupon
             )
+
+        if razorpay_payment_id:
+            invoice.razorpay_order_id = razorpay_order_id
+            invoice.razorpay_payment_id = razorpay_payment_id
+            invoice.save(update_fields=["razorpay_order_id", "razorpay_payment_id"])
 
         # Create Transactions
         created_transactions = []
@@ -436,7 +691,8 @@ class CreateOrderView(APIView):
         return Response(
             {
                 "message": "Order created successfully",
-                "invoice_id": invoice.id
+                "invoice_id": invoice.id,
+                "tracking_token": invoice.tracking_token
             },
             status=status.HTTP_201_CREATED
         )
@@ -473,7 +729,10 @@ class PastOrdersView(APIView):
 
     def get(self, request):
         invoices = Invoice.objects.filter(user=request.user).order_by('-order_date')
-        total_spent = invoices.aggregate(total=Sum('net_amount'))['total'] or 0
+        for pending in invoices.filter(refund_status="PENDING"):
+            sync_refund_status(pending)
+        # cancelled orders are listed but not counted as money spent
+        total_spent = invoices.exclude(status="CANCELLED").aggregate(total=Sum('net_amount'))['total'] or 0
         serializer = InvoiceListSerializer(invoices, many=True)
         return Response({
             "total_order_value": total_spent,
@@ -481,7 +740,7 @@ class PastOrdersView(APIView):
         })
     
 class InvoiceDetailView(APIView):
-    authentication_classes = [OptionalJWTAuthentication]  # applies for all methods
+    authentication_classes = [LenientJWTAuthentication]  # applies for all methods
 
     # def get_permissions(self):
     #     if self.request.method == 'GET':
@@ -493,6 +752,11 @@ class InvoiceDetailView(APIView):
         except Invoice.DoesNotExist:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # same answer as a missing order, so order numbers cannot be probed
+        if not can_access_invoice(request, invoice):
+            return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        sync_refund_status(invoice)
         serializer = InvoiceDetailSerializer(invoice)
         return Response(serializer.data)
     
@@ -748,7 +1012,7 @@ def apply_coupon(request):
         if eligible_subtotal < coupon.min_order_value:
             return Response(
                 {
-                    "error": f"Minimum order value ₹{coupon.min_order_value} required"
+                    "error": f"Minimum order value Rs.{coupon.min_order_value} required"
                 },
                 status=400,
             )
@@ -1042,6 +1306,7 @@ def validate_coupon(request):
 
 class CreateReviewView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = [LenientJWTAuthentication]
 
     def post(self, request):
         data = request.data
@@ -1059,6 +1324,9 @@ class CreateReviewView(APIView):
             item = Item.objects.get(id=item_id)
             invoice = Invoice.objects.get(id=invoice_id)
         except:
+            return Response({"error": "Invalid item/order"}, status=400)
+
+        if not can_access_invoice(request, invoice):
             return Response({"error": "Invalid item/order"}, status=400)
 
         if not invoice.transactions.filter(item=item).exists():
@@ -1141,6 +1409,27 @@ class DeliveryConfigAPIView(APIView):
         })
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
+def delivery_quote_view(request):
+    """Distance, delivery charge and whether we deliver, for a saved address
+    (?address_id=) or for raw coordinates (?lat=&lng=)."""
+    address_id = request.query_params.get("address_id")
+    if address_id:
+        address = Address.objects.filter(id=address_id).first()
+        if not address:
+            return Response({"error": "Invalid address"}, status=404)
+        latitude, longitude = address.latitude, address.longitude
+    else:
+        try:
+            latitude = float(request.query_params["lat"])
+            longitude = float(request.query_params["lng"])
+        except (KeyError, ValueError):
+            return Response({"error": "address_id or lat and lng are required"}, status=400)
+
+    return Response(delivery_quote(latitude, longitude))
+
+
+@api_view(["GET"])
 def get_site_config(request):
     config = SiteConfig.objects.first()
 
@@ -1149,37 +1438,68 @@ def get_site_config(request):
     })
     
 @api_view(["POST"])
+@authentication_classes([LenientJWTAuthentication])
+@permission_classes([AllowAny])
 def cancel_order(request, invoice_id):
-    try:
-        invoice = Invoice.objects.get(id=invoice_id)
+    # the row is locked so two clicks cannot start two refunds
+    with transaction.atomic():
+        invoice = Invoice.objects.select_for_update().filter(id=invoice_id).first()
 
-        if invoice.payment_mode != "CASH":
-            return Response(
-                {"error": "Only Cash on Delivery orders can be cancelled."},
-                status=400
-            )
+        if not invoice or not can_access_invoice(request, invoice):
+            return Response({"error": "Invalid order."}, status=404)
 
-        if invoice.status in [
-            "SHIPPING",
-            "OUT_FOR_DELIVERY",
-            "DELIVERED",
-            "CANCELLED"
-        ]:
+        if invoice.status not in ["ORDERED", "IN_PROGRESS"]:
             return Response(
                 {"error": "Order can no longer be cancelled."},
                 status=400
             )
 
+        if invoice.payment_mode == "UPI":
+            if not invoice.razorpay_payment_id:
+                return Response(
+                    {"error": "This online order cannot be cancelled here. Please contact us to cancel it."},
+                    status=400
+                )
+
+            # full refund of the Razorpay payment, back to where it was paid from
+            if not invoice.refund_id:
+                try:
+                    # refund exactly what was charged and is still refundable
+                    # (Razorpay fails this with "invalid request sent" when the
+                    # account balance is lower than the refund amount)
+                    payment = client.payment.fetch(invoice.razorpay_payment_id)
+                    refundable = int(payment["amount"]) - int(payment.get("amount_refunded") or 0)
+                    refund = client.payment.refund(
+                        invoice.razorpay_payment_id,
+                        {"amount": refundable, "notes": {"invoice_id": str(invoice.id)}}
+                    )
+                except Exception as e:
+                    print(f"Refund failed for invoice {invoice.id}: {e}")
+                    return Response(
+                        {"error": "Refund could not be started, so the order was not cancelled. Please try again or contact us."},
+                        status=502
+                    )
+
+                refund_status = str(refund.get("status", "")).upper()
+                invoice.refund_id = refund.get("id")
+                invoice.refund_status = refund_status if refund_status in ("PROCESSED", "FAILED") else "PENDING"
+                invoice.refund_amount = (
+                    Decimal(refund["amount"]) / 100 if refund.get("amount") is not None else invoice.net_amount
+                )
+
+        elif invoice.payment_mode != "CASH":
+            return Response(
+                {"error": "This order cannot be cancelled here. Please contact us to cancel it."},
+                status=400
+            )
+
         invoice.status = "CANCELLED"
-        invoice.save(update_fields=["status"])
+        invoice.save(update_fields=["status", "refund_id", "refund_status", "refund_amount"])
 
-        return Response({
-            "success": True,
-            "message": "Order cancelled successfully."
-        })
-
-    except Invoice.DoesNotExist:
-        return Response(
-            {"error": "Invalid order."},
-            status=404
-        )
+    return Response({
+        "success": True,
+        "message": "Order cancelled successfully.",
+        "status": invoice.status,
+        "refund_status": invoice.refund_status,
+        "refund_amount": invoice.refund_amount,
+    })

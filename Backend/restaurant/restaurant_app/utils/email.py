@@ -6,6 +6,24 @@ from sib_api_v3_sdk.rest import ApiException
 from django.conf import settings
 
 
+def format_weight(weight):
+    """'250' -> '250 g', '1000' -> '1 KG'; anything else is shown as stored."""
+    try:
+        grams = int(weight)
+    except (TypeError, ValueError):
+        return weight or "-"
+    return f"{grams / 1000:g} KG" if grams >= 1000 else f"{grams} g"
+
+
+def describe_quantity(txn):
+    """How a line was bought: by the piece or by weight, and how much."""
+    if txn.weight == "piece":
+        count = f"{txn.quantity} {'piece' if txn.quantity == 1 else 'pieces'}"
+        each = f" ({txn.item.piece_weight} g each)" if txn.item.piece_weight else ""
+        return f'<strong>By Piece</strong><br>{count}{each}'
+    return f'<strong>By Weight</strong><br>{txn.quantity} × {format_weight(txn.weight)}'
+
+
 def send_order_confirmation_email(
     invoice,
     transactions
@@ -19,7 +37,7 @@ def send_order_confirmation_email(
     items_html = ""
     address_html = ""
     coupon_html = ""
-    tracking_url = (f"https://villagemitai.com/order_status?invoice={invoice.id}")
+    tracking_url = (f"https://villagemitai.com/order_status?invoice_id={invoice.id}&token={invoice.tracking_token}")
 
     if invoice.coupon:
         coupon_html = f"""
@@ -94,6 +112,7 @@ def send_order_confirmation_email(
 
     for txn in transactions:
         item = txn.item
+        quantity_html = describe_quantity(txn)
         effective_price = (
             txn.discounted
             if txn.discounted and txn.discounted > 0
@@ -110,7 +129,7 @@ def send_order_confirmation_email(
             </td>
 
             <td>
-    {txn.quantity} × {txn.weight or '-'}
+    {quantity_html}
             </td>
 
             <td>
@@ -119,7 +138,7 @@ def send_order_confirmation_email(
                     <span style="text-decoration:line-through;color:#999;">
                         Rs.{txn.item_amount}
                     </span><br>
-                    <strong>₹{effective_price}</strong>
+                    <strong>Rs.{effective_price}</strong>
                     '''
                     if txn.discounted and txn.discounted > 0
                     else f'Rs.{txn.item_amount}'
@@ -286,7 +305,7 @@ table.items td {{
 
                 <tr>
                     <td><strong>Order Total</strong></td>
-                    <td>₹{invoice.net_amount}</td>
+                    <td>Rs.{invoice.net_amount}</td>
                 </tr>
                 <tr>
     <td><strong>Track Order</strong></td>
@@ -343,12 +362,12 @@ table.items td {{
         <div class="summary">
             <div class="summary-row">
                 <span>Discount</span>
-                <span>₹{invoice.discount}</span>
+                <span>Rs.{invoice.discount}</span>
             </div>
 
             <div class="summary-row total">
                 <span>Grand Total</span>
-                <span>₹{invoice.net_amount}</span>
+                <span>Rs.{invoice.net_amount}</span>
             </div>
 
         </div>
@@ -379,7 +398,7 @@ table.items td {{
         subject=(
             f"New Order #{invoice.id}"
             f" | {invoice.address.name if invoice.address else 'Guest'}"
-            f" | ₹{invoice.net_amount}"
+            f" | Rs.{invoice.net_amount}"
         ),
         html_content=html_content
     )

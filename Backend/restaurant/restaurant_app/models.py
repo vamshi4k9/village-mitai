@@ -1,9 +1,14 @@
+import uuid
 from decimal import Decimal
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import User 
 from django.db import models
 from django.db.models import Q
+
+
+# value of Cart.weight / Transaction.weight for a line bought by the piece
+PIECE = "piece"
 
 
 class FieldMarketingForm(models.Model):
@@ -71,6 +76,8 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
     phone = models.CharField(max_length=15, blank=True, null=True)  # Add this line
+    google_id = models.CharField(max_length=64, unique=True, blank=True, null=True)
+    picture = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -94,6 +101,12 @@ class Item(models.Model):
     image = models.ImageField(upload_to='items/', blank=True, null=True)
     available = models.BooleanField(default=True)
     bestseller = models.BooleanField(default=False)
+    sort_order = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Display position across all items (1 shows first). Leave empty to show after the numbered items."
+    )
     veg = models.BooleanField(default=False)
     shelf_life = models.IntegerField(default=10)
     delivery_time = models.IntegerField(default=1)
@@ -103,6 +116,23 @@ class Item(models.Model):
     discounted_price_half = models.DecimalField(max_digits=8, decimal_places=2,blank=True,null=True)
     price_quarter = models.DecimalField(max_digits=8, decimal_places=2,blank=True,null=True)
     discounted_price_quarter = models.DecimalField(max_digits=8, decimal_places=2,blank=True,null=True)
+    # Selling by the piece: the item page offers it only when BOTH are filled
+    piece_weight = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Weight of one piece in grams. Fill this and the piece price to sell this item by the piece."
+    )
+    piece_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Price of one piece."
+    )
+
+    @property
+    def sold_by_piece(self):
+        return bool(self.piece_weight and self.piece_price)
 
     def __str__(self):
         return self.name
@@ -204,6 +234,12 @@ class Cart(models.Model):
         item = self.item
         qty = self.quantity
 
+        # bought by the piece: quantity is the number of pieces
+        if self.weight == PIECE:
+            if not item.piece_price:
+                return Decimal("0.00")
+            return Decimal(item.piece_price) * qty
+
         try:
             weight = int(self.weight)
         except (TypeError, ValueError):
@@ -260,6 +296,10 @@ class Address(models.Model):
     def __str__(self):
         return f"{self.name} - {self.user}"
 
+def generate_tracking_token():
+    return uuid.uuid4().hex
+
+
 class Invoice(models.Model):
     PAYMENT_CHOICES = [
         ('CASH', 'Cash'),
@@ -305,6 +345,31 @@ class Invoice(models.Model):
     discount = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORDERED')
+    # secret part of the tracking link: order numbers are easy to guess, this is not
+    tracking_token = models.CharField(max_length=32, unique=True, null=True, editable=False, default=generate_tracking_token)
+
+    # Razorpay ids of the online payment; needed to refund a cancelled order
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
+
+    REFUND_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('PROCESSED', 'Processed'),
+        ('FAILED', 'Failed'),
+    ]
+    refund_id = models.CharField(max_length=100, blank=True, null=True)
+    refund_status = models.CharField(max_length=20, choices=REFUND_STATUS_CHOICES, blank=True, null=True)
+    refund_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    @property
+    def can_cancel(self):
+        """Orders can be cancelled until they ship. Online orders also need the
+        Razorpay payment id, otherwise there is nothing to refund against."""
+        if self.status not in ('ORDERED', 'IN_PROGRESS'):
+            return False
+        if self.payment_mode == 'CASH':
+            return True
+        return self.payment_mode == 'UPI' and bool(self.razorpay_payment_id)
 
     def __str__(self):
         return f"Invoice #{self.id}"
@@ -436,7 +501,52 @@ class DeliveryFeeConfig(models.Model):
         verbose_name_plural = "Delivery Fee Configuration"
 
     def __str__(self):
-        return f"Free Delivery Above ₹{self.free_delivery_above}"
+        return f"Free Delivery Above Rs.{self.free_delivery_above}"
+
+class StoreLocation(models.Model):
+    """Where orders are sent from. Delivery distance is measured from here."""
+    name = models.CharField(max_length=100, default="Village Mitai")
+    address = models.TextField(blank=True)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    max_delivery_km = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=40,
+        help_text="Addresses further than this from the store cannot be delivered to."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Only one location should be active; the first active one is used."
+    )
+
+    class Meta:
+        verbose_name = "Store Location"
+        verbose_name_plural = "Store Location"
+
+    def __str__(self):
+        return f"{self.name} ({self.latitude}, {self.longitude})"
+
+
+class DeliveryCharge(models.Model):
+    """Delivery charge by distance. Each row covers distances up to up_to_km;
+    the first row that covers the distance is used."""
+    up_to_km = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        unique=True,
+        help_text="This charge applies to distances up to this many km."
+    )
+    charge = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        ordering = ["up_to_km"]
+        verbose_name = "Delivery Charge"
+        verbose_name_plural = "Delivery Charges"
+
+    def __str__(self):
+        return f"Up to {self.up_to_km} km: Rs.{self.charge}"
+
 
 class APIRequestLog(models.Model):
     session_id = models.CharField(max_length=255, null=True, blank=True)

@@ -5,20 +5,23 @@
   padding: 20px;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
 }
 
+/* the app centres all text by default; this page reads left to right */
 .order-card {
   background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  max-width: 420px;
+  border-radius: 6px;
+  padding: 24px;
+  max-width: 560px;
   width: 100%;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  transition: all 0.2s ease;
+  text-align: left;
+  color: #3F2305;
 }
 
-.order-card:hover {
-  box-shadow: 0 6px 16px rgba(63, 35, 5, 0.1);
+.order-card p {
+  margin: 0;
 }
 
 /* ================= HEADER ================= */
@@ -26,18 +29,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
 }
 
-.order-date {
+.order-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3F2305;
+}
+
+.order-card .order-date {
   font-size: 0.8rem;
   color: #6b5e52;
-  margin-bottom: 10px;
+  margin: 4px 0 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e6ded6;
+}
+
+/* small heading above each block */
+.order-section-title {
+  margin: 20px 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #3F2305;
 }
 
 /* ================= STATUS BADGE ================= */
 .status-badge {
   padding: 5px 12px;
-  border-radius: 20px;
+  border-radius: 6px;
   font-size: 0.75rem;
   display: inline-block;
   font-weight: 600;
@@ -52,22 +73,58 @@
 
 /* ================= ITEMS ================= */
 .order-items {
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-item-wrapper {
+  background: #f8f4f1;
+  border: 1px solid #e6ded6;
+  border-radius: 6px;
+  padding: 10px;
 }
 
 .order-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  gap: 12px;
 }
 
 .order-item img {
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   border-radius: 6px;
   object-fit: cover;
+  display: block;
+}
+
+.order-item-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* payment + total under the items */
+.order-summary {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e6ded6;
+}
+
+.order-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #6b5e52;
+  padding: 2px 0;
+}
+
+.order-summary-row.total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3F2305;
 }
 
 .item-name {
@@ -89,26 +146,66 @@
 }
 
 /* ================= TIMELINE ================= */
+/* Each step is a row: a fixed column for the dot and its connecting line on
+   the left, the label on the right, so dots and text always line up */
 .timeline {
-  border-left: 2px solid #e6ded6;
-  margin: 20px 0;
-  padding-left: 20px;
+  background: #f8f4f1;
+  border: 1px solid #e6ded6;
+  border-radius: 6px;
+  padding: 16px;
 }
 
 .timeline-item {
   position: relative;
-  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 22px;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+/* line from this dot down to the next one */
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  background: #e6ded6;
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-item.completed::before {
+  background: #3F2305;
 }
 
 .timeline-marker {
-  width: 14px;
-  height: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
   background: #ddd;
   border-radius: 50%;
-  position: absolute;
-  left: -28px;
-  top: 5px;
-  border: 2px solid white;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px #e6ded6;
+  position: relative;
+  z-index: 1;
+}
+
+.timeline-content {
+  min-width: 0;
+  line-height: 18px;
+}
+
+.timeline-item.pending .timeline-title {
+  color: #6b5e52;
+  font-weight: 500;
 }
 
 /* Status colors */
@@ -140,23 +237,15 @@
 }
 
 /* ================= ADDRESS ================= */
-.address-info {
-  margin-top: 20px;
-  background: #f8f4f1;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid #e6ded6;
-}
-
-.address-info h4 {
-  margin-bottom: 8px;
-  font-size: 0.9rem;
-  color: #3F2305;
-}
-
 .address-info p {
-  font-size: 0.8rem;
-  margin: 2px 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #6b5e52;
+  overflow-wrap: anywhere;
+}
+
+.address-info p strong {
+  color: #3F2305;
 }
 
 /* ================= BUTTON ================= */
@@ -180,15 +269,20 @@
   background: #fdecea;
   color: #b91c1c;
   padding: 10px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.85rem;
+  margin-top: 16px;
 }
 
 /* ================= MOBILE ================= */
 @media (max-width: 768px) {
 
+  .order-status-container {
+    padding: 12px;
+  }
+
   .order-card {
-    padding: 15px;
+    padding: 16px;
   }
 
   .order-item img {
@@ -204,14 +298,6 @@
     font-size: 0.8rem;
   }
 
-  .timeline {
-    padding-left: 15px;
-  }
-
-  .timeline-marker {
-    left: -22px;
-  }
-
   .track-btn {
     width: 100%;
     padding: 10px;
@@ -224,6 +310,12 @@
 }
 .review-box {
   margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e6ded6;
+}
+
+.review-actions {
+  margin-top: 6px;
 }
 
 .stars {
@@ -291,7 +383,7 @@
   width: 100%;
   max-width: 420px;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 6px;
   padding: 24px;
   box-shadow: 0 10px 35px rgba(63, 35, 5, 0.18);
   animation: popupScale 0.2s ease;
@@ -315,7 +407,7 @@
   margin-top: 18px;
   background: #f8f4f1;
   border: 1px solid #e6ded6;
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 14px;
 }
 
@@ -332,7 +424,7 @@
 .popup-btn {
   flex: 1;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 12px;
   cursor: pointer;
   font-weight: 600;
@@ -380,8 +472,8 @@
   padding: 12px 16px;
   background: #ffffff;
   color: #3F2305;
-  border: 2px solid #3F2305;
-  border-radius: 10px;
+  border: 1px solid #3F2305;
+  border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -404,4 +496,42 @@
   border-color: #d8cdc3;
   cursor: not-allowed;
   box-shadow: none;
+}
+/* Links back into the site (this page has no header) */
+.order-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+}
+
+.order-nav a {
+  color: #3F2305;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.order-nav a:hover {
+  text-decoration: underline;
+}
+
+/* Refund progress for a cancelled online order */
+.refund-box {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f4f1;
+  border: 1px solid #e6ded6;
+  border-radius: 6px;
+  color: #3F2305;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.refund-box p {
+  margin: 0;
+}
+
+.refund-box .refund-title {
+  font-weight: 600;
+  margin-bottom: 4px;
 }

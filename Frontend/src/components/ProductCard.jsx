@@ -73,13 +73,14 @@ const ProductCard = ({ item, smallImage = false }) => {
       onClick={!isSoldOut ? handleClick : undefined}
     >
       <div className="image-container">
-        <img className={`bestseller-img ${smallImage ? "small-item-img" : ""}`} src={item.image} alt="NOT FOUND" />
+        <img className="bestseller-img" src={item.image} alt={item.name} />
         {isSoldOut && (
           <div className="sold-out-overlay">
             SOLD OUT
           </div>
         )}
-        {item.bestseller && (
+        {/* both badges sit in the top-left corner, so sold-out items show only SOLD OUT */}
+        {item.bestseller && !isSoldOut && (
           <div className="bestseller-badge">
             🔥 Bestseller
           </div>
@@ -97,32 +98,22 @@ const ProductCard = ({ item, smallImage = false }) => {
         )}
 
       </div>
-      <p className="bestseller-info">
-        <span
-          style={{
-            fontSize:
-              item.name.length > 10
-                ? "13px"
-                : item.name.length > 15
-                  ? "10px"
-                  : "16px"
-          }}
-        >
-          {item.name}
-        </span>
-        <br />
-        {hasDiscount ? (
-          <>
-            <span className="card-original-price">Rs {price}</span>
-            <span className="card-discounted-price">Rs {discounted}</span>
-            <span className="card-discount-percent">
-              ({discountPercent}% OFF)
-            </span>
-          </>
-        ) : (
-          <span className="card-normal-price">Rs {price}</span>
-        )}
-      </p>
+      <div className="bestseller-info">
+        <p className="card-name">{item.name}</p>
+        <p className="card-price">
+          {hasDiscount ? (
+            <>
+              <span className="card-original-price">Rs.{price}</span>
+              <span className="card-discounted-price">Rs.{discounted}</span>
+              <span className="card-discount-percent">
+                ({discountPercent}% OFF)
+              </span>
+            </>
+          ) : (
+            <span className="card-normal-price">Rs.{price}</span>
+          )}
+        </p>
+      </div>
 
 
     </div>

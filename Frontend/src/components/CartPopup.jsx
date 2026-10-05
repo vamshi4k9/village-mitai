@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
 import "../styles/CartPopup.css";
 import { Link } from "react-router-dom";
+import GoogleLoginButton from '../components/GoogleLoginButton';
+import { getValidAccessToken } from "../utils/auth";
+import { isPiece, formatWeight } from "../utils/pricing";
 
 
 const CartPopup = ({ isOpen, toggleCart }) => {
@@ -12,9 +15,14 @@ const CartPopup = ({ isOpen, toggleCart }) => {
   const { getUrlWithAgentId } = useAgentId();
   const [showAuthPopup, setShowAuthPopup] = useState(false);
 
-  const handleCheckout = () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
+  const [authError, setAuthError] = useState("");
+
+  const handleCheckout = async () => {
+    // Logged-in users, and guests who already chose guest checkout in this
+    // browser session, are not asked again
+    const token = await getValidAccessToken();
+    if (!token && !sessionStorage.getItem("checkout_as_guest")) {
+      setAuthError("");
       setShowAuthPopup(true);
       return;
     }
@@ -23,7 +31,16 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
   };
 
+  const handleGoogleLogin = () => {
+    setShowAuthPopup(false);
+    toggleCart();
+    navigate(getUrlWithAgentId("/precheckout"));
+  };
+
   const getPriceByWeight = (item, weight) => {
+    // bought by the piece: quantity is the number of pieces
+    if (isPiece(weight)) return { price: Number(item.piece_price), discounted: null };
+
     let price, discounted;
 
     switch (Number(weight)) {
@@ -49,6 +66,7 @@ const CartPopup = ({ isOpen, toggleCart }) => {
 
 
   const handleGuest = () => {
+    sessionStorage.setItem("checkout_as_guest", "true");
     setShowAuthPopup(false);
     toggleCart();
     navigate(getUrlWithAgentId("/precheckout"));
@@ -67,6 +85,8 @@ const CartPopup = ({ isOpen, toggleCart }) => {
   };
 
   const getFinalPrice = (item) => {
+    if (isPiece(item.weight)) return Number(item.item.piece_price);
+
     let price, discounted;
 
     switch (Number(item.weight)) {
@@ -109,15 +129,28 @@ const CartPopup = ({ isOpen, toggleCart }) => {
       {isOpen && <div className="cart-overlay" onClick={toggleCart}></div>}
 
       <div className={`cart-popup ${isOpen ? "open" : ""}`}>
-        <div className="cart-header">
-          <div>Your Cart {totalItems > 0 && <span className="cart-count-cart">{totalItems}</span>}</div>
-          <button className="close-btn text-xs" onClick={toggleCart}><i className="bi bi-x"></i></button>
+        <div className="cartd-head">
+          <div className="cartd-title">
+            Your Cart
+            {totalItems > 0 && (
+              <span className="cartd-count">
+                {totalItems} {totalItems === 1 ? "item" : "items"}
+              </span>
+            )}
+          </div>
+          <button className="cartd-close" onClick={toggleCart} aria-label="Close cart">
+            <i className="bi bi-x-lg"></i>
+          </button>
         </div>
 
         {cart.length === 0 ? (
-          <div className="empty-cart">Your cart is empty</div>
+          <div className="cartd-empty">
+            <i className="bi bi-cart"></i>
+            <p>Your cart is empty</p>
+            <button className="cartd-btn" onClick={toggleCart}>Continue Shopping</button>
+          </div>
         ) : (
-          <div className="cart-items">
+          <div className="cartd-list">
             {cart.map((item) => {
               const { price, discounted } = getPriceByWeight(item.item, item.weight);
 
@@ -134,97 +167,75 @@ const CartPopup = ({ isOpen, toggleCart }) => {
                 ? Math.round(((price - discounted) / price) * 100)
                 : 0;
 
-
               return (
-                <div key={item.item.id} className="cart-item">
+                <div key={`${item.item.id}-${item.weight}`} className="cartd-item">
+                  <Link to={`/product/${item.item.id}`} onClick={toggleCart}>
+                    <img
+                      src={item.item.image}
+                      alt={item.item.name}
+                      className="cartd-item-img"
+                    />
+                  </Link>
 
-                  <div className="flex">
-                    <Link
-                      to={`/product/${item.item.id}`}
-                      onClick={toggleCart}
-                    >
-                      <img
-                        src={item.item.image}
-                        alt={item.item.name}
-                        className="cart-item-img"
-                      />
-                    </Link>
-                    <div className="cart-item-details">
-                      <div className="cart-item-info">
-                        <div className="cart-item-name" >
-                          <Link
-                            to={`/product/${item.item.id}`}
-                            onClick={toggleCart}
-                            style={{ textDecoration: "none", color: "inherit" }}
-                          >
-                            {item.item.name}
-                          </Link>
-                        </div>
-                        {item.item.available}
-                        <div className="cart-item-price">
-                          {hasDiscount ? (
-                            <>
-                              <div>
-                                <span
-                                  style={{
-                                    textDecoration: "line-through",
-                                    color: "#888",
-                                    marginRight: "6px",
-                                    fontSize: "12px"
-                                  }}
-                                >
-                                  Rs.{price * item.quantity}
-                                </span>
-
-                                <span style={{ fontWeight: "bold", color: "green" }}>
-                                  Rs.{itemTotal}
-                                </span>
-                              </div>
-
-                              <div style={{ fontSize: "8px", color: "#d32f2f" }}>
-                                ({discountPercent}% OFF)
-                              </div>
-                            </>
-                          ) : (
-                            <span style={{ fontWeight: "bold" }}>
-                              Rs.{itemTotal}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="cart-item-weight">
-                        {item.weight >= 1000
-                          ? `${item.weight / 1000} KG`
-                          : `${item.weight} g`}
-                      </div>
+                  <div className="cartd-item-body">
+                    <div className="cartd-item-top">
+                      <Link
+                        to={`/product/${item.item.id}`}
+                        onClick={toggleCart}
+                        className="cartd-item-name"
+                      >
+                        {item.item.name}
+                      </Link>
+                      <button
+                        className="cartd-remove"
+                        onClick={() => removeFromCart(item)}
+                        aria-label="Remove item"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex">
-                    <div className="cart-item-actions">
-                      <div className="cart-quantity">
-                        <button onClick={() => decQuant(item)}>-</button>
+
+                    <span className="cartd-weight">
+                      {formatWeight(item.weight, item.item)}
+                    </span>
+
+                    <div className="cartd-item-bottom">
+                      <div className="cartd-qty">
+                        <button onClick={() => decQuant(item)} aria-label="Decrease quantity">-</button>
                         <span>{item.quantity}</span>
-                        <button onClick={() => incQuant(item)}>+</button>
+                        <button onClick={() => incQuant(item)} aria-label="Increase quantity">+</button>
+                      </div>
+                      {isPiece(item.weight) && (
+                        <span className="cartd-unit">{item.quantity === 1 ? "piece" : "pieces"}</span>
+                      )}
+
+                      <div className="cartd-price">
+                        {hasDiscount && (
+                          <span className="cartd-price-old">Rs.{price * item.quantity}</span>
+                        )}
+                        <span className={`cartd-price-new ${hasDiscount ? "discounted" : ""}`}>
+                          Rs.{itemTotal}
+                        </span>
+                        {hasDiscount && (
+                          <span className="cartd-price-off">({discountPercent}% OFF)</span>
+                        )}
                       </div>
                     </div>
-                    <button className="remove-btn ml-3" onClick={() => removeFromCart(item)}>Remove</button>
                   </div>
                 </div>
               );
             })}
-
           </div>
         )}
 
         {cart.length > 0 && (
-          <div className="cart-footer">
-            <p className="cart-total font-semibold">
-              Total: Rs.{total}
-            </p>
-
-            <div className="checkout-btn cursor-pointer rounded-md" onClick={handleCheckout}>
-              <span className="checkout-btn-txt font-semibold">Checkout</span>
+          <div className="cartd-foot">
+            <div className="cartd-total">
+              <span>Subtotal</span>
+              <span>Rs.{total}</span>
             </div>
+            <p className="cartd-note">Delivery charges are calculated at checkout.</p>
+            <button className="cartd-btn" onClick={handleCheckout}>Checkout</button>
           </div>
         )}
       </div>
@@ -243,6 +254,10 @@ const CartPopup = ({ isOpen, toggleCart }) => {
               <button className="auth-btn guest" onClick={handleGuest}>
                 Continue as Guest
               </button>
+              <div className="auth-google">
+                <GoogleLoginButton onLogin={handleGoogleLogin} onError={setAuthError} />
+              </div>
+              {authError && <p className="auth-error">{authError}</p>}
 
               {/* <button className="auth-btn login" onClick={handleLogin}>
                 Login

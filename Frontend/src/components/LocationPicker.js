@@ -4,14 +4,16 @@ import { useState } from 'react'
 
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN
 
-function LocationPicker({ onLocationSelect }) {
+// initialLocation ({ lat, lng }) is optional: when given, the map opens on it
+// with the marker already placed (used when editing a saved address)
+function LocationPicker({ onLocationSelect, initialLocation }) {
   const [viewState, setViewState] = useState({
-    latitude: 12.9716,
-    longitude: 77.5946,
-    zoom: 12
+    latitude: initialLocation ? initialLocation.lat : 12.9716,
+    longitude: initialLocation ? initialLocation.lng : 77.5946,
+    zoom: initialLocation ? 14 : 12
   })
 
-  const [selectedLocation, setSelectedLocation] = useState(null)
+  const [selectedLocation, setSelectedLocation] = useState(initialLocation || null)
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
 
@@ -65,7 +67,7 @@ function LocationPicker({ onLocationSelect }) {
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
         )
         const data = await res.json()
-
+        
         if (data.features && data.features.length > 0) {
           setSearch(data.features[0].place_name)
         }
@@ -100,7 +102,7 @@ function LocationPicker({ onLocationSelect }) {
           style={{
             width: '100%',
             padding: '10px',
-            borderRadius: '8px',
+            borderRadius: '6px',
             border: '1px solid #ccc',
             outline: 'none'
           }}
@@ -111,7 +113,7 @@ function LocationPicker({ onLocationSelect }) {
             background: 'white',
             maxHeight: 200,
             overflowY: 'auto',
-            borderRadius: '8px',
+            borderRadius: '6px',
             marginTop: '5px',
             boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
           }}>
@@ -163,7 +165,7 @@ function LocationPicker({ onLocationSelect }) {
         style={{
           width: '100%',
           height: 300,
-          borderRadius: '10px'
+          borderRadius: '6px'
         }}
         attributionControl={false}
         mapStyle="mapbox://styles/mapbox/streets-v11"
