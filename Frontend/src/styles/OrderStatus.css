@@ -10,12 +10,13 @@
 
 /* the app centres all text by default; this page reads left to right */
 .order-card {
-  background: #fff;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
   border-radius: 6px;
   padding: 24px;
-  max-width: 560px;
+  max-width: 960px;
   width: 100%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.06);
   text-align: left;
   color: #3F2305;
 }
@@ -56,20 +57,51 @@
 }
 
 /* ================= STATUS BADGE ================= */
+/* soft tinted pills, the same colours as the staff dashboards */
 .status-badge {
   padding: 5px 12px;
-  border-radius: 6px;
+  border-radius: 20px;
   font-size: 0.75rem;
   display: inline-block;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.status-badge.ordered { background: #6b7280; color: white; }
-.status-badge.in_progress { background: #f59e0b; color: white; }
-.status-badge.shipping { background: #3b82f6; color: white; }
-.status-badge.out_for_delivery { background: #6366f1; color: white; }
-.status-badge.delivered { background: #10b981; color: white; }
-.status-badge.cancelled { background: #ef4444; color: white; }
+.status-badge.ordered { background: #ede7e1; color: #3F2305; }
+.status-badge.in_progress { background: #fbefd3; color: #7a5200; }
+.status-badge.shipping { background: #e2ecf6; color: #1f4e79; }
+.status-badge.out_for_delivery { background: #ebe5f5; color: #4a3878; }
+.status-badge.delivered { background: #e1f1e4; color: #1e6331; }
+.status-badge.cancelled { background: #fbe9e9; color: #a12626; }
+
+/* ================= TWO COLUMNS (laptop) ================= */
+.order-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 0 32px;
+}
+
+.order-col {
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .order-card {
+    max-width: 560px;
+  }
+
+  .order-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.order-loading {
+  padding: 28px 0;
+  font-size: 0.9rem;
+  color: #7b7167;
+  text-align: center;
+}
 
 /* ================= ITEMS ================= */
 .order-items {
@@ -79,8 +111,8 @@
 }
 
 .order-item-wrapper {
-  background: #f8f4f1;
-  border: 1px solid #e6ded6;
+  background: #fff;
+  border: 1px solid #e4d8cc;
   border-radius: 6px;
   padding: 10px;
 }
@@ -149,8 +181,8 @@
 /* Each step is a row: a fixed column for the dot and its connecting line on
    the left, the label on the right, so dots and text always line up */
 .timeline {
-  background: #f8f4f1;
-  border: 1px solid #e6ded6;
+  background: #fff;
+  border: 1px solid #e4d8cc;
   border-radius: 6px;
   padding: 16px;
 }
@@ -266,9 +298,10 @@
 
 /* ================= ERROR ================= */
 .error-box {
-  background: #fdecea;
-  color: #b91c1c;
-  padding: 10px;
+  background: #fbf1f1;
+  border: 1px solid #e6c3c3;
+  color: #a12626;
+  padding: 10px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
   margin-top: 16px;
@@ -336,16 +369,23 @@
 .review-box textarea {
   width: 100%;
   margin-top: 5px;
-  padding: 6px;
+  padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid #ddd;
-  font-size: 0.8rem;
+  border: 1px solid #d8cfc4;
+  color: #3F2305;
+  font-size: 0.85rem;
+}
+
+.review-box textarea:focus {
+  outline: none;
+  border-color: #3F2305;
+  box-shadow: 0 0 0 3px rgba(63, 35, 5, 0.1);
 }
 
 .review-btn {
   background: #3F2305;
   color: white;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
@@ -470,7 +510,7 @@
   width: 100%;
   margin-top: 20px;
   padding: 12px 16px;
-  background: #ffffff;
+  background: transparent;
   color: #3F2305;
   border: 1px solid #3F2305;
   border-radius: 6px;
@@ -506,6 +546,9 @@
 }
 
 .order-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: #3F2305;
   font-weight: 600;
   text-decoration: none;
@@ -518,9 +561,9 @@
 /* Refund progress for a cancelled online order */
 .refund-box {
   margin-top: 10px;
-  padding: 10px;
-  background: #f8f4f1;
-  border: 1px solid #e6ded6;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e4d8cc;
   border-radius: 6px;
   color: #3F2305;
   font-size: 0.85rem;

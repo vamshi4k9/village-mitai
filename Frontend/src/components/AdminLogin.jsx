@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import '../styles/LoginPage.css';
+import '../styles/FormPage.css';
 import { API_BASE_URL } from '../constants';
 
 function AdminLogin() {
@@ -83,64 +83,66 @@ function AdminLogin() {
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleLogin();
-    }
+  // a form, so Enter in either field submits
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleLogin();
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2 className="login-heading">Admin Login</h2>
-        
+    <div className="fp-auth">
+      <form className="fp-card" onSubmit={handleSubmit} noValidate>
+        <img
+          src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
+          alt="Village Mitai"
+          className="fp-logo"
+        />
+
+        <h1 className="fp-title">Staff Login</h1>
+        <p className="fp-sub">For admin, maker and delivery accounts</p>
+
         {error && (
-          <div className="error-message">
+          <div className="fp-alert error" role="alert">
+            <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
             {error}
           </div>
         )}
 
-        <div className="form-group">
-          <label htmlFor="username" className="form-label">Username</label>
+        <div className="fp-field">
+          <label htmlFor="username" className="fp-label">Username</label>
           <input
             id="username"
-            className="login-input"
+            className="fp-input"
             placeholder="Enter username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyPress={handleKeyPress}
             disabled={isLoading}
             autoComplete="username"
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="password" className="form-label">Password</label>
+        <div className="fp-field">
+          <label htmlFor="password" className="fp-label">Password</label>
           <input
             id="password"
-            className="login-input"
+            className="fp-input"
             placeholder="Enter password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={handleKeyPress}
             disabled={isLoading}
             autoComplete="current-password"
           />
         </div>
 
-        <button 
-          className="login-button" 
-          onClick={handleLogin}
+        <button
+          type="submit"
+          className="fp-btn"
           disabled={isLoading}
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
-
-        {/* <div className="login-footer">
-          <p>Select your role and enter your credentials to access the admin panel.</p>
-        </div> */}
-      </div>
+      </form>
     </div>
   );
 }

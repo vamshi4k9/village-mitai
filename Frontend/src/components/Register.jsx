@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../constants";
-import "../styles/Register.css";
+import PaymentResultModal from "./PaymentResultModal";
+import "../styles/FormPage.css";
 
 const Register = () => {
   const [form, setForm] = useState({
@@ -15,6 +16,8 @@ const Register = () => {
     password: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -34,71 +37,143 @@ const Register = () => {
       setError("Please fill all fields");
       return;
     }
+
+    setError("");
+    setLoading(true);
     try {
       await axios.post(`${API_BASE_URL}/register/`, form);
-      alert("Registration successful!");
-      navigate("/login");
+      setShowSuccess(true);
     } catch (err) {
-      alert("Registration failed");
+      setError("Registration failed");
     }
+    setLoading(false);
   };
 
   return (
-    <div className="register-container">
-      <form className="register-card" onSubmit={handleSubmit}>
-        <img src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`} alt="Village Mitai Logo" className="register-logo" />
-        <h2 className="register-heading">Create Account</h2>
-        {error && <div className="register-error">{error}</div>}
-        <input
-          type="text"
-          name="username"
-          className="register-input"
-          placeholder="Username"
-          value={form.username}
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="first_name"
-          className="register-input"
-          placeholder="First Name"
-          value={form.first_name}
-          onChange={handleChange}
-        />
-        <input
-          type="text"
-          name="last_name"
-          className="register-input"
-          placeholder="Last Name"
-          value={form.last_name}
-          onChange={handleChange}
-        />
-        <input
-          type="email"
-          name="email"
-          className="register-input"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-        />
-        <input
-          type="tel"
-          name="phone"
-          className="register-input"
-          placeholder="Phone Number"
-          value={form.phone}
-          onChange={handleChange}
-        />
-        <input
-          type="password"
-          name="password"
-          className="register-input"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-        />
-        <button type="submit" className="register-button">Register</button>
+    <div className="fp-auth">
+      <form className="fp-card wide" onSubmit={handleSubmit} noValidate>
+        <Link to="/">
+          <img
+            src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
+            alt="Village Mitai"
+            className="fp-logo"
+          />
+        </Link>
+
+        <h1 className="fp-title">Create Account</h1>
+        <p className="fp-sub">Join Village Mitai to order and track your sweets</p>
+
+        {error && (
+          <div className="fp-alert error" role="alert">
+            <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
+            {error}
+          </div>
+        )}
+
+        <div className="fp-field">
+          <label htmlFor="register-username" className="fp-label">Username</label>
+          <input
+            id="register-username"
+            type="text"
+            name="username"
+            className="fp-input"
+            placeholder="Choose a username"
+            value={form.username}
+            onChange={handleChange}
+            autoComplete="username"
+          />
+        </div>
+
+        <div className="fp-row">
+          <div className="fp-field">
+            <label htmlFor="register-first-name" className="fp-label">First Name</label>
+            <input
+              id="register-first-name"
+              type="text"
+              name="first_name"
+              className="fp-input"
+              placeholder="First name"
+              value={form.first_name}
+              onChange={handleChange}
+              autoComplete="given-name"
+            />
+          </div>
+
+          <div className="fp-field">
+            <label htmlFor="register-last-name" className="fp-label">Last Name</label>
+            <input
+              id="register-last-name"
+              type="text"
+              name="last_name"
+              className="fp-input"
+              placeholder="Last name"
+              value={form.last_name}
+              onChange={handleChange}
+              autoComplete="family-name"
+            />
+          </div>
+        </div>
+
+        <div className="fp-row">
+          <div className="fp-field">
+            <label htmlFor="register-email" className="fp-label">Email</label>
+            <input
+              id="register-email"
+              type="email"
+              name="email"
+              className="fp-input"
+              placeholder="you@example.com"
+              value={form.email}
+              onChange={handleChange}
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="fp-field">
+            <label htmlFor="register-phone" className="fp-label">Phone Number</label>
+            <input
+              id="register-phone"
+              type="tel"
+              name="phone"
+              className="fp-input"
+              placeholder="Mobile number"
+              value={form.phone}
+              onChange={handleChange}
+              autoComplete="tel"
+            />
+          </div>
+        </div>
+
+        <div className="fp-field">
+          <label htmlFor="register-password" className="fp-label">Password</label>
+          <input
+            id="register-password"
+            type="password"
+            name="password"
+            className="fp-input"
+            placeholder="Create a password"
+            value={form.password}
+            onChange={handleChange}
+            autoComplete="new-password"
+          />
+        </div>
+
+        <button type="submit" className="fp-btn" disabled={loading}>
+          {loading ? "Creating account..." : "Register"}
+        </button>
+
+        <p className="fp-foot">
+          Already have an account? <Link to="/login">Log in</Link>
+        </p>
       </form>
+
+      <PaymentResultModal
+        open={showSuccess}
+        status="success"
+        title="Registration Successful"
+        message="Your account is ready. Log in to continue."
+        onClose={() => navigate("/login")}
+      />
     </div>
   );
 };

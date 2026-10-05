@@ -199,9 +199,16 @@ export default function OrderStatus() {
     <div className="order-status-container">
       <div className="order-card">
         <div className="order-nav">
-          <Link to="/">← Home</Link>
-          {isLoggedIn && <Link to="/profile">My Orders</Link>}
+          <Link to="/">
+            <i className="bi bi-arrow-left" aria-hidden="true"></i> Home
+          </Link>
+          {isLoggedIn && (
+            <Link to="/profile">
+              <i className="bi bi-bag" aria-hidden="true"></i> My Orders
+            </Link>
+          )}
         </div>
+        {loading && <div className="order-loading">Loading your order...</div>}
         {error && <div className="error-box">{error}</div>}
 
         {order && (
@@ -221,6 +228,9 @@ export default function OrderStatus() {
               {new Date(order.order_date).toLocaleString()}
             </p>
 
+            {/* two columns on a laptop: what was ordered, then where it is */}
+            <div className="order-columns">
+            <div className="order-col">
             <h4 className="order-section-title">Items</h4>
             <div className="order-items">
               {order.transactions.map((t, i) => (
@@ -337,7 +347,9 @@ export default function OrderStatus() {
                 <p>{REFUND_NOTES[order.refund_status]}</p>
               </div>
             )}
+            </div>
 
+            <div className="order-col">
             {order.status !== "CANCELLED" && (
             <>
             <h4 className="order-section-title">Order Status</h4>
@@ -386,6 +398,8 @@ export default function OrderStatus() {
 
               )
             }
+            </div>
+            </div>
             {showCancelPopup && (
               <div className="popup-overlay">
                 <div className="popup-card">

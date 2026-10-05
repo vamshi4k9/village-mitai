@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
+import DashboardShell from "./DashboardShell";
+import "../styles/FormPage.css";
 import "../styles/AgentPage.css";
 import { API_BASE_URL } from "../constants";
 
@@ -20,7 +22,9 @@ export default function AgentPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (!form.customer_name || !form.customer_phone || !form.area || !form.pincode) {
       setErrorMsg("Please fill all required fields.");
       return;
@@ -33,7 +37,7 @@ export default function AgentPage() {
     try {
       const token = localStorage.getItem("access_token");
 
-      const response = await axios.post(
+      await axios.post(
         `${API_BASE_URL}/agent-submit/`,
         form,
         {
@@ -60,73 +64,119 @@ export default function AgentPage() {
   };
 
   return (
-    <div className="agent-container">
-      <div className="agent-card">
+    <DashboardShell
+      title="Customer Details"
+      subtitle="Register a customer you have spoken to"
+      actions={
+        <a href="/agent-dashboard" className="dash-btn secondary" aria-label="My dashboard">
+          <i className="bi bi-bar-chart" aria-hidden="true"></i>
+          <span>My Dashboard</span>
+        </a>
+      }
+    >
+      <form className="fp-form narrow" onSubmit={handleSubmit} noValidate>
+        {errorMsg && (
+          <div className="fp-alert error" role="alert">
+            <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
+            {errorMsg}
+          </div>
+        )}
+        {successMsg && (
+          <div className="fp-alert success" role="status">
+            <i className="bi bi-check-circle" aria-hidden="true"></i>
+            {successMsg}
+          </div>
+        )}
 
-        <h2 className="agent-title">Customer Details Form</h2>
+        <div className="fp-panel">
+          <h2 className="fp-panel-title">Customer Information</h2>
 
-        {errorMsg && <div className="error-box">{errorMsg}</div>}
-        {successMsg && <div className="success-box">{successMsg}</div>}
+          <div className="fp-row">
+            <div className="fp-field">
+              <label htmlFor="agent-name" className="fp-label">
+                Name<span className="fp-required">*</span>
+              </label>
+              <input
+                id="agent-name"
+                className="fp-input"
+                type="text"
+                name="customer_name"
+                value={form.customer_name}
+                onChange={handleChange}
+                placeholder="Enter customer name"
+              />
+            </div>
 
-        <div className="form-section">
-          <h4>Customer Information</h4>
+            <div className="fp-field">
+              <label htmlFor="agent-phone" className="fp-label">
+                Phone Number<span className="fp-required">*</span>
+              </label>
+              <input
+                id="agent-phone"
+                className="fp-input"
+                type="text"
+                inputMode="tel"
+                name="customer_phone"
+                value={form.customer_phone}
+                onChange={handleChange}
+                placeholder="Enter phone number"
+              />
+            </div>
+          </div>
 
-          <label>Name *</label>
-          <input
-            className="input_agent"
-            type="text"
-            name="customer_name"
-            value={form.customer_name}
-            onChange={handleChange}
-            placeholder="Enter customer name"
-          />
+          <div className="fp-row">
+            <div className="fp-field">
+              <label htmlFor="agent-area" className="fp-label">
+                Area<span className="fp-required">*</span>
+              </label>
+              <input
+                id="agent-area"
+                className="fp-input"
+                type="text"
+                name="area"
+                value={form.area}
+                onChange={handleChange}
+                placeholder="Enter area"
+              />
+            </div>
 
-          <label>Phone Number *</label>
-          <input
-            className="input_agent"
-            type="text"
-            name="customer_phone"
-            value={form.customer_phone}
-            onChange={handleChange}
-            placeholder="Enter phone number"
-          />
-
-          <label>Area *</label>
-          <input
-            className="input_agent"
-            type="text"
-            name="area"
-            value={form.area}
-            onChange={handleChange}
-            placeholder="Enter area"
-          />
-
-          <label>Pincode *</label>
-          <input
-            className="input_agent"
-            type="text"
-            name="pincode"
-            value={form.pincode}
-            onChange={handleChange}
-            placeholder="Enter pincode"
-          />
+            <div className="fp-field">
+              <label htmlFor="agent-pincode" className="fp-label">
+                Pincode<span className="fp-required">*</span>
+              </label>
+              <input
+                id="agent-pincode"
+                className="fp-input"
+                type="text"
+                inputMode="numeric"
+                name="pincode"
+                value={form.pincode}
+                onChange={handleChange}
+                placeholder="Enter pincode"
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="form-section">
-          <h4>Additional Notes</h4>
-          <textarea
-            className="input_agent"
-            name="notes"
-            value={form.notes}
-            onChange={handleChange}
-            placeholder="Optional notes"
-          ></textarea>
+        <div className="fp-panel">
+          <h2 className="fp-panel-title">Additional Notes</h2>
+
+          <div className="fp-field">
+            <textarea
+              className="fp-input"
+              name="notes"
+              aria-label="Additional notes"
+              value={form.notes}
+              onChange={handleChange}
+              placeholder="Optional notes"
+            ></textarea>
+          </div>
         </div>
 
-        <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
+        <button type="submit" className="fp-btn" disabled={loading}>
           {loading ? "Submitting..." : "Submit Details"}
         </button>
-      </div>
-    </div>
+      </form>
+    </DashboardShell>
   );
 }

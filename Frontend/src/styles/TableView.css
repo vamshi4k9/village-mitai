@@ -1,267 +1,430 @@
-.invoice-container {
-  max-width: 900px;
-  margin: 20px auto;
-  padding: 16px;
-  background: #f4f2f1;
-  color: #3F2305;
+/* Order list on the Admin, Maker and Delivery dashboards. The page frame,
+   buttons and messages are in Dashboard.css. */
+.odash {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
-.dashboard-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin-bottom: 16px;
+.odash-count {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #7b7167;
 }
 
-/* Tabs */
-.tab-navigation {
-  display: flex;
+/* ================= TABS (Admin) ================= */
+.odash-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   margin-bottom: 16px;
 }
 
-.tab-button {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid #d8cfc4;
+.odash-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
   background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  bodash-radius: 6px;
+  color: #3F2305;
+  font-size: 0.92rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.2s ease, bodash-color 0.2s ease, color 0.2s ease;
+}
+
+.odash-tab:hover {
+  bodash-color: #4b2a0d;
+}
+
+.odash-tab i {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.odash-tab-label {
+  flex: 1;
+  text-align: left;
+}
+
+.odash-tab-count {
+  min-width: 28px;
+  padding: 2px 8px;
+  background: #ede7e1;
+  bodash-radius: 20px;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-align: center;
 }
 
-.tab-button.active {
-  background: #4b2a0d;
-  color: white;
+.odash-tab.active {
+  background: #3F2305;
+  bodash-color: #3F2305;
+  color: #f9f9f9;
 }
 
-/* Table */
-.invoice-table {
+.odash-tab.active .odash-tab-count {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.odash-tab:focus-visible,
+.odash-toggle:focus-visible,
+.odash-status-select:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+/* ================= ORDER CARD ================= */
+.odash-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-/* Card */
-.invoice-block {
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e6ded6;
-  padding: 12px;
-}
-
-/* Row */
-.invoice-row {
-  cursor: pointer;
-}
-
-.invoice-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.invoice-id {
-  font-weight: 700;
-}
-
-.invoice-date {
-  font-size: 0.75rem;
-  color: #7a6a58;
-}
-
-.invoice-amount {
-  font-weight: 700;
-}
-
-/* Status */
-.status-wrapper {
-  margin-top: 4px;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  font-weight: 600;
-}
-
-/* Status colors */
-/* .status-badge.ordered {
-  background: #f3e9e2;
-}
-
-.status-badge.in-progress {
-  background: #fde68a;
-}
-
-.status-badge.shipping {
-  background: #bfdbfe;
-}
-
-.status-badge.out-for-delivery {
-  background: #c7d2fe;
-}
-
-.status-badge.delivered {
-  background: #bbf7d0;
-} */
-
-.status-select {
-  display: block;
-  margin-top: 4px;
-  padding: 4px;
-  border-radius: 6px;
-}
-
-/* Expanded */
-.invoice-details {
-  margin-top: 10px;
-  padding: 10px;
-  background: #f8f4f1;
-  border-radius: 10px;
-}
-
-.invoice-info {
-  font-size: 0.85rem;
-  margin-bottom: 10px;
-}
-
-/* Transactions */
-.transaction-row {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  padding: 8px 0;
-  border-top: 1px solid #eee;
 }
 
-.transaction-row img {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
+.odash-card {
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  bodash-radius: 6px;
+  transition: bodash-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .invoice-main {
-    flex-direction: row;
-  }
-
-  .invoice-right {
-    text-align: right;
-  }
+.odash-card:hover,
+.odash-card.expanded {
+  bodash-color: #4b2a0d;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
 }
 
-/* 🔥 Delivery Address Box */
-.delivery-address-box {
-  margin-top: 10px;
-  padding: 10px;
-  background: #f8f4f1;
-  border: 1px solid #e6ded6;
-  border-radius: 10px;
-}
-
-.address-title {
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: #3F2305;
-}
-
-/* Map button */
-.map-btn {
-  margin-top: 8px;
-  padding: 6px 10px;
-  background: #4b2a0d;
-  color: white;
-  border: none;
-  border-radius: 6px;
+/* one line on a laptop: order, items, amount, status, change status, toggle */
+.odash-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.4fr) 90px 120px 150px 170px 36px;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
   cursor: pointer;
-  font-size: 0.8rem;
 }
 
-.map-btn:hover {
-  background: #3a210a;
-}
-
-/* 🔥 Compact Delivery UI */
-.delivery-compact {
-  margin-top: 8px;
-  padding: 10px;
-  background: #f8f4f1;
-  border-radius: 10px;
-  border: 1px solid #e6ded6;
-}
-
-/* Top row */
-.delivery-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
+.odash-id {
+  font-size: 0.98rem;
   font-weight: 600;
 }
 
-.delivery-name {
+.odash-date {
+  font-size: 0.78rem;
+  color: #7b7167;
+}
+
+.odash-items-count {
+  font-size: 0.85rem;
+  color: #5e4632;
+}
+
+.odash-amount {
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- status badge ---- */
+.odash-status {
+  justify-self: start;
+  padding: 4px 10px;
+  bodash-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.odash-status.ordered {
+  background: #ede7e1;
   color: #3F2305;
 }
 
-.delivery-phone {
-  font-size: 0.8rem;
-  color: #5c4033;
+.odash-status.in-progress {
+  background: #fbefd3;
+  color: #7a5200;
 }
 
-/* Address */
-.delivery-address {
-  font-size: 0.8rem;
-  margin-top: 4px;
-  color: #6b5e52;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* 🔥 single line */
+.odash-status.shipping {
+  background: #e2ecf6;
+  color: #1f4e79;
 }
 
-/* Actions */
-.delivery-actions {
+.odash-status.out-for-delivery {
+  background: #ebe5f5;
+  color: #4a3878;
+}
+
+.odash-status.delivered {
+  background: #e1f1e4;
+  color: #1e6331;
+}
+
+.odash-status.other {
+  background: #eee;
+  color: #555;
+}
+
+.odash-status-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid #aaa;
+  bodash-radius: 6px;
+  color: #3F2305;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.odash-toggle {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  bodash-radius: 50%;
+  color: #7b7167;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.odash-toggle:hover {
+  background: #ebe5df;
+  color: #3F2305;
+}
+
+.odash-card.expanded .odash-toggle {
+  transform: rotate(180deg);
+}
+
+/* ================= EXPANDED DETAILS ================= */
+.odash-details {
+  padding: 14px;
+  bodash-top: 1px solid #d8cfc4;
+  background: #f4f2f1;
+  bodash-radius: 0 0 6px 6px;
+  animation: orderDetailsIn 0.2s ease;
+}
+
+.odash-payment {
+  margin: 0 0 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.odash-payment span {
+  margin-right: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #7b7167;
+}
+
+/* ---- delivery address (Delivery role) ---- */
+.odash-delivery {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  bodash-radius: 6px;
+}
+
+.odash-delivery-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.odash-delivery-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.odash-delivery-name span {
+  margin-left: 10px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #5e4632;
+}
+
+.odash-delivery-address {
+  margin-top: 2px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #5e4632;
+  overflow-wrap: anywhere;
+}
+
+.odash-delivery-actions {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  flex-shrink: 0;
 }
 
-/* Buttons */
-.action-btn {
+/* ---- items ---- */
+.odash-items {
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  bodash-radius: 6px;
+}
+
+.odash-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  bodash-top: 1px solid #e9e2da;
+}
+
+.odash-item:first-child {
+  bodash-top: none;
+}
+
+.odash-item img {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  object-fit: cover;
+  bodash-radius: 6px;
+}
+
+.odash-item-text {
   flex: 1;
-  text-align: center;
-  padding: 6px;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.odash-item-text strong {
+  font-size: 0.9rem;
   font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
-/* Map button */
-.action-btn.map {
-  background: #4b2a0d;
-  color: white;
+.odash-item-text span {
+  font-size: 0.8rem;
+  color: #7b7167;
 }
 
-/* Call button */
-.action-btn.call {
-  background: #e7e1dc;
-  color: #3F2305;
+.odash-item-price {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Mobile optimization */
-@media (max-width: 768px) {
-  .delivery-top {
-    font-size: 0.8rem;
+@keyframes orderDetailsIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================= TABLET AND MOBILE ================= */
+/* two lines: order + amount + toggle, then status + change status */
+@media (max-width: 860px) {
+  .odash-row {
+    grid-template-columns: 1fr auto 36px;
+    grid-template-areas:
+      "id     amount toggle"
+      "status select select";
+    gap: 10px 12px;
   }
 
-  .delivery-address {
-    font-size: 0.75rem;
+  .odash-id-block {
+    grid-area: id;
+    min-width: 0;
   }
 
-  .action-btn {
-    padding: 8px;
-    font-size: 0.8rem;
+  .odash-items-count {
+    display: none;
+  }
+
+  .odash-amount {
+    grid-area: amount;
+  }
+
+  .odash-status {
+    grid-area: status;
+    align-self: center;
+  }
+
+  .odash-status-select {
+    grid-area: select;
+    justify-self: end;
+    max-width: 200px;
+    height: 40px;
+  }
+
+  .odash-toggle {
+    grid-area: toggle;
+  }
+}
+
+@media (max-width: 576px) {
+  .odash-tabs {
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  /* icon over label over count, so three tabs fit a phone */
+  .odash-tab {
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 4px;
+    font-size: 0.78rem;
+  }
+
+  .odash-tab-label {
+    flex: none;
+    text-align: center;
+  }
+
+  .odash-row {
+    padding: 12px;
+  }
+
+  .odash-details {
+    padding: 12px;
+  }
+
+  .odash-delivery {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .odash-delivery-name span {
+    display: block;
+    margin-left: 0;
+  }
+
+  .odash-delivery-actions .dash-btn {
+    flex: 1;
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odash-details {
+    animation: none;
+  }
+
+  .odash-toggle {
+    transition: none;
   }
 }
