@@ -346,7 +346,7 @@ class Invoice(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORDERED')
     # secret part of the tracking link: order numbers are easy to guess, this is not
-    tracking_token = models.CharField(max_length=32, unique=True, null=True, editable=False, default=generate_tracking_token)
+    tracking_token = models.CharField(max_length=32, null=True, editable=False, default=generate_tracking_token)
 
     # Razorpay ids of the online payment; needed to refund a cancelled order
     razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
