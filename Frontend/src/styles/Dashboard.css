@@ -1,0 +1,274 @@
+/* Shared shell for the staff and agent pages (order dashboards, agent
+   dashboard, catalogue). These routes have no site header, so the shell
+   brings its own top bar. Same colours and 6px corners as the storefront. */
+.dash-page {
+  min-height: 100vh;
+  background: #f4f2f1;
+  color: #3F2305;
+  text-align: left;
+}
+
+/* ================= TOP BAR ================= */
+.dash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e4d8cc;
+}
+
+.dash-topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-brand {
+  flex-shrink: 0;
+  display: block;
+  line-height: 0;
+}
+
+.dash-brand img {
+  height: 40px;
+  width: auto;
+  border-radius: 4px;
+}
+
+.dash-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-heading h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #3F2305;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-heading p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #7b7167;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ================= BUTTONS ================= */
+.dash-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 14px;
+  background: #3F2305;
+  border: none;
+  border-radius: 6px;
+  color: #f9f9f9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.dash-btn:hover:not(:disabled) {
+  background: #2d1804;
+  color: #f9f9f9;
+}
+
+.dash-btn.secondary {
+  background: #ebe5df;
+  color: #3F2305;
+}
+
+.dash-btn.secondary:hover:not(:disabled) {
+  background: #e0d7ce;
+  color: #3F2305;
+}
+
+.dash-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dash-btn:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+/* ================= CONTENT ================= */
+.dash-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 20px 48px;
+}
+
+.dash-section-title {
+  margin: 24px 0 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #3F2305;
+  text-align: left;
+}
+
+.dash-panel {
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+/* number tiles */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.dash-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+.dash-stat-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ede7e1;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.dash-stat-value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dash-stat-label {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: #7b7167;
+}
+
+/* loading, empty and error messages */
+.dash-message {
+  padding: 36px 16px;
+  background: #f9f9f9;
+  border: 1px dashed #d8cfc4;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.92rem;
+  color: #7b7167;
+}
+
+.dash-message i {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.6rem;
+  color: #a08a75;
+}
+
+.dash-message.error {
+  border-style: solid;
+  border-color: #e6c3c3;
+  background: #fbf1f1;
+  color: #a12626;
+}
+
+.dash-message.error i {
+  color: #d32f2f;
+}
+
+.dash-message .dash-btn {
+  margin-top: 12px;
+}
+
+/* ================= TABLET ================= */
+@media (max-width: 900px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 576px) {
+  .dash-topbar-inner {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .dash-brand img {
+    height: 34px;
+  }
+
+  .dash-heading h1 {
+    font-size: 1rem;
+  }
+
+  /* icon-only buttons in the top bar */
+  .dash-actions .dash-btn {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 1rem;
+  }
+
+  .dash-actions .dash-btn span {
+    display: none;
+  }
+
+  .dash-main {
+    padding: 14px 12px 36px;
+  }
+
+  .dash-stats {
+    gap: 8px;
+  }
+
+  .dash-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .dash-stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .dash-stat-value {
+    font-size: 1.3rem;
+  }
+}

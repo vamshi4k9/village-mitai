@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../constants";
+import DashboardShell from "./DashboardShell";
+import PaymentResultModal from "./PaymentResultModal";
+import "../styles/FormPage.css";
 import "../styles/Register.css";
+import "../styles/OfflineOrder.css";
 
 const OfflineOrder = () => {
 
@@ -246,191 +250,206 @@ const OfflineOrder = () => {
     const availableWeights = selectedItem ? getAvailableWeights(selectedItem) : [];
 
     return (
-        <div className="register-container">
+        <DashboardShell title="Offline Sweet Order" subtitle="Record an order taken in person">
 
-            <div className="register-card">
+            <div className="oo-layout">
 
-                <h2 className="register-heading">Offline Sweet Order</h2>
+                <div className="oo-entry">
 
-                <input
-                    className="register-input"
-                    name="name"
-                    placeholder="Customer Name"
-                    value={customer.name}
-                    onChange={handleCustomerChange}
-                />
+                    <div className="fp-panel">
+                        <h2 className="fp-panel-title">Customer</h2>
 
-                <input
-                    className="register-input"
-                    name="phone"
-                    placeholder="Phone Number"
-                    value={customer.phone}
-                    onChange={handleCustomerChange}
-                />
+                        <div className="fp-row">
+                            <div className="fp-field">
+                                <label htmlFor="oo-name" className="fp-label">Customer Name</label>
+                                <input
+                                    id="oo-name"
+                                    className="fp-input"
+                                    name="name"
+                                    placeholder="Customer Name"
+                                    value={customer.name}
+                                    onChange={handleCustomerChange}
+                                />
+                            </div>
 
-                <select
-                    name="item_id"
-                    className="register-input"
-                    value={product.item_id}
-                    onChange={handleProductChange}
-                >
-                    <option value="">Select Sweet</option>
+                            <div className="fp-field">
+                                <label htmlFor="oo-phone" className="fp-label">Phone Number</label>
+                                <input
+                                    id="oo-phone"
+                                    className="fp-input"
+                                    name="phone"
+                                    inputMode="tel"
+                                    placeholder="Phone Number"
+                                    value={customer.phone}
+                                    onChange={handleCustomerChange}
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-                    {items.map((item) => (
-                        <option key={item.id} value={item.id}>
-                            {item.name}
-                        </option>
-                    ))}
+                    <div className="fp-panel">
+                        <h2 className="fp-panel-title">Add Item</h2>
 
-                </select>
+                        <div className="fp-row">
+                            <div className="fp-field">
+                                <label htmlFor="oo-item" className="fp-label">Sweet</label>
+                                <select
+                                    id="oo-item"
+                                    name="item_id"
+                                    className="fp-input"
+                                    value={product.item_id}
+                                    onChange={handleProductChange}
+                                >
+                                    <option value="">Select Sweet</option>
 
-                <select
-                    name="weight"
-                    className="register-input"
-                    value={product.weight}
-                    onChange={handleProductChange}
-                >
+                                    {items.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </option>
+                                    ))}
 
-                    <option value="">Select Weight</option>
+                                </select>
+                            </div>
 
-                    {availableWeights.map((w) => (
-                        <option key={w} value={w}>
-                            {w}
-                        </option>
-                    ))}
+                            <div className="fp-field">
+                                <label htmlFor="oo-weight" className="fp-label">Weight</label>
+                                <select
+                                    id="oo-weight"
+                                    name="weight"
+                                    className="fp-input"
+                                    value={product.weight}
+                                    onChange={handleProductChange}
+                                >
 
-                </select>
+                                    <option value="">Select Weight</option>
 
-                <button
-                    className="register-button"
-                    onClick={addItem}
-                >
-                    Add Item
-                </button>
+                                    {availableWeights.map((w) => (
+                                        <option key={w} value={w}>
+                                            {w}
+                                        </option>
+                                    ))}
 
-                <div className="bill-container">
+                                </select>
+                            </div>
+                        </div>
 
-                    <table className="bill-table">
+                        <div className="fp-field oo-add">
+                            <span className="oo-add-price">
+                                {product.price ? `Rs.${product.price}` : "Select a sweet and weight"}
+                            </span>
+                            <button
+                                type="button"
+                                className="fp-btn secondary"
+                                onClick={addItem}
+                            >
+                                <i className="bi bi-plus-lg" aria-hidden="true"></i>
+                                Add Item
+                            </button>
+                        </div>
+                    </div>
 
-                        <thead>
-                            <tr>
-                                <th>Sweet</th>
-                                <th>Weight</th>
-                                <th>Price</th>
-                                  <th></th>
+                </div>
 
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div className="fp-panel oo-bill">
+                    <h2 className="fp-panel-title">Bill</h2>
+
+                    {orders.length === 0 ? (
+                        <p className="oo-empty">No items added yet.</p>
+                    ) : (
+                        <ul className="oo-items">
 
                             {orders.map((item, index) => (
-                                <tr key={index}>
+                                <li key={index}>
 
-                                    <td>{item.name}</td>
-                                    <td>{item.weight}</td>
-                                    <td>Rs.{item.price}</td>
+                                    <div className="oo-item-text">
+                                        <strong>{item.name}</strong>
+                                        <span>{item.weight}</span>
+                                    </div>
 
-                                    <td>
-                                        <button
-                                            className="remove-btn"
-                                            onClick={() => removeItem(index)}
-                                        >
-                                            ❌
-                                        </button>
-                                    </td>
+                                    <span className="oo-item-price">Rs.{item.price}</span>
 
-                                </tr>
+                                    <button
+                                        type="button"
+                                        className="oo-remove"
+                                        aria-label={`Remove ${item.name}`}
+                                        onClick={() => removeItem(index)}
+                                    >
+                                        <i className="bi bi-x-lg" aria-hidden="true"></i>
+                                    </button>
+
+                                </li>
                             ))}
 
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-                <div className="coupon-section">
-
-                    <input
-                        className="register-input"
-                        placeholder="Enter Coupon"
-                        value={coupon}
-                        onChange={(e) => setCoupon(e.target.value)}
-                    />
-                    {couponMessage && (
-                        <div className="coupon-message">
-                            {couponMessage}
-                        </div>
+                        </ul>
                     )}
 
-                    <button
-                        className="register-button"
-                        onClick={() => applyCoupon(coupon, getTotal())}
-                    >
-                        Apply
-                    </button>
-
-                    {couponApplied && (
-                        <div className="coupon-success">
-                            Coupon VAT20 applied (20% OFF)
-                        </div>
-                    )}
-
-                </div>
-
-                <div className="bill-summary">
-
-                    <div className="summary-row">
-                        <span>Total</span>
-                        <span>Rs.{getTotal()}</span>
-                    </div>
-
-                    {couponApplied && (
-                        <div className="summary-row discount">
-                            <span>Coupon VAT20</span>
-                            <span>-Rs.{discount.toFixed(2)}</span>
-                        </div>
-                    )}
-
-                    <div className="summary-row final">
-                        <span>Final Total</span>
-                        <span>Rs.{(getTotal() - discount).toFixed(2)}</span>
-                    </div>
-
-                </div>
-
-                <button
-                    className="register-button"
-                    style={{ marginTop: "15px" }}
-                    onClick={submitOrder}
-                >
-                    Place Order
-                </button>
-
-            </div>
-            {showModal && (
-
-                <div className="modal-overlay">
-
-                    <div className="modal-box">
-
-                        <h3>Order Created Successfully 🎉</h3>
-
-                        <p>Order ID: #{orderId}</p>
+                    <div className="oo-coupon">
+                        <input
+                            className="fp-input"
+                            placeholder="Enter Coupon"
+                            aria-label="Coupon code"
+                            value={coupon}
+                            onChange={(e) => setCoupon(e.target.value)}
+                        />
 
                         <button
-                            className="register-button"
-                            onClick={() => setShowModal(false)}
+                            type="button"
+                            className="fp-btn secondary"
+                            onClick={() => applyCoupon(coupon, getTotal())}
                         >
-                            Close
+                            Apply
                         </button>
+                    </div>
+
+                    {couponMessage && (
+                        <p className={`oo-coupon-message ${couponApplied ? "applied" : ""}`}>
+                            {couponMessage}
+                        </p>
+                    )}
+
+                    <div className="oo-summary">
+
+                        <div className="oo-summary-row">
+                            <span>Total</span>
+                            <span>Rs.{getTotal()}</span>
+                        </div>
+
+                        {couponApplied && (
+                            <div className="oo-summary-row oo-discount">
+                                <span>Coupon VAT20</span>
+                                <span>-Rs.{discount.toFixed(2)}</span>
+                            </div>
+                        )}
+
+                        <div className="oo-summary-row final">
+                            <span>Final Total</span>
+                            <span>Rs.{(getTotal() - discount).toFixed(2)}</span>
+                        </div>
 
                     </div>
 
+                    <div className="fp-field">
+                        <button
+                            type="button"
+                            className="fp-btn"
+                            onClick={submitOrder}
+                        >
+                            Place Order
+                        </button>
+                    </div>
                 </div>
 
-            )}
+            </div>
 
-        </div>
+            <PaymentResultModal
+                open={showModal}
+                status="success"
+                title="Order Created Successfully"
+                message={`Order ID: #${orderId}`}
+                onClose={() => setShowModal(false)}
+            />
+
+        </DashboardShell>
 
     );
 };

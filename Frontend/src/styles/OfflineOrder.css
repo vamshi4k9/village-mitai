@@ -1,0 +1,193 @@
+/* Offline order page: entry forms on the left, the running bill on the right
+   (stacked on a phone). Fields, panels and buttons are in FormPage.css. */
+.oo-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* the bill stays in view while items are added */
+.oo-bill {
+  position: sticky;
+  top: 84px;
+}
+
+.oo-add {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.oo-add-price {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #7b7167;
+}
+
+.oo-add .fp-btn {
+  width: auto;
+  flex-shrink: 0;
+}
+
+.oo-empty {
+  margin: 0 0 14px;
+  padding: 18px 12px;
+  border: 1px dashed #d8cfc4;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  color: #7b7167;
+  text-align: center;
+}
+
+.oo-items {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #e4d8cc;
+  border-radius: 6px;
+}
+
+.oo-items li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px 10px 12px;
+  border-top: 1px solid #e9e2da;
+}
+
+.oo-items li:first-child {
+  border-top: none;
+}
+
+.oo-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.oo-item-text strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.oo-item-text span {
+  font-size: 0.8rem;
+  color: #7b7167;
+}
+
+.oo-item-price {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.oo-remove {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #7b7167;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.oo-remove:hover {
+  background: #fbf1f1;
+  color: #d32f2f;
+}
+
+.oo-remove:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+.oo-coupon {
+  display: flex;
+  gap: 8px;
+}
+
+.oo-coupon .fp-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.oo-coupon .fp-btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 10px 18px;
+}
+
+.oo-coupon-message {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: #a12626;
+}
+
+.oo-coupon-message.applied {
+  color: #1e6331;
+}
+
+.oo-summary {
+  margin: 14px 0;
+  padding-top: 12px;
+  border-top: 1px solid #d8cfc4;
+}
+
+.oo-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 0.9rem;
+  color: #5e4632;
+  font-variant-numeric: tabular-nums;
+}
+
+.oo-summary-row.oo-discount {
+  color: #1e6331;
+}
+
+.oo-summary-row.final {
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #d8cfc4;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #3F2305;
+}
+
+@media (max-width: 860px) {
+  .oo-layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .oo-bill {
+    position: static;
+  }
+}
+
+@media (max-width: 576px) {
+  .oo-add {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .oo-add .fp-btn {
+    width: 100%;
+  }
+}

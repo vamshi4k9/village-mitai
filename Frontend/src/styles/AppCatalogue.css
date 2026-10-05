@@ -1,64 +1,78 @@
-/* Reuse the same layout theme */
-.dash-container {
-  background: #f4f2f1;
-  min-height: 100vh;
-  padding: 16px;
-  display: flex;
-  justify-content: center;
+/* Catalogue: grouped link cards. The page frame is in Dashboard.css. */
+.catalogue-group:first-child .dash-section-title {
+  margin-top: 0;
 }
 
-.dash-card {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 960px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-
-/* Title */
-.dash-title {
-  color: #3F2305;
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-/* Catalogue Grid */
 .catalogue-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
 }
 
-/* Button style */
-.catalogue-btn {
-  background: #3F2305;
-  color: #fff;
-  border: none;
-  padding: 16px;
-  border-radius: 12px;
-  font-size: 1rem;
-  cursor: pointer;
+.catalogue-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+  color: #3F2305;
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.catalogue-card:hover,
+.catalogue-card:focus-visible {
+  border-color: #4b2a0d;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
+  color: #3F2305;
+  transform: translateY(-1px);
+}
+
+.catalogue-card:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+.catalogue-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.catalogue-name {
+  font-size: 0.95rem;
   font-weight: 600;
-  transition: 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  line-height: 1.4;
 }
 
-.catalogue-btn:hover {
-  background: #5a3510;
-  transform: translateY(-2px);
+.catalogue-url {
+  font-size: 0.78rem;
+  color: #7b7167;
+  overflow-wrap: anywhere;
 }
 
-.catalogue-btn:active {
-  transform: scale(0.98);
+.catalogue-arrow {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: #a08a75;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-/* Mobile */
-@media (max-width: 640px) {
+.catalogue-card:hover .catalogue-arrow {
+  color: #3F2305;
+  transform: translateX(2px);
+}
+
+@media (max-width: 576px) {
   .catalogue-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .catalogue-card {
+    padding: 12px;
   }
 }

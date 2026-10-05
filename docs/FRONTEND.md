@@ -100,7 +100,9 @@ Other helpers in [src/utils/](../Frontend/src/utils/):
 | `CartPopup` | Cart drawer opened from the header |
 | `MobilePrompt` | Welcome popup on the home page that collects a mobile number. Shows 1.5 seconds after the first visit, posts to `/save-mobile/`, never shows again once submitted or dismissed |
 | `WhatsAppButton` | Floating chat button, bottom right of the home page. Hidden until a WhatsApp number is set in the admin (`SiteConfig`) |
-| `PaymentResultModal`, `ConfirmPopup` | Result and confirmation popups |
+| `PaymentResultModal`, `ConfirmPopup` | Result and confirmation popups. `PaymentResultModal` is also the success popup on the register, recruitment and offline-order pages |
+| `DashboardShell` | Page frame for routes without the site header: sticky top bar with logo, title and action buttons. Used by the order dashboards, agent dashboard, agent page, recruitment form, offline order and catalogue |
+| `Dashboards/OrdersDashboard` | Loads orders for the Admin, Maker and Delivery dashboards; `TableView` renders the list and decides what each role sees |
 | `Loader` | Top-of-page route loader |
 | `ProductCard` | Item tile used in every grid |
 
@@ -123,13 +125,28 @@ Keep new screens consistent with these values:
 | Corner radius | `6px` |
 | Font | Poppins |
 
-Shared classes in [App.css](../Frontend/src/App.css): `.page-title` for the page heading and `.section-title` for section headings. The text pages share [StaticPages.css](../Frontend/src/styles/StaticPages.css).
+Shared classes in [App.css](../Frontend/src/App.css): `.page-title` for the page heading and `.section-title` for section headings.
+
+Shared stylesheets:
+
+| File | Prefix | Used by |
+| --- | --- | --- |
+| [StaticPages.css](../Frontend/src/styles/StaticPages.css) | `static-` | About, Contact, Privacy |
+| [Dashboard.css](../Frontend/src/styles/Dashboard.css) | `dash-` | `DashboardShell`, number tiles, buttons and messages on staff and agent pages |
+| [FormPage.css](../Frontend/src/styles/FormPage.css) | `fp-` | Login, staff login and register cards; fields, choice chips, panels and alerts on the agent, recruitment and offline-order forms |
+| [TableView.css](../Frontend/src/styles/TableView.css) | `odash-` | Order list on the dashboards |
 
 Icons come from Bootstrap Icons, loaded in [public/index.html](../Frontend/public/index.html): `<i className="bi bi-truck"></i>`.
 
 Things to know before adding styles:
 
 - `.App` sets `text-align: center`. Set `text-align: left` on containers that hold body text.
-- [Ordering.css](../Frontend/src/styles/Ordering.css) has a bare `h2 { text-align: center }` rule that applies site-wide once loaded.
+- A few stylesheets contain rules that are not scoped to their page and so apply everywhere. They are marked with a comment and kept because other pages were built with them in effect:
+  - [Ordering.css](../Frontend/src/styles/Ordering.css): `h2` (centred, 20px bottom margin)
+  - [AgentPage.css](../Frontend/src/styles/AgentPage.css): `label`, `input:focus`, `textarea:focus`
+  - [RecruitForm.css](../Frontend/src/styles/RecruitForm.css): `select`, `input[type="date"]`
+  - [AgentDashboard.css](../Frontend/src/styles/AgentDashboard.css): `.section-title`, which overrides the one in `App.css`
+  - [Register.css](../Frontend/src/styles/Register.css): `.summary-row`, `.discount`, `.coupon-success`, `.remove-btn`
+  - [OrderStatus.css](../Frontend/src/styles/OrderStatus.css): `.popup-*`, which `ConfirmPopup` relies on, plus generic names such as `.order-card` and `.error-box`
 - Tailwind is loaded from its CDN script in `index.html`, so utility classes work at runtime, but it is not part of the build. Prefer the CSS files for new work.
 - Header height is exposed as `--header-offset`; `.page-content` already pads for it.

@@ -1,8 +1,12 @@
 import React, { useState } from "react";
+import DashboardShell from "./DashboardShell";
+import PaymentResultModal from "./PaymentResultModal";
+import "../styles/FormPage.css";
 import "../styles/RecruitForm.css";
 import axios from "axios";
 import { API_BASE_URL } from '../constants';
 
+const Required = () => <span className="fp-required">*</span>;
 
 const RecruitForm = () => {
     const initialForm = {
@@ -94,146 +98,193 @@ const RecruitForm = () => {
     };
 
     return (
-        <div className="register-container">
-            <form className="register-card" onSubmit={handleSubmit}>
-                <img
-                    src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
-                    alt="Logo"
-                    className="register-logo"
-                />
-                <h2 className="register-heading">Join Our Team</h2>
+        <DashboardShell title="Join Our Team" subtitle="Tell us about yourself and the role you want">
+            <form className="fp-form" onSubmit={handleSubmit} noValidate>
 
-                <label className="labelClass">Full Name<span className="required">*</span></label>
-                <input type="text" name="fullName" className="register-input" value={form.fullName} onChange={handleChange} />
+                <div className="fp-panel">
+                    <h2 className="fp-panel-title">Personal Details</h2>
 
-                <label className="labelClass">Date of Birth<span className="required">*</span></label>
-                <input type="date" name="dob" className="register-input" value={form.dob} onChange={handleChange} />
+                    <div className="fp-row">
+                        <div className="fp-field">
+                            <label htmlFor="recruit-name" className="fp-label">Full Name<Required /></label>
+                            <input id="recruit-name" type="text" name="fullName" className="fp-input" value={form.fullName} onChange={handleChange} autoComplete="name" />
+                        </div>
 
-                <label className="labelClass">Gender<span className="required">*</span></label>
-                <select name="gender" className="register-input" value={form.gender} onChange={handleChange}>
-                    <option value="">Select Gender</option>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
-                </select>
+                        <div className="fp-field">
+                            <label htmlFor="recruit-dob" className="fp-label">Date of Birth<Required /></label>
+                            <input id="recruit-dob" type="date" name="dob" className="fp-input" value={form.dob} onChange={handleChange} />
+                        </div>
+                    </div>
 
-                <label className="labelClass">Mobile Number (WhatsApp preferred)<span className="required">*</span></label>
-                <input type="tel" name="phone" className="register-input" value={form.phone} onChange={handleChange} />
+                    <div className="fp-row">
+                        <div className="fp-field">
+                            <label htmlFor="recruit-gender" className="fp-label">Gender<Required /></label>
+                            <select id="recruit-gender" name="gender" className="fp-input" value={form.gender} onChange={handleChange}>
+                                <option value="">Select Gender</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
 
-                <label className="labelClass">Email ID (Optional)</label>
-                <input type="email" name="email" className="register-input" value={form.email} onChange={handleChange} />
+                        <div className="fp-field">
+                            <label htmlFor="recruit-city" className="fp-label">City / Area of Residence<Required /></label>
+                            <input id="recruit-city" type="text" name="city" className="fp-input" value={form.city} onChange={handleChange} />
+                        </div>
+                    </div>
 
-                <label className="labelClass">City / Area of Residence<span className="required">*</span></label>
-                <input type="text" name="city" className="register-input" value={form.city} onChange={handleChange} />
+                    <div className="fp-row">
+                        <div className="fp-field">
+                            <label htmlFor="recruit-phone" className="fp-label">Mobile Number (WhatsApp preferred)<Required /></label>
+                            <input id="recruit-phone" type="tel" name="phone" className="fp-input" value={form.phone} onChange={handleChange} autoComplete="tel" />
+                        </div>
 
-                <label className="labelClass">Languages Spoken<span className="required">*</span></label>
-                <div className="checkbox-group">
-                    {["English", "Hindi", "Telugu", "Tamil", "Kannada"].map((lang) => (
-                        <label key={lang} className="checkbox-label">
-                            <input
-                                type="checkbox"
-                                name="languages"
-                                value={lang}
-                                checked={form.languages.includes(lang)}
-                                onChange={handleChange}
-                            />
-                            {lang}
-                        </label>
-                    ))}
-                </div>
-
-                <label className="labelClass">Highest Qualification<span className="required">*</span></label>
-                <select name="qualification" className="register-input" value={form.qualification} onChange={handleChange}>
-                    <option value="">Select Qualification</option>
-                    <option>10th</option>
-                    <option>12th</option>
-                    <option>Graduate</option>
-                    <option>Postgraduate</option>
-                </select>
-
-                <label className="labelClass">Own a bike/scooter for local travel?<span className="required">*</span></label>
-                <select name="ownBike" className="register-input" value={form.ownBike} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option>Yes</option>
-                    <option>No</option>
-                </select>
-
-                <label className="labelClass">Prior field marketing experience?<span className="required">*</span></label>
-                <select name="marketingExperience" className="register-input" value={form.marketingExperience} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option>Yes</option>
-                    <option>No</option>
-                </select>
-
-                <label className="labelClass">Preferred Work Location/Area<span className="required">*</span></label>
-                <input type="text" name="preferredLocation" className="register-input" value={form.preferredLocation} onChange={handleChange} />
-
-                <label className="labelClass">How many hours can you commit daily?<span className="required">*</span></label>
-                <select name="dailyHours" className="register-input" value={form.dailyHours} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option>2 Hours</option>
-                    <option>4 Hours</option>
-                    <option>6 Hours</option>
-                    <option>Full-time</option>
-                    <option>Flexible</option>
-                </select>
-
-                <label className="labelClass">Willing to distribute flyers, visit stores, and talk to people directly?<span className="required">*</span></label>
-                <select name="flyerWillingness" className="register-input" value={form.flyerWillingness} onChange={handleChange}>
-                    <option value="">Select</option>
-                    <option>Yes</option>
-                    <option>No</option>
-                </select>
-
-                <label className="labelClass">Salary Preference<span className="required">*</span></label>
-                <div className="radio-group">
-                    {["Salary-Based", "Commission-Based", "Open to Both"].map((opt) => (
-                        <label key={opt} className="radio-label">
-                            <input
-                                type="radio"
-                                name="salaryPreference"
-                                value={opt}
-                                checked={form.salaryPreference === opt}
-                                onChange={handleChange}
-                            />
-                            {opt}
-                        </label>
-                    ))}
-                </div>
-                <label className="labelClass">
-                    Applying For<span className="required">*</span>
-                </label>
-                
-
-                <div className="radio-group role-group">
-                    {["Delivery Partner", "Field Agent", "Cook"].map((role) => (
-                        <label key={role} className="radio-label">
-                            <input
-                                type="radio"
-                                name="role"
-                                value={role}
-                                checked={form.role === role}
-                                onChange={handleChange}
-                            />
-                            {role}
-                        </label>
-                    ))}
-                </div>
-
-                {error && <div className="register-error">{error}</div>}
-
-                <button type="submit" className="register-button">Submit</button>
-            </form>
-
-            {showSuccess && (
-                <div className="modal-overlay">
-                    <div className="modal-box">
-                        <p className="modal-message">Details sent successfully. We will contact you shortly.</p>
-                        <button className="modal-ok" onClick={handleDialogClose}>Okay</button>
+                        <div className="fp-field">
+                            <label htmlFor="recruit-email" className="fp-label">Email ID (Optional)</label>
+                            <input id="recruit-email" type="email" name="email" className="fp-input" value={form.email} onChange={handleChange} autoComplete="email" />
+                        </div>
                     </div>
                 </div>
-            )}
-        </div>
+
+                <div className="fp-panel">
+                    <h2 className="fp-panel-title">Background</h2>
+
+                    <div className="fp-field">
+                        <span className="fp-label">Languages Spoken<Required /></span>
+                        <div className="fp-choices">
+                            {["English", "Hindi", "Telugu", "Tamil", "Kannada"].map((lang) => (
+                                <label key={lang} className="fp-choice">
+                                    <input
+                                        type="checkbox"
+                                        name="languages"
+                                        value={lang}
+                                        checked={form.languages.includes(lang)}
+                                        onChange={handleChange}
+                                    />
+                                    {lang}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="fp-row">
+                        <div className="fp-field">
+                            <label htmlFor="recruit-qualification" className="fp-label">Highest Qualification<Required /></label>
+                            <select id="recruit-qualification" name="qualification" className="fp-input" value={form.qualification} onChange={handleChange}>
+                                <option value="">Select Qualification</option>
+                                <option>10th</option>
+                                <option>12th</option>
+                                <option>Graduate</option>
+                                <option>Postgraduate</option>
+                            </select>
+                        </div>
+
+                        <div className="fp-field">
+                            <label htmlFor="recruit-experience" className="fp-label">Prior field marketing experience?<Required /></label>
+                            <select id="recruit-experience" name="marketingExperience" className="fp-input" value={form.marketingExperience} onChange={handleChange}>
+                                <option value="">Select</option>
+                                <option>Yes</option>
+                                <option>No</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="fp-field">
+                        <label htmlFor="recruit-bike" className="fp-label">Own a bike/scooter for local travel?<Required /></label>
+                        <select id="recruit-bike" name="ownBike" className="fp-input" value={form.ownBike} onChange={handleChange}>
+                            <option value="">Select</option>
+                            <option>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="fp-panel">
+                    <h2 className="fp-panel-title">Work Preferences</h2>
+
+                    <div className="fp-row">
+                        <div className="fp-field">
+                            <label htmlFor="recruit-location" className="fp-label">Preferred Work Location/Area<Required /></label>
+                            <input id="recruit-location" type="text" name="preferredLocation" className="fp-input" value={form.preferredLocation} onChange={handleChange} />
+                        </div>
+
+                        <div className="fp-field">
+                            <label htmlFor="recruit-hours" className="fp-label">How many hours can you commit daily?<Required /></label>
+                            <select id="recruit-hours" name="dailyHours" className="fp-input" value={form.dailyHours} onChange={handleChange}>
+                                <option value="">Select</option>
+                                <option>2 Hours</option>
+                                <option>4 Hours</option>
+                                <option>6 Hours</option>
+                                <option>Full-time</option>
+                                <option>Flexible</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="fp-field">
+                        <label htmlFor="recruit-flyer" className="fp-label">Willing to distribute flyers, visit stores, and talk to people directly?<Required /></label>
+                        <select id="recruit-flyer" name="flyerWillingness" className="fp-input" value={form.flyerWillingness} onChange={handleChange}>
+                            <option value="">Select</option>
+                            <option>Yes</option>
+                            <option>No</option>
+                        </select>
+                    </div>
+
+                    <div className="fp-field">
+                        <span className="fp-label">Salary Preference<Required /></span>
+                        <div className="fp-choices">
+                            {["Salary-Based", "Commission-Based", "Open to Both"].map((opt) => (
+                                <label key={opt} className="fp-choice">
+                                    <input
+                                        type="radio"
+                                        name="salaryPreference"
+                                        value={opt}
+                                        checked={form.salaryPreference === opt}
+                                        onChange={handleChange}
+                                    />
+                                    {opt}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="fp-field">
+                        <span className="fp-label">Applying For<Required /></span>
+                        <div className="fp-choices">
+                            {["Delivery Partner", "Field Agent", "Cook"].map((role) => (
+                                <label key={role} className="fp-choice">
+                                    <input
+                                        type="radio"
+                                        name="role"
+                                        value={role}
+                                        checked={form.role === role}
+                                        onChange={handleChange}
+                                    />
+                                    {role}
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="fp-alert error" role="alert">
+                        <i className="bi bi-exclamation-circle" aria-hidden="true"></i>
+                        {error}
+                    </div>
+                )}
+
+                <button type="submit" className="fp-btn">Submit</button>
+            </form>
+
+            <PaymentResultModal
+                open={showSuccess}
+                status="success"
+                title="Details Sent"
+                message="Details sent successfully. We will contact you shortly."
+                onClose={handleDialogClose}
+            />
+        </DashboardShell>
     );
 };
 
