@@ -1,0 +1,391 @@
+/* Text pages (About, Contact, Privacy): same light cards, soft brown borders
+   and brown buttons as the checkout and profile pages */
+.static-page {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+  color: #3F2305;
+  text-align: left;
+}
+
+/* ================= HERO ================= */
+.static-hero {
+  padding: 30px 24px 28px;
+  background: linear-gradient(135deg, #ede7e1 0%, #f9f6f3 100%);
+  border: 1px solid #e4d8cc;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.static-eyebrow {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #3F2305;
+  border-radius: 20px;
+  color: #f9f9f9;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.static-hero .page-title {
+  margin: 12px 0 8px;
+  font-size: 1.75rem;
+}
+
+.static-lead {
+  max-width: 620px;
+  margin: 0 auto;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #5e4632;
+}
+
+.static-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  color: #7b7167;
+}
+
+/* ================= SECTIONS ================= */
+.static-section {
+  margin-top: 28px;
+}
+
+/* text-align is set here because Ordering.css centres every h2 on the site */
+.static-section > .section-title {
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.static-card {
+  padding: 18px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+.static-card p {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.static-card p:last-child {
+  margin-bottom: 0;
+}
+
+.static-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ede7e1;
+  border-radius: 50%;
+  color: #3F2305;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.static-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #3F2305;
+  border-radius: 6px;
+  color: #f9f9f9;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.static-btn:hover {
+  background: #2d1804;
+  color: #f9f9f9;
+  transform: translateY(-1px);
+}
+
+/* ================= ABOUT: TIMELINE ================= */
+.about-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-timeline li {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  padding-bottom: 14px;
+}
+
+.about-timeline li:last-child {
+  padding-bottom: 0;
+}
+
+/* line joining one year to the next */
+.about-timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 46px;
+  bottom: 0;
+  left: 31px;
+  width: 2px;
+  background: #d8cfc4;
+}
+
+.about-year {
+  width: 64px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3F2305;
+  border-radius: 6px;
+  color: #f9f9f9;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.about-timeline .static-card {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ================= ABOUT: VALUES ================= */
+.about-values {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.about-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.about-value:hover,
+.contact-card:hover {
+  border-color: #4b2a0d;
+  box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
+}
+
+/* ================= ABOUT: CLOSING ================= */
+.about-closing {
+  padding: 26px 22px;
+  background: #3F2305;
+  border-radius: 6px;
+  color: #f4f2f1;
+  text-align: center;
+}
+
+.about-closing p {
+  max-width: 600px;
+  margin: 0 auto 12px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.about-closing .about-quote {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #fff;
+}
+
+.about-closing .static-btn {
+  margin-top: 6px;
+  background: #f4f2f1;
+  color: #3F2305;
+}
+
+.about-closing .static-btn:hover {
+  background: #fff;
+  color: #3F2305;
+}
+
+/* ================= CONTACT ================= */
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.contact-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  color: #3F2305;
+  text-decoration: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+a.contact-card:hover {
+  color: #3F2305;
+}
+
+.contact-card-body {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.static-card .contact-label {
+  margin: 0 0 2px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #7b7167;
+}
+
+.static-card .contact-value {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.static-card .contact-hint {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: #7b7167;
+}
+
+.contact-card.wide {
+  grid-column: 1 / -1;
+}
+
+.contact-icon-whatsapp {
+  background: #e3f6ea;
+  color: #128c4b;
+}
+
+/* ================= PRIVACY ================= */
+.policy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.policy-section {
+  display: flex;
+  gap: 14px;
+}
+
+.policy-number {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3F2305;
+  border-radius: 50%;
+  color: #f9f9f9;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.policy-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.policy-body h2 {
+  margin: 4px 0 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #3F2305;
+  text-align: left;
+}
+
+.policy-body ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.policy-body li {
+  margin-bottom: 6px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.policy-body li::marker {
+  color: #a08a75;
+}
+
+.policy-help {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.policy-help p {
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 576px) {
+  .static-page {
+    padding: 12px 12px 36px;
+  }
+
+  .static-hero {
+    padding: 22px 16px 20px;
+  }
+
+  .static-hero .page-title {
+    font-size: 1.5rem;
+  }
+
+  .static-section {
+    margin-top: 22px;
+  }
+
+  .static-card {
+    padding: 14px;
+  }
+
+  .about-values,
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-timeline li {
+    gap: 12px;
+  }
+
+  .about-year {
+    width: 54px;
+    font-size: 0.8rem;
+  }
+
+  .about-timeline li:not(:last-child)::before {
+    left: 26px;
+  }
+
+  .policy-section {
+    gap: 10px;
+  }
+}

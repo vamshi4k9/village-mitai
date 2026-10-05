@@ -47,36 +47,7 @@ html, body{
   color: #3F2305;
 }
 
-/* ---- Text pages (About, Contact, Privacy) ---- */
-.page-static {
-  padding-bottom: 20px;
-  color: #3F2305;
-}
-
-.page-text {
-  width: 100%;
-  max-width: 750px;
-  margin: 0 auto 14px;
-  line-height: 1.7;
-}
-
-.page-block {
-  width: 100%;
-  max-width: 750px;
-  margin: 24px auto 0;
-  padding-top: 8px;
-  border-top: 1px solid #d8cfc4;
-  line-height: 1.7;
-  text-align: left;
-}
-
-.page-block.text-center {
-  text-align: center;
-}
-
-.page-block a {
-  color: #3F2305;
-}
+/* the text pages (About, Contact, Privacy) are styled in styles/StaticPages.css */
  .tab-container {
           display: flex;
           align-items: center;

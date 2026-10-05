@@ -1,0 +1,114 @@
+/* Floating WhatsApp button: a round icon that opens into a pill with a label
+   on hover (desktop) */
+.whatsapp-fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 998; /* under the header, cart drawer and popups */
+  display: inline-flex;
+  align-items: center;
+  height: 52px;
+  padding: 0;
+  border-radius: 26px;
+  background: #25d366;
+  color: #fff;
+  text-decoration: none;
+  box-shadow:
+    0 8px 20px rgba(63, 35, 5, 0.18),
+    0 2px 6px rgba(63, 35, 5, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.whatsapp-fab:hover,
+.whatsapp-fab:focus-visible {
+  background: #1fbd5a;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 26px rgba(63, 35, 5, 0.22),
+    0 3px 8px rgba(63, 35, 5, 0.14);
+}
+
+.whatsapp-fab:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 3px;
+}
+
+.whatsapp-fab-icon {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  line-height: 1;
+}
+
+/* soft ring that pulses a few times to draw the eye, then stops */
+.whatsapp-fab-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid #25d366;
+  opacity: 0;
+  animation: whatsappPulse 2.4s ease-out 1s 3;
+}
+
+.whatsapp-fab-label {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0;
+  transition: max-width 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
+}
+
+@media (hover: hover) and (min-width: 768px) {
+  .whatsapp-fab:hover .whatsapp-fab-label,
+  .whatsapp-fab:focus-visible .whatsapp-fab-label {
+    max-width: 140px;
+    padding-right: 18px;
+    opacity: 1;
+  }
+}
+
+@keyframes whatsappPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .whatsapp-fab {
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    height: 48px;
+    border-radius: 24px;
+  }
+
+  .whatsapp-fab-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-fab,
+  .whatsapp-fab-label {
+    transition: none;
+  }
+
+  .whatsapp-fab-icon::before {
+    animation: none;
+  }
+}
