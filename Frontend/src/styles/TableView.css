@@ -117,6 +117,26 @@
   color: #7b7167;
 }
 
+/* delivery day: what the kitchen and riders plan around */
+.odash-deliver {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #3F2305;
+}
+
+.odash-scheduled {
+  padding: 1px 8px;
+  background: #ede7e1;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
 .odash-items-count {
   font-size: 0.85rem;
   color: #5e4632;
@@ -229,6 +249,38 @@
 }
 
 /* ---- delivery address (Delivery role) ---- */
+.odash-store {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b4f2a;
+}
+
+.odash-store-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3F2305;
+}
+
+.odash-store-filter select {
+  padding: 6px 10px;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+  background: #fff;
+  max-width: 100%;
+}
+
+.odash-pickup {
+  background: #fdf6ec;
+}
+
 .odash-delivery {
   display: flex;
   align-items: center;
@@ -322,6 +374,38 @@
   font-size: 0.9rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- price breakdown ---- */
+.odash-summary {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+.odash-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0;
+  font-size: 0.85rem;
+  color: #5e4632;
+  font-variant-numeric: tabular-nums;
+}
+
+.odash-summary-row.saving {
+  color: #1e6331;
+}
+
+.odash-summary-row.total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #e9e2da;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3F2305;
 }
 
 @keyframes orderDetailsIn {

@@ -9,6 +9,8 @@ import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PaymentResultModal from "./PaymentResultModal";
+import { formatDeliveryDate, relativeDay, datesBetween, dateParts } from "../utils/deliveryDate";
+import { orderStatusUrl } from "../utils/orderNumber";
 
 export default function PreCheckout() {
   const { cart, total, totalItems, setCart, triggerToast } = useContext(CartContext);
@@ -16,6 +18,7 @@ export default function PreCheckout() {
   // messages shown right at the field / section that needs attention
   const [addressErrors, setAddressErrors] = useState({});
   const [addressNotice, setAddressNotice] = useState("");
+  const [deliveryNotice, setDeliveryNotice] = useState("");
 
   // scrolls the problem into the middle of the screen and puts the cursor in it
   const goTo = (id) => {
@@ -37,8 +40,12 @@ export default function PreCheckout() {
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  // set when the applied coupon waives the delivery charge
+  const [couponFreeDelivery, setCouponFreeDelivery] = useState(false);
   const [newTotal, setNewTotal] = useState(total);
   const [message, setMessage] = useState("");
+  // "any" / "online" / "cod": which payment methods the applied coupon allows
+  const [couponPaymentMode, setCouponPaymentMode] = useState("any");
   const navigate = useNavigate();
   const [newAddress, setNewAddress] = useState({
     name: "",
@@ -68,6 +75,40 @@ export default function PreCheckout() {
   };
   // const [showBreakdown, setShowBreakdown] = useState(false);
   const [freeDeliveryAmount, setFreeDeliveryAmount] = useState(0);
+
+  // Delivery date: the fastest possible day, or a later day the customer picks.
+  // The window depends on the slowest item in the cart, so it is fetched
+  // again whenever the items change.
+  const [deliveryDates, setDeliveryDates] = useState(null);
+  const [deliveryMode, setDeliveryMode] = useState("fastest");
+  const [scheduledDate, setScheduledDate] = useState("");
+  const cartItemIds = [...new Set(cart.map((ci) => ci.item.id))].sort().join(",");
+
+  useEffect(() => {
+    if (!cartItemIds) return;
+    let active = true;
+    axios
+      .get(`${API_BASE_URL}/delivery-dates/`, { params: { item_ids: cartItemIds } })
+      .then((res) => {
+        if (!active) return;
+        setDeliveryDates(res.data);
+        // a picked day that is no longer offered has to be picked again
+        setScheduledDate((picked) =>
+          picked && picked > res.data.earliest_date && picked <= res.data.latest_date ? picked : ""
+        );
+      })
+      .catch((err) => console.error("Failed to get delivery dates", err));
+    return () => {
+      active = false;
+    };
+  }, [cartItemIds]);
+
+  // later days to choose from; the fastest day is its own option
+  const scheduleOptions = deliveryDates
+    ? datesBetween(deliveryDates.earliest_date, deliveryDates.latest_date).slice(1)
+    : [];
+  const selectedDeliveryDate =
+    deliveryMode === "scheduled" ? scheduledDate : deliveryDates?.earliest_date || "";
   // distance, charge and whether we deliver, for the selected address
   const [deliveryQuote, setDeliveryQuote] = useState(null);
 
@@ -163,6 +204,7 @@ export default function PreCheckout() {
       if (!selectedAddress || selectedAddress === "0") {
         setMessage("Select address before applying coupon");
         setDiscount(0);
+        setCouponFreeDelivery(false);
         return;
       }
       const address = addresses.find(
@@ -185,6 +227,7 @@ export default function PreCheckout() {
           price: currentPrice,              // Current total
           original_price: originalPrice,    // MRP total
           category_id: item.category,
+          weight,                           // "250" / "500" / "1000" / "piece"
           phone_number: address?.phone_number || "",
         };
       });
@@ -194,18 +237,21 @@ export default function PreCheckout() {
         {
           code: coupon,
           cart_items: cartItems,
+          payment_mode: paymentMode === "UPI" ? "UPI" : "CASH",
         },
         SESSION_TOKEN
       );
 
       setDiscount(response.data.discount);
       setNewTotal(response.data.new_total);
+      setCouponFreeDelivery(!!response.data.free_delivery);
+      setCouponPaymentMode(response.data.payment_mode || "any");
 
       if (response.data.discounted_items) {
         setCart((prevCart) =>
           prevCart.map((ci) => {
             const discItem = response.data.discounted_items.find(
-              (d) => d.id === ci.item.id
+              (d) => d.id === ci.item.id && String(d.weight) === String(ci.weight)
             );
             if (discItem) {
               return {
@@ -226,6 +272,7 @@ export default function PreCheckout() {
     } catch (err) {
       setMessage(err.response?.data?.error || "Failed to apply coupon");
       setDiscount(0);
+      setCouponFreeDelivery(false);
       setNewTotal(total);
     }
   };
@@ -245,9 +292,31 @@ export default function PreCheckout() {
 
     setCoupon("");
     setDiscount(0);
+    setCouponFreeDelivery(false);
+    setCouponPaymentMode("any");
     setNewTotal(total);
     setMessage("Coupon removed.");
   };
+
+  // switching to a payment method the applied coupon does not allow takes
+  // the coupon off and says why
+  useEffect(() => {
+    if (discount <= 0 && !couponFreeDelivery) return;
+    const isOnline = paymentMode === "UPI";
+    if (
+      (couponPaymentMode === "online" && !isOnline) ||
+      (couponPaymentMode === "cod" && isOnline)
+    ) {
+      const code = coupon;
+      removeCoupon();
+      setMessage(
+        couponPaymentMode === "online"
+          ? `${code} is valid only for online payment`
+          : `${code} is valid only for cash on delivery`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMode]);
 
   const handleAddAddress = async () => {
     try {
@@ -341,6 +410,12 @@ export default function PreCheckout() {
       return;
     }
 
+    if (deliveryMode === "scheduled" && !scheduledDate) {
+      setDeliveryNotice("Please pick a delivery date");
+      goTo("co-delivery");
+      return;
+    }
+
     if (!paymentMode) {
       triggerToast("Please select a payment method", 2000);
       goTo("co-payment");
@@ -361,25 +436,30 @@ export default function PreCheckout() {
     const payload = {
       payment_mode: paymentMode === "UPI" ? "UPI" : "CASH",
       delivery_time: 1,
+      // empty means "fastest"; the server works the date out itself
+      delivery_date: selectedDeliveryDate,
+      is_scheduled: deliveryMode === "scheduled",
       net_amount: finalPayable,
       coupon_code: coupon || "",
       cgst: 0,
       sgst: 0,
       discount,
+      // saved with the order so its page can show items, coupon, delivery
+      // and total as they were at checkout
+      delivery_charge: deliveryCharge,
+      // packing is shown struck through as FREE, so nothing is charged
+      packing_charge: 0,
       address_id: address.id,
       // price is what one unit of this line costs: one pack of the chosen
-      // weight, or one piece, after any item discount and coupon
+      // weight, or one piece, after any item discount. The server saves each
+      // line's MRP and its share of the coupon (free units for Buy X Get Y).
       cart_items: cart.map(({ item, quantity, weight }) => {
         const { price, discounted } = getPriceByWeight(item, weight);
         const unitPrice = discounted > 0 && discounted < price ? discounted : price;
-        const lineTotal =
-          item.discounted_total !== undefined
-            ? Number(item.discounted_total)
-            : unitPrice * quantity;
 
         return {
           id: item.id,
-          price: Number((lineTotal / quantity).toFixed(2)),
+          price: Number(Number(unitPrice).toFixed(2)),
           quantity,
           weight,
           discounted: 0,
@@ -401,7 +481,7 @@ export default function PreCheckout() {
           open: true,
           status: "success",
           message: "Order placed successfully!",
-          redirectUrl: `/order_status?invoice_id=${response.data.invoice_id}`,
+          redirectUrl: orderStatusUrl({ order_number: response.data.order_number, id: response.data.invoice_id }),
           type: "Payment",
         });
 
@@ -479,7 +559,7 @@ export default function PreCheckout() {
                 open: true,
                 status: "success",
                 message: "Payment & Order placed successfully!",
-                redirectUrl: `/order_status?invoice_id=${createOrderRes.data.invoice_id}`,
+                redirectUrl: orderStatusUrl({ order_number: createOrderRes.data.order_number, id: createOrderRes.data.invoice_id }),
                 type: "Payment",
               });
             } catch (err) {
@@ -552,11 +632,10 @@ export default function PreCheckout() {
     return sum + price * ci.quantity;
   }, 0);
 
+  // items after their own discounts, before the coupon. The coupon is taken
+  // off once, below; the per-line coupon totals from apply-coupon are not
+  // used here, or the coupon would come off twice.
   const discountedItemsTotal = cart.reduce((sum, ci) => {
-
-    if (ci.item.discounted_total !== undefined) {
-      return sum + Number(ci.item.discounted_total);
-    }
 
     const { price, discounted } = getPriceByWeight(ci.item, ci.weight);
 
@@ -577,8 +656,11 @@ export default function PreCheckout() {
       ? Number(deliveryQuote.delivery_charge)
       : DEFAULT_DELIVERY_CHARGE;
 
+  // free delivery is judged on what is paid for the items, after the coupon
+  const itemsAfterCoupon = discountedItemsTotal - discount;
+
   const deliveryCharge =
-    discountedItemsTotal >= freeDeliveryAmount
+    couponFreeDelivery || itemsAfterCoupon >= freeDeliveryAmount
       ? 0
       : distanceCharge;
 
@@ -624,10 +706,7 @@ export default function PreCheckout() {
                   discounted < price;
 
                 const finalPrice = hasDiscount ? discounted : price;
-                const itemTotal =
-                  ci.item.discounted_total !== undefined
-                    ? Number(ci.item.discounted_total)
-                    : finalPrice * ci.quantity;
+                const itemTotal = finalPrice * ci.quantity;
 
                 const discountPercent = hasDiscount
                   ? Math.round(((price - discounted) / price) * 100)
@@ -791,6 +870,85 @@ export default function PreCheckout() {
               </div>
             )}
           </div>
+
+          <div className="co-card">
+            <div className="co-card-head">
+              <h3 className="section-title" id="co-delivery">Delivery Date</h3>
+            </div>
+
+            {deliveryNotice && <p className="co-error co-notice">{deliveryNotice}</p>}
+
+            <div className="co-delivery-options">
+              <label className={`payment-option co-delivery-option ${deliveryMode === "fastest" ? "selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="delivery-mode"
+                  value="fastest"
+                  checked={deliveryMode === "fastest"}
+                  onChange={() => {
+                    setDeliveryMode("fastest");
+                    setDeliveryNotice("");
+                  }}
+                />
+                <span className="co-radio"></span>
+                <i className="bi bi-lightning-charge"></i>
+                <span className="co-delivery-text">
+                  <span className="co-delivery-title">Fastest Delivery</span>
+                  <span className="co-delivery-sub">
+                    {deliveryDates
+                      ? relativeDay(deliveryDates.earliest_date, deliveryDates.today)
+                        ? `${relativeDay(deliveryDates.earliest_date, deliveryDates.today)} · ${formatDeliveryDate(deliveryDates.earliest_date)}`
+                        : `Arrives ${formatDeliveryDate(deliveryDates.earliest_date)}`
+                      : "Earliest available day"}
+                  </span>
+                </span>
+              </label>
+
+              <label className={`payment-option co-delivery-option ${deliveryMode === "scheduled" ? "selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="delivery-mode"
+                  value="scheduled"
+                  checked={deliveryMode === "scheduled"}
+                  disabled={scheduleOptions.length === 0}
+                  onChange={() => setDeliveryMode("scheduled")}
+                />
+                <span className="co-radio"></span>
+                <i className="bi bi-calendar-event"></i>
+                <span className="co-delivery-text">
+                  <span className="co-delivery-title">Schedule Delivery</span>
+                  <span className="co-delivery-sub">
+                    {scheduledDate ? formatDeliveryDate(scheduledDate) : "Pick a later date"}
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            {deliveryMode === "scheduled" && (
+              <div className="co-date-chips" role="radiogroup" aria-label="Delivery date">
+                {scheduleOptions.map((iso) => {
+                  const { weekday, day, month } = dateParts(iso);
+                  return (
+                    <button
+                      key={iso}
+                      type="button"
+                      role="radio"
+                      aria-checked={scheduledDate === iso}
+                      className={`co-date-chip ${scheduledDate === iso ? "selected" : ""}`}
+                      onClick={() => {
+                        setScheduledDate(iso);
+                        setDeliveryNotice("");
+                      }}
+                    >
+                      <span className="co-date-weekday">{relativeDay(iso, deliveryDates?.today) || weekday}</span>
+                      <span className="co-date-day">{day}</span>
+                      <span className="co-date-month">{month}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: order summary, then payment method and the pay button.
@@ -847,6 +1005,15 @@ export default function PreCheckout() {
               )}
             </div>
 
+            {(discount > 0 || couponFreeDelivery) && couponPaymentMode !== "any" && (
+              <p className="co-coupon-note">
+                <i className="bi bi-info-circle"></i>
+                {couponPaymentMode === "online"
+                  ? " Valid for online payment only"
+                  : " Valid for cash on delivery only"}
+              </p>
+            )}
+
             <div className="co-summary">
               <div className="co-summary-row">
                 <span>Items ({totalItems})</span>
@@ -871,6 +1038,11 @@ export default function PreCheckout() {
                 <span>
                   Delivery Charges
                   {deliveryQuote?.distance_km != null && ` (${deliveryQuote.distance_km} km)`}
+                  {deliveryQuote?.store_name && (
+                    <small className="co-hint" style={{ display: "block", margin: 0 }}>
+                      From {deliveryQuote.store_name}
+                    </small>
+                  )}
                 </span>
 
                 {deliveryCharge === 0 ? (
@@ -891,7 +1063,7 @@ export default function PreCheckout() {
                   Add items worth Rs.
                   {Math.max(
                     0,
-                    freeDeliveryAmount - discountedItemsTotal
+                    freeDeliveryAmount - itemsAfterCoupon
                   ).toFixed(0)}
                   {" "}more to get FREE delivery.
                 </p>
@@ -905,6 +1077,13 @@ export default function PreCheckout() {
                   FREE
                 </span>
               </div>
+
+              {selectedDeliveryDate && (
+                <div className="co-summary-row">
+                  <span>{deliveryMode === "scheduled" ? "Scheduled For" : "Delivery By"}</span>
+                  <span>{formatDeliveryDate(selectedDeliveryDate)}</span>
+                </div>
+              )}
 
               <div className="co-summary-row total">
                 <span>Total</span>

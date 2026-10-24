@@ -123,14 +123,25 @@
   .home-categories {
     flex-wrap: nowrap;
     justify-content: flex-start;
-    gap: 14px;
-    padding: 2px 12px 0;
+    gap: 18px;
+    padding: 2px 16px 0;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
   .home-categories::-webkit-scrollbar {
     display: none;
+  }
+
+  /* centres the row when the categories fit on screen. Auto margins drop to
+     zero once the row overflows, so a long row still starts at the left and
+     scrolls; justify-content: center would cut off the first categories */
+  .home-category:first-child {
+    margin-left: auto;
+  }
+
+  .home-category:last-child {
+    margin-right: auto;
   }
 
   .home-category {

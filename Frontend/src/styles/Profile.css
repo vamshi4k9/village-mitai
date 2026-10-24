@@ -279,6 +279,63 @@
   flex-shrink: 0;
 }
 
+.profile-order .order-detail-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-line-total {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* coupon used on the order, next to the amount paid */
+.profile-coupon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background: #e1f1e4;
+  border-radius: 20px;
+  color: #1e6331;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* items, coupon, delivery and total paid, under the order lines */
+.profile-summary {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #d8cfc4;
+}
+
+.profile-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 0;
+  font-size: 0.88rem;
+  color: #5e4632;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-summary-row.saving {
+  color: #1e6331;
+}
+
+.profile-summary-row.total {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #e9e2da;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #3F2305;
+}
+
 @keyframes profileFadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }

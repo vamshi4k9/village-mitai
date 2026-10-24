@@ -1,4 +1,5 @@
 import uuid
+from django.db import IntegrityError, transaction
 from decimal import Decimal
 from django.utils import timezone
 from django.db import models
@@ -141,6 +142,7 @@ class Coupon(models.Model):
     DISCOUNT_CHOICES = [
         ("percent", "Percent"),
         ("fixed", "Fixed Amount"),
+        ("bogo", "Buy X Get Y Free"),
     ]
     APPLY_ON_CHOICES = [
         ("order", "Entire Order"),
@@ -153,7 +155,30 @@ class Coupon(models.Model):
         choices=DISCOUNT_CHOICES,
         default="percent"
     )
-    discount_value = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    # Buy X Get Y Free: in every group of buy + get units the cheapest
+    # get units are free, so the customer pays for the costliest ones
+    buy_quantity = models.PositiveIntegerField(
+        default=1,
+        help_text="Buy X Get Y Free only: units the customer pays for (e.g. 2 in Buy 2 Get 1)."
+    )
+    get_quantity = models.PositiveIntegerField(
+        default=1,
+        help_text="Buy X Get Y Free only: units given free (e.g. 1 in Buy 2 Get 1)."
+    )
+    # waives the delivery charge; can be used alone (discount_value 0) or with a discount
+    free_delivery = models.BooleanField(default=False)
+    PAYMENT_MODE_CHOICES = [
+        ("any", "Any payment method"),
+        ("online", "Online payment only"),
+        ("cod", "Cash on delivery only"),
+    ]
+    payment_mode = models.CharField(
+        max_length=10,
+        choices=PAYMENT_MODE_CHOICES,
+        default="any",
+        help_text="Which payment methods this coupon can be used with."
+    )
     min_order_value = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -195,6 +220,42 @@ class Coupon(models.Model):
         default="current",
     )
     
+    WEIGHT_CHOICES = [
+        ("250", "250 g"),
+        ("500", "500 g"),
+        ("1000", "1 kg"),
+        (PIECE, "By piece"),
+    ]
+    # comma separated values from WEIGHT_CHOICES; empty means every weight
+    weights = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        help_text="Leave all unticked to allow every weight."
+    )
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.discount_type == "bogo" and (not self.buy_quantity or not self.get_quantity):
+            raise ValidationError("Buy and get quantities must be at least 1 for a Buy X Get Y Free coupon.")
+
+    def allowed_weights(self):
+        return {w for w in self.weights.split(",") if w}
+
+    def allows_payment(self, payment_mode):
+        """payment_mode as checkout sends it: "UPI" (online) or "CASH"."""
+        if self.payment_mode == "online":
+            return payment_mode in ("UPI", "ONLINE", "CARD")
+        if self.payment_mode == "cod":
+            return payment_mode == "CASH"
+        return True
+
+    def payment_mode_message(self):
+        return {
+            "online": f"Coupon {self.code} is valid only for online payment",
+            "cod": f"Coupon {self.code} is valid only for cash on delivery",
+        }.get(self.payment_mode, "")
+
     def is_valid(self):
         now = timezone.now()
         return (
@@ -320,6 +381,10 @@ class Invoice(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     delivery_time = models.IntegerField()
+    # day the customer gets the order: the fastest possible day, or a later
+    # day they picked at checkout (is_scheduled). Empty on older orders.
+    delivery_date = models.DateField(null=True, blank=True)
+    is_scheduled = models.BooleanField(default=False)
     session_key = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -338,15 +403,43 @@ class Invoice(models.Model):
         blank=True,
         related_name="invoices"
     )
+    # store the order is prepared at and picked up from
+    store = models.ForeignKey(
+        "StoreLocation",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="invoices"
+    )
 
     net_amount = models.DecimalField(max_digits=10, decimal_places=2)
     cgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     sgst = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     discount = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    # delivery charge paid, as at checkout. Empty on orders placed before it
+    # was saved; those also have the coupon spread into their line prices.
+    delivery_charge = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    # price breakdown as at checkout (empty on older orders):
+    # items_mrp_total - item_discount = items_total
+    # items_total - discount (coupon) + delivery_charge + packing_charge = net_amount
+    items_mrp_total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                          help_text="Items at their actual price (MRP).")
+    item_discount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                        help_text="Saved through the items' own offer prices.")
+    items_total = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                      help_text="Items at their selling price, before the coupon.")
+    packing_charge = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
+    # copied from the coupon so the order keeps them if the coupon is changed later
+    coupon_code = models.CharField(max_length=50, blank=True, default="")
+    coupon_type = models.CharField(max_length=10, blank=True, default="")
+
+    # order number shown to customers and staff, e.g. VM2610240007: VM, the
+    # order date (YYMMDD) and the order's number within that day
+    order_number = models.CharField(max_length=20, unique=True, null=True, blank=True, editable=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORDERED')
     # secret part of the tracking link: order numbers are easy to guess, this is not
-    tracking_token = models.CharField(max_length=32, null=True, editable=False, default=generate_tracking_token)
+    tracking_token = models.CharField(max_length=32, null=True, unique=True, editable=False, default=generate_tracking_token)
 
     # Razorpay ids of the online payment; needed to refund a cancelled order
     razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
@@ -371,18 +464,60 @@ class Invoice(models.Model):
             return True
         return self.payment_mode == 'UPI' and bool(self.razorpay_payment_id)
 
+    ORDER_NUMBER_PREFIX = "VM"
+
+    @classmethod
+    def next_order_number(cls, day=None):
+        if day is None:
+            now = timezone.now()
+            day = (timezone.localtime(now) if timezone.is_aware(now) else now).date()
+        prefix = f"{cls.ORDER_NUMBER_PREFIX}{day:%y%m%d}"
+        last = (
+            cls.objects.filter(order_number__startswith=prefix)
+            .order_by("-order_number")
+            .values_list("order_number", flat=True)
+            .first()
+        )
+        sequence = int(last[len(prefix):]) + 1 if last else 1
+        return f"{prefix}{sequence:04d}"
+
+    def save(self, *args, **kwargs):
+        if self.order_number:
+            return super().save(*args, **kwargs)
+        # two orders placed at the same moment can pick the same number;
+        # the unique constraint stops the second, which then takes the next
+        for attempt in range(5):
+            self.order_number = self.next_order_number()
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                self.order_number = None
+                if attempt == 4:
+                    raise
+
     def __str__(self):
-        return f"Invoice #{self.id}"
+        return self.order_number or f"Invoice #{self.id}"
     
 class Transaction(models.Model):
     session_key = models.CharField(max_length=40, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='transactions')
+    store = models.ForeignKey("StoreLocation", on_delete=models.SET_NULL, null=True, blank=True, related_name="transactions")
     item_amount = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     weight = models.CharField(max_length=50)
     discounted = models.DecimalField(max_digits=6, decimal_places=2)
+    # price breakdown of this line as at checkout (empty on older orders)
+    mrp_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                    help_text="Actual price (MRP) of one unit.")
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                          help_text="Part of the order's coupon taken off this line.")
+    free_quantity = models.PositiveIntegerField(default=0,
+                                                help_text="Units given free by a Buy X Get Y Free coupon.")
+    final_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
+                                       help_text="What was paid for this line: item_amount x quantity - coupon_discount.")
 
     def __str__(self):
         return f"{self.quantity} x {self.item.name} for Invoice #{self.invoice.id}"
@@ -493,6 +628,10 @@ class DeliveryFeeConfig(models.Model):
         decimal_places=2,
         default=499
     )
+    schedule_days_ahead = models.PositiveIntegerField(
+        default=7,
+        help_text="How many days after the fastest delivery date customers can schedule a delivery for."
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -504,7 +643,8 @@ class DeliveryFeeConfig(models.Model):
         return f"Free Delivery Above Rs.{self.free_delivery_above}"
 
 class StoreLocation(models.Model):
-    """Where orders are sent from. Delivery distance is measured from here."""
+    """A store orders are sent from. Each order goes from the active store
+    nearest to the delivery address (by road), within that store's radius."""
     name = models.CharField(max_length=100, default="Village Mitai")
     address = models.TextField(blank=True)
     latitude = models.FloatField()
@@ -517,15 +657,15 @@ class StoreLocation(models.Model):
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Only one location should be active; the first active one is used."
+        help_text="Inactive stores get no new orders."
     )
 
     class Meta:
         verbose_name = "Store Location"
-        verbose_name_plural = "Store Location"
+        verbose_name_plural = "Store Locations"
 
     def __str__(self):
-        return f"{self.name} ({self.latitude}, {self.longitude})"
+        return self.name
 
 
 class DeliveryCharge(models.Model):

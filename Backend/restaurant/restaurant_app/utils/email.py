@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from restaurant_app.models import NotificationEmail
 import sib_api_v3_sdk
@@ -37,7 +38,28 @@ def send_order_confirmation_email(
     items_html = ""
     address_html = ""
     coupon_html = ""
-    tracking_url = (f"https://villagemitai.com/order_status?invoice_id={invoice.id}&token={invoice.tracking_token}")
+    delivery_date_text = "Fastest available"
+    if invoice.delivery_date:
+        delivery_date_text = invoice.delivery_date.strftime("%a, %d %b %Y")
+        if invoice.is_scheduled:
+            delivery_date_text += " (scheduled by customer)"
+    # price breakdown as saved with the order: items (before the coupon),
+    # coupon, delivery; these add up to the grand total
+    items_total = sum((t.item_amount * t.quantity for t in transactions), Decimal("0"))
+    summary_rows = [("Items", f"Rs.{items_total:.2f}")]
+    if invoice.discount:
+        code = f" ({invoice.coupon.code})" if invoice.coupon else ""
+        summary_rows.append((f"Coupon{code}", f"- Rs.{invoice.discount:.2f}"))
+    if invoice.delivery_charge is not None:
+        summary_rows.append((
+            "Delivery",
+            f"Rs.{invoice.delivery_charge:.2f}" if invoice.delivery_charge > 0 else "FREE",
+        ))
+    summary_html = "".join(
+        f'<div class="summary-row"><span>{label}</span><span>{value}</span></div>'
+        for label, value in summary_rows
+    )
+    tracking_url = (f"https://villagemitai.com/order_status?order={invoice.order_number or invoice.id}&token={invoice.tracking_token}")
 
     if invoice.coupon:
         coupon_html = f"""
@@ -291,7 +313,7 @@ table.items td {{
             <table class="info-grid">
                 <tr>
                     <td><strong>Order ID</strong></td>
-                    <td>#{invoice.id}</td>
+                    <td>{invoice.order_number or "#" + str(invoice.id)}</td>
                 </tr>
 
                 <tr>
@@ -306,6 +328,11 @@ table.items td {{
                 <tr>
                     <td><strong>Order Total</strong></td>
                     <td>Rs.{invoice.net_amount}</td>
+                </tr>
+
+                <tr>
+                    <td><strong>Delivery Date</strong></td>
+                    <td>{delivery_date_text}</td>
                 </tr>
                 <tr>
     <td><strong>Track Order</strong></td>
@@ -360,10 +387,7 @@ table.items td {{
         </table>
 
         <div class="summary">
-            <div class="summary-row">
-                <span>Discount</span>
-                <span>Rs.{invoice.discount}</span>
-            </div>
+            {summary_html}
 
             <div class="summary-row total">
                 <span>Grand Total</span>
@@ -396,7 +420,7 @@ table.items td {{
     ],
         sender=settings.BREVO_SENDER,
         subject=(
-            f"New Order #{invoice.id}"
+            f"New Order {invoice.order_number or '#' + str(invoice.id)}"
             f" | {invoice.address.name if invoice.address else 'Guest'}"
             f" | Rs.{invoice.net_amount}"
         ),

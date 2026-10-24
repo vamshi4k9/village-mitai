@@ -9,6 +9,8 @@ import ConfirmPopup from "./ConfirmPopup";
 import { CartContext } from "./CartContext";
 import { getValidAccessToken, clearSession } from "../utils/auth";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
+import { orderBreakdown, formatRs } from "../utils/orderTotals";
+import { orderLabel, orderStatusUrl } from "../utils/orderNumber";
 
 const EMPTY_ADDRESS = {
   name: "",
@@ -127,7 +129,7 @@ function Profile() {
       const res = await axios.get(`${API_BASE_URL}/order-detail/${invoiceId}/`, SESSION_TOKEN);
       setOrderDetailsMap(prev => ({
         ...prev,
-        [invoiceId]: res.data.transactions
+        [invoiceId]: res.data
       }));
     } catch (error) {
       console.error("Error fetching order details", error);
@@ -163,7 +165,7 @@ function Profile() {
         )
       );
       setTotalOrderValue((prev) => Number(prev) - Number(order.net_amount));
-      triggerToast(`Order #${order.id} cancelled`, 2000);
+      triggerToast(`Order ${orderLabel(order)} cancelled`, 2000);
     } catch (error) {
       triggerToast(error.response?.data?.error || "Unable to cancel order.");
     }
@@ -490,9 +492,17 @@ function Profile() {
                   <div className="profile-order" key={order.id}>
                     <div className="profile-order-head">
                       <div className="profile-item-text">
-                        <p className="profile-item-title">Order #{order.id}</p>
+                        <p className="profile-item-title">Order {orderLabel(order)}</p>
                         <p>{new Date(order.order_date).toLocaleString()}</p>
-                        <p>Amount: Rs.{order.net_amount}</p>
+                        <p>
+                          Paid: <strong>{formatRs(order.net_amount)}</strong>
+                          {order.coupon_code && Number(order.discount) > 0 && (
+                            <span className="profile-coupon-chip">
+                              <i className="bi bi-tag" aria-hidden="true"></i>
+                              {order.coupon_code} saved {formatRs(order.discount)}
+                            </span>
+                          )}
+                        </p>
                         {order.refund_status && (
                           <p>
                             Refund of Rs.{order.refund_amount}: {REFUND_LABELS[order.refund_status] || order.refund_status}
@@ -513,7 +523,7 @@ function Profile() {
                       </button>
                       <button
                         className="profile-btn small secondary"
-                        onClick={() => navigate(`/order_status?invoice_id=${order.id}`)}
+                        onClick={() => navigate(orderStatusUrl(order))}
                       >
                         {order.status === "DELIVERED" ? "Rate Order" : "Track Order"}
                       </button>
@@ -530,7 +540,7 @@ function Profile() {
                     {expandedOrderId === order.id && (
                       <div className="order-detail-section">
                         {detailsLoading && !orderDetailsMap[order.id] ? null : (
-                          (orderDetailsMap[order.id] || []).map((item, idx) => (
+                          (orderDetailsMap[order.id]?.transactions || []).map((item, idx) => (
                             <div key={idx} className="order-detail-card">
                               <img
                                 src={`${API_BASE_URL_MEDIA}${item.item.image}`}
@@ -548,9 +558,47 @@ function Profile() {
                                   Price: Rs.{item.item_amount} {isPiece(item.weight) ? "per piece" : "each"}
                                 </p>
                               </div>
+                              <span className="profile-line-total">
+                                {formatRs(Number(item.item_amount) * item.quantity)}
+                              </span>
                             </div>
                           ))
                         )}
+
+                        {/* what was paid and how, as saved when the order was placed */}
+                        {orderDetailsMap[order.id] && (() => {
+                          const b = orderBreakdown(orderDetailsMap[order.id]);
+                          return (
+                            <div className="profile-summary">
+                              <div className="profile-summary-row">
+                                <span>Items</span>
+                                <span>{formatRs(b.itemsTotal)}</span>
+                              </div>
+                              {b.coupon > 0 && (
+                                <div className="profile-summary-row saving">
+                                  <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
+                                  <span>- {formatRs(b.coupon)}</span>
+                                </div>
+                              )}
+                              {b.deliveryCharge != null && (
+                                <div className="profile-summary-row">
+                                  <span>Delivery</span>
+                                  <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
+                                </div>
+                              )}
+                              {b.adjustment !== 0 && (
+                                <div className="profile-summary-row">
+                                  <span>Delivery & adjustments</span>
+                                  <span>{b.adjustment < 0 ? "- " : ""}{formatRs(Math.abs(b.adjustment))}</span>
+                                </div>
+                              )}
+                              <div className="profile-summary-row total">
+                                <span>Paid</span>
+                                <span>{formatRs(b.total)}</span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -573,7 +621,7 @@ function Profile() {
           onCancel={() => setConfirm(null)}
           onConfirm={() => runConfirm(() => handleCancelOrder(confirm.target))}
         >
-          <p><strong>Order ID:</strong> #{confirm.target.id}</p>
+          <p><strong>Order No:</strong> {orderLabel(confirm.target)}</p>
           <p><strong>Amount:</strong> Rs.{confirm.target.net_amount}</p>
           {confirm.target.payment_mode === "UPI" && (
             <p>Rs.{confirm.target.net_amount} will be refunded to the account you paid from.</p>

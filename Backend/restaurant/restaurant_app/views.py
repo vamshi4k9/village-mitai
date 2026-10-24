@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+from datetime import date
 from threading import Thread
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -11,7 +12,7 @@ from django.core.paginator import Paginator
 
 from restaurant import settings
 from .utils.email import send_order_confirmation_email
-from .utils.delivery import delivery_quote
+from .utils.delivery import delivery_quote, delivery_window, pick_delivery_date
 from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Avg, Count, Sum, Case, When, Value, IntegerField, F
@@ -70,6 +71,21 @@ class LenientJWTAuthentication(JWTAuthentication):
             return None
 
 STAFF_ROLES = ("admin", "maker", "delivery")
+
+
+def find_invoice(ref):
+    """An order by its order number (VM2610240007) or, for older links, its id."""
+    ref = str(ref).strip()
+    if ref.isdigit():
+        return Invoice.objects.filter(id=int(ref)).first()
+    return Invoice.objects.filter(order_number=ref.upper()).first()
+
+
+def is_staff_request(request):
+    user = request.user
+    return user.is_authenticated and (
+        user.is_staff or UserProfile.objects.filter(user=user, role__in=STAFF_ROLES).exists()
+    )
 
 
 def can_access_invoice(request, invoice):
@@ -532,6 +548,10 @@ class CreateOrderView(APIView):
         cgst = Decimal(data.get("cgst", 0))
         sgst = Decimal(data.get("sgst", 0))
         discount = Decimal(data.get("discount", 0))
+        try:
+            delivery_charge = Decimal(str(data["delivery_charge"])) if data.get("delivery_charge") is not None else None
+        except (ArithmeticError, ValueError):
+            delivery_charge = None
 
         coupon_code = data.get("coupon_code")
         coupon = None
@@ -550,6 +570,28 @@ class CreateOrderView(APIView):
                 {"error": "Payment mode and cart items are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        # checkout removes a coupon that does not fit the payment method, so
+        # this only stops a cash order sent with an online-only coupon. Online
+        # orders are created after payment, so they are logged, not refused.
+        if coupon and not coupon.allows_payment(payment_mode):
+            if payment_mode == "CASH":
+                return Response(
+                    {"error": coupon.payment_mode_message(), "message": coupon.payment_mode_message()},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            print(f"Coupon {coupon.code} ({coupon.payment_mode}) used with paid {payment_mode} order")
+
+        # fastest delivery unless the customer scheduled a later day
+        try:
+            requested_date = date.fromisoformat(data["delivery_date"]) if data.get("delivery_date") else None
+        except (TypeError, ValueError):
+            requested_date = None
+        earliest_date, latest_date = delivery_window(
+            Item.objects.filter(id__in=[ci.get("id") for ci in cart_items])
+        )
+        delivery_date = pick_delivery_date(requested_date, earliest_date, latest_date)
+        is_scheduled = bool(data.get("is_scheduled")) and delivery_date > earliest_date
 
         # Online payment: check the Razorpay signature and keep the ids, they
         # are what a later refund is made against
@@ -570,12 +612,14 @@ class CreateOrderView(APIView):
                     {
                         "message": "Order created successfully",
                         "invoice_id": existing.id,
+                        "order_number": existing.order_number,
                         "tracking_token": existing.tracking_token
                     },
                     status=status.HTTP_200_OK
                 )
 
         address = None
+        store_id = None
 
         if address_id:
             try:
@@ -600,35 +644,76 @@ class CreateOrderView(APIView):
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
+            # nearest store that delivers here; it prepares and sends the order
+            store_id = quote["store_id"]
+
+        try:
+            packing_charge = Decimal(str(data.get("packing_charge") or 0))
+        except (ArithmeticError, ValueError):
+            packing_charge = Decimal("0")
+
+        # Price of every line as at checkout: actual price (MRP), selling
+        # price and, below, its share of the coupon
+        order_lines = []
+        for item_data in cart_items:
+            item = Item.objects.filter(id=item_data.get("id")).first()
+            if item is None:
+                continue
+            qty = int(item_data["quantity"])
+            weight = item_data.get("weight", "")
+            selling = Decimal(str(item_data["price"]))
+            mrp, _ = unit_prices(item, weight)
+            mrp = max(mrp, selling)
+            order_lines.append({
+                "item": item,
+                "id": item.id,
+                "category_id": item.category_id,
+                "weight": weight,
+                "qty": qty,
+                "unit_price": selling,
+                "unit_mrp": mrp,
+                "price": selling * qty,
+                "original_price": mrp * qty,
+                "discounted": Decimal(str(item_data.get("discounted", 0) or 0)),
+            })
+
+        line_coupon = [Decimal("0.00")] * len(order_lines)
+        line_free = [0] * len(order_lines)
+        if coupon and discount > 0:
+            try:
+                coupon_total, line_coupon, line_free = calculate_coupon(coupon, order_lines)
+                if abs(coupon_total - discount) > Decimal("0.01"):
+                    print(f"Coupon {coupon.code}: checkout sent {discount}, server worked out {coupon_total}")
+            except CouponNotApplicable as e:
+                print(f"Coupon {coupon.code} not split over lines: {e}")
+
+        items_mrp_total = sum((line["original_price"] for line in order_lines), Decimal("0"))
+        items_total = sum((line["price"] for line in order_lines), Decimal("0"))
 
         # Create Invoice
-        if request.user.is_authenticated:
-            invoice = Invoice.objects.create(
-                user=request.user,
-                session_key=session_key,
-                payment_mode=payment_mode,
-                delivery_time=delivery_time,
-                net_amount=net_amount,
-                cgst=cgst,
-                sgst=sgst,
-                discount=discount,
-                status="ORDERED",
-                address=address,
-                coupon=coupon
-            )
-        else:
-            invoice = Invoice.objects.create(
-                session_key=session_key,
-                payment_mode=payment_mode,
-                delivery_time=delivery_time,
-                net_amount=net_amount,
-                cgst=cgst,
-                sgst=sgst,
-                discount=discount,
-                status="ORDERED",
-                address=address,
-                coupon=coupon
-            )
+        invoice = Invoice.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_key=session_key,
+            payment_mode=payment_mode,
+            delivery_time=delivery_time,
+            delivery_date=delivery_date,
+            is_scheduled=is_scheduled,
+            net_amount=net_amount,
+            cgst=cgst,
+            sgst=sgst,
+            discount=discount,
+            delivery_charge=delivery_charge,
+            packing_charge=packing_charge,
+            items_mrp_total=items_mrp_total,
+            item_discount=items_mrp_total - items_total,
+            items_total=items_total,
+            coupon_code=coupon.code if coupon else "",
+            coupon_type=coupon.discount_type if coupon else "",
+            status="ORDERED",
+            address=address,
+            coupon=coupon,
+            store_id=store_id
+        )
 
         if razorpay_payment_id:
             invoice.razorpay_order_id = razorpay_order_id
@@ -638,41 +723,24 @@ class CreateOrderView(APIView):
         # Create Transactions
         created_transactions = []
 
-        for item_data in cart_items:
-            try:
-                item = Item.objects.get(id=item_data["id"])
+        for index, line in enumerate(order_lines):
+            txn = Transaction.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                session_key=session_key,
+                item=line["item"],
+                invoice=invoice,
+                store_id=invoice.store_id,
+                item_amount=line["unit_price"],
+                mrp_price=line["unit_mrp"],
+                quantity=line["qty"],
+                weight=line["weight"],
+                discounted=line["discounted"],
+                coupon_discount=line_coupon[index],
+                free_quantity=line_free[index],
+                final_amount=max(line["price"] - line_coupon[index], Decimal("0")),
+            )
+            created_transactions.append(txn)
 
-                if request.user.is_authenticated:
-                    txn = Transaction.objects.create(
-                        user=request.user,
-                        session_key=session_key,
-                        item=item,
-                        invoice=invoice,
-                        item_amount=Decimal(item_data["price"]),
-                        quantity=int(item_data["quantity"]),
-                        weight=item_data.get("weight", ""),
-                        discounted=Decimal(
-                            item_data.get("discounted", 0)
-                        )
-                    )
-                else:
-                    txn = Transaction.objects.create(
-                        session_key=session_key,
-                        item=item,
-                        invoice=invoice,
-                        item_amount=Decimal(item_data["price"]),
-                        quantity=int(item_data["quantity"]),
-                        weight=item_data.get("weight", ""),
-                        discounted=Decimal(
-                            item_data.get("discounted", 0)
-                        )
-                    )
-
-                created_transactions.append(txn)
-
-            except Item.DoesNotExist:
-                continue
-        
         try:
             if True:
                 print("Sending order confirmation email to:")
@@ -692,6 +760,7 @@ class CreateOrderView(APIView):
             {
                 "message": "Order created successfully",
                 "invoice_id": invoice.id,
+                "order_number": invoice.order_number,
                 "tracking_token": invoice.tracking_token
             },
             status=status.HTTP_201_CREATED
@@ -747,9 +816,8 @@ class InvoiceDetailView(APIView):
     #         # return [IsAuthenticated()]  # enforce permission only on GET
     #     return []
     def get(self, request, invoice_id):
-        try:
-            invoice = Invoice.objects.get(id=invoice_id)
-        except Invoice.DoesNotExist:
+        invoice = find_invoice(invoice_id)
+        if invoice is None:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # same answer as a missing order, so order numbers cannot be probed
@@ -761,14 +829,18 @@ class InvoiceDetailView(APIView):
         return Response(serializer.data)
     
     def patch(self, request, invoice_id):
-        try:
-            invoice = Invoice.objects.get(id=invoice_id)
-        except Invoice.DoesNotExist:
+        # only staff (admin, maker, delivery) move an order along
+        if not is_staff_request(request):
+            return Response({"error": "Staff login required"}, status=status.HTTP_403_FORBIDDEN)
+
+        invoice = find_invoice(invoice_id)
+        if invoice is None:
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
         new_status = request.data.get('status')
-        if not new_status:
-            return Response({"error": "Status is required"}, status=status.HTTP_400_BAD_REQUEST)
+        valid_statuses = {value for value, _ in Invoice.STATUS_CHOICES}
+        if new_status not in valid_statuses:
+            return Response({"error": "A valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         invoice.status = new_status
         invoice.save()
@@ -786,7 +858,7 @@ class SubmitRatingView(generics.CreateAPIView):
 
 @api_view(['GET'])
 def get_all_transactions_and_invoices(request):
-    invoices = Invoice.objects.prefetch_related('transactions', 'transactions__item').all().order_by("-order_date")   
+    invoices = Invoice.objects.select_related('store', 'address', 'coupon').prefetch_related('transactions', 'transactions__item').all().order_by("-order_date")   
     serializer = InvoiceDetailSerializer(invoices, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -913,6 +985,135 @@ class BannerListView(generics.ListAPIView):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
 
+def cart_weight(weight):
+    """A cart line's weight as one of Coupon.WEIGHT_CHOICES; anything that is
+    not 250 g, 500 g or a piece is priced as 1 kg (as Cart.total_price does)."""
+    weight = str(weight or "").strip().lower()
+    if weight == PIECE:
+        return PIECE
+    return weight if weight in ("250", "500") else "1000"
+
+
+class CouponNotApplicable(Exception):
+    """The coupon cannot be used on this cart; the message says why."""
+
+
+def calculate_coupon(coupon, lines):
+    """Coupon discount for a cart, worked out per cart line.
+
+    Each line is a dict with id, qty, price (line total at the selling price),
+    original_price (line total at MRP), category_id and weight.
+    Returns (discount, line_discounts, free_units): the total off, the part of
+    it taken off each line (rounded so they add up to the total) and, for Buy
+    X Get Y Free, how many units of each line are free.
+    Raises CouponNotApplicable when the cart does not qualify.
+    """
+    price_key = "original_price" if coupon.price_basis == "mrp" else "price"
+
+    if coupon.apply_on == "order":
+        eligible = list(range(len(lines)))
+    elif coupon.apply_on == "category":
+        category_ids = set(coupon.categories.values_list("id", flat=True))
+        eligible = [i for i, line in enumerate(lines) if line.get("category_id") in category_ids]
+    elif coupon.apply_on == "item":
+        item_ids = set(coupon.items.values_list("id", flat=True))
+        eligible = [i for i, line in enumerate(lines) if line.get("id") in item_ids]
+    else:
+        eligible = []
+
+    # coupon limited to some weights (250 g, 1 kg, by piece...)
+    allowed_weights = coupon.allowed_weights()
+    if allowed_weights:
+        eligible = [i for i in eligible if cart_weight(lines[i].get("weight")) in allowed_weights]
+
+    if not eligible:
+        raise CouponNotApplicable("Coupon not applicable to selected items")
+
+    eligible_subtotal = sum(Decimal(str(lines[i][price_key])) for i in eligible)
+
+    if eligible_subtotal < coupon.min_order_value:
+        raise CouponNotApplicable(f"Minimum order value Rs.{coupon.min_order_value} required")
+
+    raw = {}   # line index -> discount before rounding
+    free = {}  # line index -> free units (Buy X Get Y Free)
+
+    if coupon.discount_type == "bogo":
+        buy, get = coupon.buy_quantity, coupon.get_quantity
+        group_size = buy + get
+
+        # one entry per unit at its current selling price, costliest first
+        units = []
+        for i in eligible:
+            qty = int(lines[i]["qty"] or 0)
+            if qty <= 0:
+                continue
+            unit_price = Decimal(str(lines[i]["price"])) / qty
+            units.extend([(unit_price, i)] * qty)
+        units.sort(key=lambda u: u[0], reverse=True)
+
+        groups = len(units) // group_size
+        if groups == 0:
+            missing = group_size - len(units)
+            raise CouponNotApplicable(
+                f"Add {missing} more eligible item{'s' if missing > 1 else ''} "
+                f"to use this Buy {buy} Get {get} Free offer"
+            )
+
+        # in each group the last `get` units are the cheapest: those are free
+        for g in range(groups):
+            for unit_price, i in units[g * group_size + buy:(g + 1) * group_size]:
+                raw[i] = raw.get(i, Decimal("0")) + unit_price
+                free[i] = free.get(i, 0) + 1
+
+        discount = sum(raw.values(), Decimal("0"))
+    elif coupon.discount_type == "percent":
+        discount = eligible_subtotal * coupon.discount_value / Decimal("100")
+    else:
+        discount = coupon.discount_value
+
+    uncapped = discount
+    if coupon.max_discount:
+        discount = min(discount, coupon.max_discount)
+    discount = min(discount, eligible_subtotal).quantize(Decimal("0.01"))
+
+    if raw:
+        # free units, scaled down if max_discount cut the total
+        scale = discount / uncapped if uncapped else Decimal("0")
+        raw = {i: v * scale for i, v in raw.items()}
+    elif eligible_subtotal:
+        # percent / fixed: spread over the eligible lines by value
+        raw = {i: Decimal(str(lines[i][price_key])) / eligible_subtotal * discount for i in eligible}
+
+    line_discounts = [Decimal("0.00")] * len(lines)
+    for i, value in raw.items():
+        line_discounts[i] = value.quantize(Decimal("0.01"))
+    # rounding leftovers go on the line with the biggest share
+    leftover = discount - sum(line_discounts, Decimal("0"))
+    if leftover and raw:
+        biggest = max(raw, key=lambda i: line_discounts[i])
+        line_discounts[biggest] += leftover
+
+    return discount, line_discounts, [free.get(i, 0) for i in range(len(lines))]
+
+
+def unit_prices(item, weight):
+    """(MRP, selling price) of one unit of an item: one pack of this weight,
+    or one piece. Same rules as the checkout page."""
+    weight = cart_weight(weight)
+    if weight == PIECE:
+        price = item.piece_price or Decimal("0")
+        return Decimal(price), Decimal(price)
+    if weight == "250":
+        mrp, offer = item.price_quarter, item.discounted_price_quarter
+    elif weight == "500":
+        mrp, offer = item.price_half, item.discounted_price_half
+    else:
+        mrp, offer = item.price, item.discounted_price
+    mrp = Decimal(mrp or 0)
+    selling = Decimal(offer) if offer and 0 < Decimal(offer) < mrp else mrp
+    return mrp, selling
+
+
 @api_view(["POST"])
 def apply_coupon(request):
     code = request.data.get("code")
@@ -932,6 +1133,9 @@ def apply_coupon(request):
             ).values_list("id", flat=True)
         if not coupon.is_valid():
             return Response({"error": "Coupon expired or inactive"},status=400)
+        payment_mode = request.data.get("payment_mode")
+        if payment_mode and not coupon.allows_payment(payment_mode):
+            return Response({"error": coupon.payment_mode_message()}, status=400)
         already_used = Invoice.objects.filter(
             address_id__in=address_ids,
             coupon=coupon
@@ -954,181 +1158,43 @@ def apply_coupon(request):
                     status=400
                 )
 
-        price_key = (
-            "original_price"
-            if coupon.price_basis == "mrp"
-            else "price"
-        )
-        
-        if coupon.apply_on == "order":
-            eligible_items = cart_items
-
-        elif coupon.apply_on == "category":
-
-            category_ids = set(
-                coupon.categories.values_list("id", flat=True)
-            )
-
-            eligible_items = [
-                item for item in cart_items
-                if item["category_id"] in category_ids
-            ]
-
-        elif coupon.apply_on == "item":
-
-            item_ids = set(
-                coupon.items.values_list("id", flat=True)
-            )
-
-            eligible_items = [
-                item for item in cart_items
-                if item["id"] in item_ids
-            ]
-
-        else:
-            eligible_items = []
-
-        if not eligible_items:
-            return Response(
-                {"error": "Coupon not applicable to selected items"},
-                status=400
-            )
-
-        eligible_item_ids = {
-            item["id"] for item in eligible_items
-        }
-
-        eligible_subtotal = sum(
-            Decimal(str(item[price_key]))
-            for item in eligible_items
-        )
+        try:
+            discount, line_discounts, free_units = calculate_coupon(coupon, cart_items)
+        except CouponNotApplicable as e:
+            return Response({"error": str(e)}, status=400)
 
         # ALWAYS current selling price
         total_cart_value = sum(
             Decimal(str(item["price"]))
             for item in cart_items
         )
-
-        if eligible_subtotal < coupon.min_order_value:
-            return Response(
-                {
-                    "error": f"Minimum order value Rs.{coupon.min_order_value} required"
-                },
-                status=400,
-            )
-            
-        if coupon.discount_type == "percent":
-
-            discount = (
-                eligible_subtotal
-                * coupon.discount_value
-                / Decimal("100")
-            )
-
-        else:
-
-            discount = coupon.discount_value
-
-        if coupon.max_discount:
-            discount = min(
-                discount,
-                coupon.max_discount
-            )
-
-        discount = min(
-            discount,
-            eligible_subtotal
-        )
-
-        discount = discount.quantize(
-            Decimal("0.01")
-        )
-
-        new_total = max(total_cart_value - discount,Decimal("0"))
+        new_total = max(total_cart_value - discount, Decimal("0"))
 
         discounted_items = []
-        for item in cart_items:
-            current_total = Decimal(
-                str(item["price"])
-            )
-            discount_base = Decimal(
-                str(item[price_key])
-            )
-            if item["id"] in eligible_item_ids:
-
-                item_discount = (
-                    discount_base
-                    / eligible_subtotal
-                ) * discount
-                item_discount = item_discount.quantize(
-                    Decimal("0.01")
-                )
-                discounted_total = max(
-                    current_total - item_discount,
-                    Decimal("0")
-                )
-                discounted_unit_price = (
-                    discounted_total / item["qty"]
-                    if item["qty"] > 0
-                    else Decimal("0")
-                )
-                discounted_items.append({
-                    "id": item["id"],
-                    "qty": item["qty"],
-
-                    "current_total": round(
-                        current_total,
-                        2
-                    ),
-                    "original_total": round(
-                        Decimal(str(item["original_price"])),
-                        2
-                    ),
-                    "discount": round(
-                        item_discount,
-                        2
-                    ),
-
-                    "discounted_unit_price": round(
-                        discounted_unit_price,
-                        2
-                    ),
-
-                    "discounted_total": round(
-                        discounted_total,
-                        2
-                    ),
-                })
-
-            else:
-                discounted_items.append({
-                    "id": item["id"],
-                    "qty": item["qty"],
-                    "current_total": round(
-                        current_total,
-                        2
-                    ),
-                    "original_total": round(
-                        Decimal(str(item["original_price"])),
-                        2
-                    ),
-                    "discount": Decimal("0.00"),
-                    "discounted_unit_price": round(
-                        current_total / item["qty"]
-                        if item["qty"] > 0
-                        else Decimal("0"),
-                        2
-                    ),
-                    "discounted_total": round(
-                        current_total,
-                        2
-                    ),
-                })
+        for index, item in enumerate(cart_items):
+            current_total = Decimal(str(item["price"]))
+            qty = int(item["qty"] or 0)
+            item_discount = line_discounts[index]
+            discounted_total = max(current_total - item_discount, Decimal("0"))
+            discounted_items.append({
+                "id": item["id"],
+                "weight": item.get("weight"),
+                "qty": item["qty"],
+                "current_total": round(current_total, 2),
+                "original_total": round(Decimal(str(item["original_price"])), 2),
+                "discount": round(item_discount, 2),
+                "free_units": free_units[index],
+                "discounted_unit_price": round(discounted_total / qty if qty > 0 else Decimal("0"), 2),
+                "discounted_total": round(discounted_total, 2),
+            })
 
         return Response({
             "success": True,
             "coupon_id": coupon.id,
             "price_basis": coupon.price_basis,
+            "discount_type": coupon.discount_type,
+            "free_delivery": coupon.free_delivery,
+            "payment_mode": coupon.payment_mode,
             "discount": round(discount, 2),
             "new_total": round(new_total, 2),
             "discounted_items": discounted_items,
@@ -1407,6 +1473,20 @@ class DeliveryConfigAPIView(APIView):
         return Response({
             "free_delivery_above": config.free_delivery_above
         })
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def delivery_dates_view(request):
+    """Fastest and latest delivery date for the items in a cart
+    (?item_ids=1,2,3), for the delivery date choice at checkout."""
+    ids = [i for i in request.query_params.get("item_ids", "").split(",") if i.strip().isdigit()]
+    earliest, latest = delivery_window(Item.objects.filter(id__in=ids))
+    return Response({
+        "earliest_date": earliest.isoformat(),
+        "latest_date": latest.isoformat(),
+        "today": date.today().isoformat(),
+    })
+
 
 @api_view(["GET"])
 @permission_classes([AllowAny])

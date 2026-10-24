@@ -48,9 +48,10 @@ This is a route index. For request and response fields, read the view named in t
 | `/validate-coupon/` | Check a coupon | | `validate_coupon` |
 | `/delivery-config/` | Free-delivery threshold and fee settings | | `DeliveryConfigAPIView` |
 | `/delivery-quote/` | Delivery charge for a location | | `delivery_quote_view` |
+| `/delivery-dates/` | Fastest and latest delivery date for `?item_ids=1,2,3`. Fastest is today plus the slowest item's `delivery_time` (days); customers can schedule up to `schedule_days_ahead` (Delivery Fee Configuration) days after it | | `delivery_dates_view` |
 | `/create-order-razor/` | Create a Razorpay order | | `create_order` |
 | `/verify-payment/` | Verify the Razorpay signature | | `verify_payment` |
-| `/create-order/` | Place the order and create the invoice | | `CreateOrderView` |
+| `/create-order/` | Place the order and create the invoice. Optional `delivery_date` (`YYYY-MM-DD`) and `is_scheduled`; no date means the fastest day, and a date outside the allowed window is moved into it rather than refused, because online orders are created after payment | | `CreateOrderView` |
 
 ## Orders
 
