@@ -12,7 +12,7 @@ from .models import (
     Transaction,
     FieldMarketingForm, AgentCustomerEntry
 )
-from .models import OTP
+from .models import OTP, StoreLocation
 from django.contrib.auth.models import User
 from .models import UserProfile, Banner
 from django.db.models import Avg
@@ -156,13 +156,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ["user", "role", "phone", "created_at", "updated_at"]
 
 
+class StoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StoreLocation
+        fields = ["id", "name", "address", "latitude", "longitude"]
+
+
 class InvoiceListSerializer(serializers.ModelSerializer):
     can_cancel = serializers.ReadOnlyField()
+    # code saved with the order; older orders only have the coupon link
+    coupon_code = serializers.SerializerMethodField()
+
+    def get_coupon_code(self, obj):
+        return obj.coupon_code or (obj.coupon.code if obj.coupon else None)
+    store_name = serializers.CharField(source="store.name", read_only=True, default=None)
 
     class Meta:
         model = Invoice
-        fields = ["id", "order_date", "payment_mode", "net_amount", "status", "tracking_token",
-                  "can_cancel", "refund_status", "refund_amount"]
+        fields = ["id", "order_number", "order_date", "payment_mode", "net_amount", "status", "tracking_token",
+                  "can_cancel", "refund_status", "refund_amount", "delivery_date", "is_scheduled",
+                  "discount", "delivery_charge", "packing_charge", "items_mrp_total",
+                  "item_discount", "items_total", "coupon_code", "coupon_type", "store_name"]
 
 
 class ItemDetailSerializer(serializers.ModelSerializer):
@@ -187,18 +201,27 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ["item", "item_amount", "quantity", "weight", "discounted"]
+        fields = ["item", "item_amount", "mrp_price", "quantity", "weight", "discounted",
+                  "coupon_discount", "free_quantity", "final_amount", "store"]
 
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
     can_cancel = serializers.ReadOnlyField()
+    # code saved with the order; older orders only have the coupon link
+    coupon_code = serializers.SerializerMethodField()
+
+    def get_coupon_code(self, obj):
+        return obj.coupon_code or (obj.coupon.code if obj.coupon else None)
     transactions = TransactionDetailSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)  
+    # where the order is prepared and picked up from
+    store = StoreSerializer(read_only=True)
 
     class Meta:
         model = Invoice
         fields = [
             "id",
+            "order_number",
             "order_date",
             "payment_mode",
             "net_amount",
@@ -211,6 +234,16 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "can_cancel",
             "refund_status",
             "refund_amount",
+            "delivery_date",
+            "is_scheduled",
+            "delivery_charge",
+            "packing_charge",
+            "items_mrp_total",
+            "item_discount",
+            "items_total",
+            "coupon_code",
+            "coupon_type",
+            "store",
         ]
 
 

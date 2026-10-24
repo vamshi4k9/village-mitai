@@ -6,7 +6,10 @@ import { API_BASE_URL, API_BASE_URL_MEDIA, SESSION_TOKEN } from "../constants";
 import { getValidAccessToken } from "../utils/auth";
 import { CartContext } from "./CartContext";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
+import { formatDeliveryDate } from "../utils/deliveryDate";
+import { orderBreakdown, formatRs } from "../utils/orderTotals";
 import { Link } from "react-router-dom";
+import { orderLabel } from "../utils/orderNumber";
 
 
 const STEP_LABELS = {
@@ -41,7 +44,9 @@ export default function OrderStatus() {
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const invoiceId = queryParams.get("invoice_id") || queryParams.get("invoice");
+  // order number (VM2610240007); invoice_id / invoice are older links
+  const invoiceId =
+    queryParams.get("order") || queryParams.get("invoice_id") || queryParams.get("invoice");
   // secret from the emailed tracking link; lets the order open without a login
   const trackingToken = queryParams.get("token") || undefined;
   const isLoggedIn = !!localStorage.getItem("access_token");
@@ -214,7 +219,7 @@ export default function OrderStatus() {
         {order && (
           <>
             <div className="order-header">
-              <h3>Order #{order.id}</h3>
+              <h3>Order {orderLabel(order)}</h3>
               <span className={`status-badge ${order.status.toLowerCase()}`}>
                 {order.status
                   .toLowerCase()
@@ -325,13 +330,49 @@ export default function OrderStatus() {
             </div>
 
             <div className="order-summary">
+              {/* amounts as saved when the order was placed */}
+              {(() => {
+                const b = orderBreakdown(order);
+                return (
+                  <>
+                    <div className="order-summary-row">
+                      <span>Items</span>
+                      <span>{formatRs(b.itemsTotal)}</span>
+                    </div>
+                    {b.coupon > 0 && (
+                      <div className="order-summary-row saving">
+                        <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
+                        <span>- {formatRs(b.coupon)}</span>
+                      </div>
+                    )}
+                    {b.deliveryCharge != null && (
+                      <div className="order-summary-row">
+                        <span>Delivery</span>
+                        <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
+                      </div>
+                    )}
+                    {b.adjustment !== 0 && (
+                      <div className="order-summary-row">
+                        <span>Delivery & adjustments</span>
+                        <span>{b.adjustment < 0 ? "- " : ""}{formatRs(Math.abs(b.adjustment))}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               <div className="order-summary-row">
                 <span>Payment</span>
                 <span>{PAYMENT_LABELS[order.payment_mode] || order.payment_mode}</span>
               </div>
+              {order.delivery_date && (
+                <div className="order-summary-row">
+                  <span>{order.is_scheduled ? "Scheduled Delivery" : "Delivery By"}</span>
+                  <span>{formatDeliveryDate(order.delivery_date)}</span>
+                </div>
+              )}
               <div className="order-summary-row total">
                 <span>Total</span>
-                <span>Rs.{order.net_amount}</span>
+                <span>{formatRs(order.net_amount)}</span>
               </div>
             </div>
 
@@ -416,7 +457,7 @@ export default function OrderStatus() {
                     </p>
 
                     <p>
-                      <strong>Order ID:</strong> #{order.id}
+                      <strong>Order No:</strong> {orderLabel(order)}
                     </p>
 
                     {order.payment_mode === "UPI" && (

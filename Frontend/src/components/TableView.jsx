@@ -3,6 +3,9 @@ import React, { useState } from "react";
 import "../styles/TableView.css";
 import { API_BASE_URL, API_BASE_URL_MEDIA } from "../constants";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
+import { formatDeliveryDate } from "../utils/deliveryDate";
+import { orderBreakdown, formatRs } from "../utils/orderTotals";
+import { orderLabel } from "../utils/orderNumber";
 
 // label and badge colour class for each order status
 const STATUS_META = {
@@ -25,6 +28,14 @@ const ADMIN_TABS = [
 function TableView({ invoices = [], userRole, setInvoices }) {
   const [expandedInvoiceId, setExpandedInvoiceId] = useState(null);
   const [activeTab, setActiveTab] = useState("preparation");
+  // "" shows every store; staff at one store can pick theirs
+  const [storeFilter, setStoreFilter] = useState("");
+
+  const storeNames = [
+    ...new Set(invoices.map((i) => i.store?.name).filter(Boolean)),
+  ].sort();
+  const byStore = (list) =>
+    storeFilter ? list.filter((i) => i.store?.name === storeFilter) : list;
 
   const toggleInvoiceDetails = (invoiceId) => {
     setExpandedInvoiceId((prevId) => (prevId === invoiceId ? null : invoiceId));
@@ -32,9 +43,13 @@ function TableView({ invoices = [], userRole, setInvoices }) {
 
   const updateInvoiceStatus = async (invoiceId, newStatus) => {
     try {
-      await axios.patch(`${API_BASE_URL}/order-detail/${invoiceId}/`, {
-        status: newStatus,
-      });
+      // staff only: the server checks the login
+      const token = localStorage.getItem("access_token");
+      await axios.patch(
+        `${API_BASE_URL}/order-detail/${invoiceId}/`,
+        { status: newStatus },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
       setInvoices((prev) =>
         prev.map((inv) =>
           inv.id === invoiceId ? { ...inv, status: newStatus } : inv
@@ -57,9 +72,9 @@ function TableView({ invoices = [], userRole, setInvoices }) {
   );
 
   const tabCounts = {
-    preparation: preparationInvoices.length,
-    shipping: shippingInvoices.length,
-    delivery: deliveryInvoices.length,
+    preparation: byStore(preparationInvoices).length,
+    shipping: byStore(shippingInvoices).length,
+    delivery: byStore(deliveryInvoices).length,
   };
 
   const getCurrentInvoices = () => {
@@ -96,7 +111,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
     ];
   };
 
-  const currentInvoices = getCurrentInvoices();
+  const currentInvoices = byStore(getCurrentInvoices());
   const statusOptions = getStatusOptions();
 
   return (
@@ -123,6 +138,24 @@ function TableView({ invoices = [], userRole, setInvoices }) {
         <p className="odash-count">
           {currentInvoices.length} {currentInvoices.length === 1 ? "order" : "orders"}
         </p>
+      )}
+
+      {storeNames.length > 1 && (
+        <div className="odash-store-filter">
+          <label htmlFor="odash-store-select">
+            <i className="bi bi-shop" aria-hidden="true"></i> Store
+          </label>
+          <select
+            id="odash-store-select"
+            value={storeFilter}
+            onChange={(e) => setStoreFilter(e.target.value)}
+          >
+            <option value="">All stores</option>
+            {storeNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
       )}
 
       {/* Invoice List */}
@@ -159,10 +192,25 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                   }}
                 >
                   <div className="odash-id-block">
-                    <div className="odash-id">Order #{invoice.id}</div>
+                    <div className="odash-id">Order {orderLabel(invoice)}</div>
                     <div className="odash-date">
                       {new Date(invoice.order_date).toLocaleString()}
                     </div>
+                    {invoice.store && (
+                      <div className="odash-store">
+                        <i className="bi bi-shop" aria-hidden="true"></i>
+                        {invoice.store.name}
+                      </div>
+                    )}
+                    {invoice.delivery_date && (
+                      <div className="odash-deliver">
+                        <i className="bi bi-calendar-check" aria-hidden="true"></i>
+                        Deliver {formatDeliveryDate(invoice.delivery_date)}
+                        {invoice.is_scheduled && (
+                          <span className="odash-scheduled">Scheduled</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="odash-items-count">
@@ -179,7 +227,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
 
                   <select
                     className="odash-status-select"
-                    aria-label={`Change status of order ${invoice.id}`}
+                    aria-label={`Change status of order ${orderLabel(invoice)}`}
                     value={invoice.status}
                     onChange={(e) => {
                       e.stopPropagation();
@@ -217,6 +265,41 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                       {invoice.payment_mode}
                     </p>
 
+                    {/* store the order is made at and picked up from */}
+                    {invoice.store && (
+                      <div className="odash-delivery odash-pickup">
+                        <div className="odash-delivery-text">
+                          <div className="odash-delivery-name">
+                            <i className="bi bi-shop" aria-hidden="true"></i> Pick up from {invoice.store.name}
+                          </div>
+                          {invoice.store.address && (
+                            <div className="odash-delivery-address">
+                              {invoice.store.address}
+                            </div>
+                          )}
+                        </div>
+
+                        {userRole === "Delivery" && (
+                          <div className="odash-delivery-actions">
+                            <button
+                              type="button"
+                              className="dash-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                  `https://www.google.com/maps/dir/?api=1&destination=${invoice.store.latitude},${invoice.store.longitude}`,
+                                  "_blank"
+                                );
+                              }}
+                            >
+                              <i className="bi bi-geo-alt" aria-hidden="true"></i>
+                              Store map
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* 🔥 SHOW ADDRESS ONLY FOR DELIVERY */}
                     {userRole === "Delivery" && invoice.address && (
                       <div className="odash-delivery">
@@ -239,8 +322,12 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                               className="dash-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                // route from the store to the customer
+                                const origin = invoice.store
+                                  ? `&origin=${invoice.store.latitude},${invoice.store.longitude}`
+                                  : "";
                                 window.open(
-                                  `https://www.google.com/maps/dir/?api=1&destination=${invoice.address.latitude},${invoice.address.longitude}`,
+                                  `https://www.google.com/maps/dir/?api=1${origin}&destination=${invoice.address.latitude},${invoice.address.longitude}`,
                                   "_blank"
                                 );
                               }}
@@ -284,6 +371,43 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                           </span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* amounts as saved when the order was placed */}
+                    <div className="odash-summary">
+                      {(() => {
+                const b = orderBreakdown(invoice);
+                return (
+                  <>
+                    <div className="odash-summary-row">
+                      <span>Items</span>
+                      <span>{formatRs(b.itemsTotal)}</span>
+                    </div>
+                    {b.coupon > 0 && (
+                      <div className="odash-summary-row saving">
+                        <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
+                        <span>- {formatRs(b.coupon)}</span>
+                      </div>
+                    )}
+                    {b.deliveryCharge != null && (
+                      <div className="odash-summary-row">
+                        <span>Delivery</span>
+                        <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
+                      </div>
+                    )}
+                    {b.adjustment !== 0 && (
+                      <div className="odash-summary-row">
+                        <span>Delivery & adjustments</span>
+                        <span>{b.adjustment < 0 ? "- " : ""}{formatRs(Math.abs(b.adjustment))}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+                      <div className="odash-summary-row total">
+                        <span>Total</span>
+                        <span>{formatRs(invoice.net_amount)}</span>
+                      </div>
                     </div>
                   </div>
                 )}

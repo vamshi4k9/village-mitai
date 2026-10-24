@@ -153,6 +153,10 @@
   padding: 2px 0;
 }
 
+.order-summary-row.saving {
+  color: #1e6331;
+}
+
 .order-summary-row.total {
   font-size: 1rem;
   font-weight: 700;

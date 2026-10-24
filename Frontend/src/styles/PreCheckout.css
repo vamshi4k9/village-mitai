@@ -542,6 +542,7 @@
 
 /* the fixed header must not cover a field that was scrolled to */
 #co-address,
+#co-delivery,
 #co-payment,
 #co-location {
   scroll-margin-top: calc(var(--header-offset) + 28px);
@@ -566,4 +567,103 @@
 .co-btn:disabled {
   background-color: #c4b5a5;
   cursor: not-allowed;
+}
+
+/* ================= DELIVERY DATE ================= */
+/* same cards as the payment options: fastest day, or schedule a later one */
+.co-delivery-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.co-delivery-option i {
+  color: #4b2a0d;
+}
+
+.co-delivery-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.co-delivery-title {
+  font-weight: 600;
+}
+
+.co-delivery-sub {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #7b7167;
+}
+
+.co-delivery-option:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* one swipeable row of days */
+.co-date-chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.co-date-chip {
+  flex: 0 0 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+  color: #3F2305;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.co-date-chip:hover {
+  border-color: #4b2a0d;
+}
+
+.co-date-chip.selected {
+  background: #3F2305;
+  border-color: #3F2305;
+  color: #f9f9f9;
+}
+
+.co-date-chip:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+.co-date-weekday,
+.co-date-month {
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.co-date-day {
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+@media (max-width: 576px) {
+  .co-delivery-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* which payment methods the applied coupon allows */
+.co-coupon-note {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: #7b7167;
 }

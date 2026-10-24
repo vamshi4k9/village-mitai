@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from .models import Category, DeliveryFeeConfig, Item, NotificationEmail, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile, Coupon
 from .models import APIRequestLog, SiteConfig, StoreLocation, DeliveryCharge
@@ -19,8 +20,16 @@ admin.site.register(Banner)
 admin.site.register(Order)
 admin.site.register(OrderItem)
 
-admin.site.register(Invoice)
-admin.site.register(Transaction)
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ("id", "order_date", "store", "status", "payment_mode", "net_amount")
+    list_filter = ("store", "status", "payment_mode")
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ("id", "invoice", "item", "store", "quantity", "weight", "item_amount")
+    list_filter = ("store",)
 
 admin.site.register(Address)
 
@@ -41,13 +50,42 @@ class CartAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at',
     )    
-admin.site.register(Coupon)
+class CouponAdminForm(forms.ModelForm):
+    # shown as tick boxes; stored on the coupon as "250,1000,piece"
+    weights = forms.MultipleChoiceField(
+        choices=Coupon.WEIGHT_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        help_text="Leave all unticked to allow every weight.",
+    )
+
+    class Meta:
+        model = Coupon
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial["weights"] = sorted(self.instance.allowed_weights())
+
+    def clean_weights(self):
+        return ",".join(self.cleaned_data["weights"])
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    form = CouponAdminForm
+    list_display = ("code", "discount_type", "discount_value", "apply_on", "weights", "payment_mode", "free_delivery", "is_active", "valid_to")
+    list_filter = ("is_active", "apply_on", "payment_mode", "free_delivery")
+    search_fields = ("code",)
+    filter_horizontal = ("categories", "items")
 
 
 @admin.register(StoreLocation)
 class StoreLocationAdmin(admin.ModelAdmin):
-    list_display = ("name", "latitude", "longitude", "max_delivery_km", "is_active")
+    list_display = ("name", "address", "latitude", "longitude", "max_delivery_km", "is_active")
     list_editable = ("max_delivery_km", "is_active")
+    search_fields = ("name", "address")
 
 
 @admin.register(DeliveryCharge)
@@ -67,6 +105,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 class DeliveryFeeConfigAdmin(admin.ModelAdmin):
     list_display = (
         "free_delivery_above",
+        "schedule_days_ahead",
         "updated_at",
     )
 
