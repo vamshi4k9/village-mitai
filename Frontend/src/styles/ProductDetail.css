@@ -143,10 +143,16 @@
   font-weight: 500;
 }
 
-.pd-feature img {
+.pd-feature img,
+.pd-feature svg {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
   object-fit: contain;
+}
+
+.pd-feature svg.pd-delivery-icon {
+  width: 26px;
 }
 
 .pd-shelf {
@@ -386,4 +392,58 @@
 .pd-qty-input:focus {
   outline: none;
   background: #f8f4f1;
+}
+
+
+/* ================= FEATURE BADGES ON ONE LINE ================= */
+.pd-short {
+  display: none;
+}
+
+@media (max-width: 576px) {
+  /* veg, shelf life and delivery stay side by side on phones */
+  .pd-features {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pd-features::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pd-feature {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 6px;
+    font-size: 0.74rem;
+    white-space: nowrap;
+  }
+
+  .pd-feature svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pd-feature svg.pd-delivery-icon {
+    width: 21px;
+  }
+
+  .pd-shelf {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    font-size: 0.55rem;
+  }
+
+  .pd-long {
+    display: none;
+  }
+
+  .pd-short {
+    display: inline;
+  }
 }

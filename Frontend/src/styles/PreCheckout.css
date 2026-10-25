@@ -420,6 +420,10 @@
   color: #b71c1c;
 }
 
+.coupon-inline-message.info {
+  color: #7b7167;
+}
+
 /* ================= SUMMARY ================= */
 .co-summary {
   display: flex;
@@ -666,4 +670,26 @@
   margin: 6px 0 0;
   font-size: 0.78rem;
   color: #7b7167;
+}
+
+
+/* "Show more addresses" under the saved address list */
+.co-more-btn {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #ebe5df;
+  border: none;
+  border-radius: 6px;
+  color: #3F2305;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.co-more-btn:hover {
+  background: #e0d7ce;
 }

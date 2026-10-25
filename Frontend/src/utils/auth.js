@@ -7,14 +7,23 @@ export const getToken = () => localStorage.getItem("token");
 export const isLoggedIn = () => !!localStorage.getItem("token");
 export const logout = () => localStorage.removeItem("token");
 
+// fired on sign-in and sign-out so the cart can reload for the new user
+export const AUTH_CHANGED = "auth-changed";
+const announce = () => window.dispatchEvent(new Event(AUTH_CHANGED));
+
 export const saveSession = ({ access, refresh }) => {
+  const wasSignedIn = !!localStorage.getItem("access_token");
   localStorage.setItem("access_token", access);
   if (refresh) localStorage.setItem("refresh_token", refresh);
+  // a token refresh keeps the same user; only a new sign-in is announced
+  if (!wasSignedIn) announce();
 };
 
 export const clearSession = () => {
+  const wasSignedIn = !!localStorage.getItem("access_token");
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  if (wasSignedIn) announce();
 };
 
 const isExpired = (token) => {

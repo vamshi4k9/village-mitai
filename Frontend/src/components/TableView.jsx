@@ -6,6 +6,7 @@ import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
 import { formatDeliveryDate } from "../utils/deliveryDate";
 import { orderBreakdown, formatRs } from "../utils/orderTotals";
 import { orderLabel } from "../utils/orderNumber";
+import { getStaffToken } from "../utils/staffAuth";
 
 // label and badge colour class for each order status
 const STATUS_META = {
@@ -44,7 +45,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
   const updateInvoiceStatus = async (invoiceId, newStatus) => {
     try {
       // staff only: the server checks the login
-      const token = localStorage.getItem("access_token");
+      const token = getStaffToken();
       await axios.patch(
         `${API_BASE_URL}/order-detail/${invoiceId}/`,
         { status: newStatus },
@@ -67,8 +68,15 @@ function TableView({ invoices = [], userRole, setInvoices }) {
 
   const shippingInvoices = invoices.filter((i) => i.status === "SHIPPING");
 
-  const deliveryInvoices = invoices.filter(
-    (i) => i.status === "OUT_FOR_DELIVERY" || i.status === "DELIVERED"
+  // out for delivery first, then the rest; newest first in each
+  const newestFirst = (a, b) => new Date(b.order_date) - new Date(a.order_date);
+  const outForDeliveryFirst = (list) => [
+    ...list.filter((i) => i.status === "OUT_FOR_DELIVERY").sort(newestFirst),
+    ...list.filter((i) => i.status !== "OUT_FOR_DELIVERY").sort(newestFirst),
+  ];
+
+  const deliveryInvoices = outForDeliveryFirst(
+    invoices.filter((i) => i.status === "OUT_FOR_DELIVERY" || i.status === "DELIVERED")
   );
 
   const tabCounts = {
@@ -85,7 +93,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
     } else if (userRole === "Maker") {
       return preparationInvoices.filter((i) => i.status === "IN_PROGRESS");
     } else if (userRole === "Delivery") {
-      return [...deliveryInvoices, ...shippingInvoices];
+      return outForDeliveryFirst([...deliveryInvoices, ...shippingInvoices]);
     }
     return [];
   };
@@ -366,9 +374,28 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                                 : `By Weight: ${formatWeight(t.weight)} x${t.quantity}`}
                             </span>
                           </div>
-                          <span className="odash-item-price">
-                            Rs.{(parseFloat(t.item_amount) * t.quantity).toFixed(2)}
-                          </span>
+                          {(() => {
+                            // prices as saved when the order was placed
+                            const qty = t.quantity;
+                            const selling = Number(t.item_amount) * qty;
+                            const mrp = t.mrp_price != null ? Number(t.mrp_price) * qty : selling;
+                            const couponShare = Number(t.coupon_discount || 0);
+                            const free = t.free_quantity || 0;
+                            return (
+                              <span className="odash-item-price">
+                                {mrp > selling && (
+                                  <span className="odash-price-old">{formatRs(mrp)}</span>
+                                )}
+                                <span>{formatRs(selling)}</span>
+                                {free > 0 && (
+                                  <span className="odash-item-note">{free} free (offer)</span>
+                                )}
+                                {free === 0 && couponShare > 0 && (
+                                  <span className="odash-item-note">Coupon - {formatRs(couponShare)}</span>
+                                )}
+                              </span>
+                            );
+                          })()}
                         </div>
                       ))}
                     </div>
@@ -379,20 +406,46 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                 const b = orderBreakdown(invoice);
                 return (
                   <>
+                    {/* same rows as the checkout summary */}
                     <div className="odash-summary-row">
-                      <span>Items</span>
-                      <span>{formatRs(b.itemsTotal)}</span>
+                      <span>Items{b.itemCount != null ? ` (${b.itemCount})` : ""}</span>
+                      <span>{formatRs(b.mrpTotal)}</span>
                     </div>
+                    {b.itemDiscount > 0 && (
+                      <div className="odash-summary-row saving">
+                        <span>Item Discount</span>
+                        <span>- {formatRs(b.itemDiscount)}</span>
+                      </div>
+                    )}
                     {b.coupon > 0 && (
                       <div className="odash-summary-row saving">
-                        <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
+                        <span>
+                          Coupon Discount
+                          {b.couponCode ? ` (${b.couponCode}${invoice.coupon_type === "bogo" ? ", Buy X Get Y" : ""})` : ""}
+                        </span>
                         <span>- {formatRs(b.coupon)}</span>
+                      </div>
+                    )}
+                    {b.coupon === 0 && b.couponCode && (
+                      <div className="odash-summary-row">
+                        <span>Coupon</span>
+                        <span>{b.couponCode}</span>
                       </div>
                     )}
                     {b.deliveryCharge != null && (
                       <div className="odash-summary-row">
-                        <span>Delivery</span>
-                        <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
+                        <span>Delivery Charges</span>
+                        <span className={b.deliveryCharge > 0 ? "" : "odash-free"}>
+                          {b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}
+                        </span>
+                      </div>
+                    )}
+                    {b.packingCharge != null && (
+                      <div className="odash-summary-row">
+                        <span>Packing & Handling</span>
+                        <span className={b.packingCharge > 0 ? "" : "odash-free"}>
+                          {b.packingCharge > 0 ? formatRs(b.packingCharge) : "FREE"}
+                        </span>
                       </div>
                     )}
                     {b.adjustment !== 0 && (

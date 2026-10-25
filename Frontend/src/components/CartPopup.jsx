@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import { GUEST_CHECKOUT_ENABLED } from "../constants";
 import { CartContext } from "./CartContext";
 import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
@@ -21,7 +22,8 @@ const CartPopup = ({ isOpen, toggleCart }) => {
     // Logged-in users, and guests who already chose guest checkout in this
     // browser session, are not asked again
     const token = await getValidAccessToken();
-    if (!token && !sessionStorage.getItem("checkout_as_guest")) {
+    const guestAllowed = GUEST_CHECKOUT_ENABLED && sessionStorage.getItem("checkout_as_guest");
+    if (!token && !guestAllowed) {
       setAuthError("");
       setShowAuthPopup(true);
       return;
@@ -251,9 +253,12 @@ const CartPopup = ({ isOpen, toggleCart }) => {
             </p> */}
 
             <div className="auth-actions">
-              <button className="auth-btn guest" onClick={handleGuest}>
-                Continue as Guest
-              </button>
+              {/* guest checkout is off for now; see GUEST_CHECKOUT_ENABLED */}
+              {GUEST_CHECKOUT_ENABLED && (
+                <button className="auth-btn guest" onClick={handleGuest}>
+                  Continue as Guest
+                </button>
+              )}
               <div className="auth-google">
                 <GoogleLoginButton onLogin={handleGoogleLogin} onError={setAuthError} />
               </div>

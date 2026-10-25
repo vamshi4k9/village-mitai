@@ -11,6 +11,7 @@ import { useState } from 'react';
 import Contact from './components/Contact';
 import About from './components/About';
 import Privacy from './components/Privacy';
+import NotFound from './components/NotFound';
 import ProductDetail from './components/ProductDetail';
 import Checkout from './components/Checkout';
 import useAgentId from './components/useAgentId';
@@ -102,6 +103,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* any other address */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         </main>
 

@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "../styles/Profile.css";
 import { API_BASE_URL, API_BASE_URL_MEDIA, SESSION_TOKEN } from "../constants";
 import LocationPicker from "./LocationPicker.js";
@@ -9,8 +9,10 @@ import ConfirmPopup from "./ConfirmPopup";
 import { CartContext } from "./CartContext";
 import { getValidAccessToken, clearSession } from "../utils/auth";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
-import { orderBreakdown, formatRs } from "../utils/orderTotals";
+import { formatRs } from "../utils/orderTotals";
 import { orderLabel, orderStatusUrl } from "../utils/orderNumber";
+import OrderFacts from "./OrderFacts";
+import OrderPriceSummary from "./OrderPriceSummary";
 
 const EMPTY_ADDRESS = {
   name: "",
@@ -24,6 +26,9 @@ const EMPTY_ADDRESS = {
 function Profile() {
   const [userData, setUserData] = useState(null);
   const [orders, setOrders] = useState([]);
+  // newest orders first; 5 at a time, "Show more" adds the next 5
+  const ORDERS_PAGE_SIZE = 5;
+  const [visibleOrders, setVisibleOrders] = useState(ORDERS_PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [totalOrderValue, setTotalOrderValue] = useState(0);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -35,6 +40,11 @@ function Profile() {
   const [addressError, setAddressError] = useState("");
 
   const navigate = useNavigate();
+  // Orders and Addresses are separate tabs; ?tab=addresses opens the second
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "addresses" ? "addresses" : "orders";
+  const selectTab = (tab) =>
+    setSearchParams(tab === "orders" ? {} : { tab }, { replace: true });
   const { triggerToast } = useContext(CartContext);
   // what the confirm popup is asking about: { type: "order" | "address", target }
   const [confirm, setConfirm] = useState(null);
@@ -358,15 +368,43 @@ function Profile() {
                   <p>{userData.phone ? `+91 ${userData.phone}` : "Mobile number not added"}</p>
                 </div>
                 <div className="profile-actions">
-                  <button className="profile-btn" onClick={handleEditProfile}>Edit Profile</button>
-                  <button className="profile-btn secondary" onClick={handleLogout}>Logout</button>
+                  <button className="profile-btn small" onClick={handleEditProfile}>Edit Profile</button>
+                  <button className="profile-btn small secondary" onClick={handleLogout}>Logout</button>
                 </div>
               </div>
             )}
           </div>
 
+          <div className="profile-tabs" role="tablist" aria-label="Profile sections">
+            <button
+              type="button"
+              role="tab"
+              id="profile-tab-orders"
+              aria-selected={activeTab === "orders"}
+              aria-controls="profile-panel-orders"
+              className={`profile-tab ${activeTab === "orders" ? "active" : ""}`}
+              onClick={() => selectTab("orders")}
+            >
+              <i className="bi bi-bag" aria-hidden="true"></i> My Orders
+              {!loading && <span className="profile-tab-count">{orders.length}</span>}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="profile-tab-addresses"
+              aria-selected={activeTab === "addresses"}
+              aria-controls="profile-panel-addresses"
+              className={`profile-tab ${activeTab === "addresses" ? "active" : ""}`}
+              onClick={() => selectTab("addresses")}
+            >
+              <i className="bi bi-geo-alt" aria-hidden="true"></i> Addresses
+              <span className="profile-tab-count">{(userData.addresses || []).length}</span>
+            </button>
+          </div>
+
           {/* Addresses */}
-          <div className="profile-card">
+          {activeTab === "addresses" && (
+          <div className="profile-card" role="tabpanel" id="profile-panel-addresses" aria-labelledby="profile-tab-addresses">
             <div className="profile-section-head">
               <h3 className="profile-section-title">Addresses</h3>
               {!showAddressForm && (
@@ -478,9 +516,11 @@ function Profile() {
               </div>
             )}
           </div>
+          )}
 
           {/* Orders */}
-          <div className="profile-card">
+          {activeTab === "orders" && (
+          <div className="profile-card" role="tabpanel" id="profile-panel-orders" aria-labelledby="profile-tab-orders">
             <div className="profile-section-head">
               <h3 className="profile-section-title">My Orders</h3>
               <span className="profile-total">Total Spent: Rs.{totalOrderValue}</span>
@@ -488,21 +528,16 @@ function Profile() {
 
             {loading ? null : orders && orders.length > 0 ? (
               <div className="profile-list">
-                {orders.map((order) => (
+                {orders.slice(0, visibleOrders).map((order) => (
                   <div className="profile-order" key={order.id}>
                     <div className="profile-order-head">
                       <div className="profile-item-text">
                         <p className="profile-item-title">Order {orderLabel(order)}</p>
-                        <p>{new Date(order.order_date).toLocaleString()}</p>
                         <p>
                           Paid: <strong>{formatRs(order.net_amount)}</strong>
-                          {order.coupon_code && Number(order.discount) > 0 && (
-                            <span className="profile-coupon-chip">
-                              <i className="bi bi-tag" aria-hidden="true"></i>
-                              {order.coupon_code} saved {formatRs(order.discount)}
-                            </span>
-                          )}
                         </p>
+                        {/* when it was ordered, the coupon used, when it was delivered */}
+                        <OrderFacts order={order} />
                         {order.refund_status && (
                           <p>
                             Refund of Rs.{order.refund_amount}: {REFUND_LABELS[order.refund_status] || order.refund_status}
@@ -514,6 +549,15 @@ function Profile() {
                       </span>
                     </div>
 
+                    {/* the bill, same rows as the checkout summary; item counts
+                        show once the details (lines) are loaded */}
+                    <div className="profile-bill">
+                      <OrderPriceSummary
+                        order={orderDetailsMap[order.id] ? { ...order, ...orderDetailsMap[order.id] } : order}
+                        title="Bill Details"
+                      />
+                    </div>
+
                     <div className="profile-actions">
                       <button
                         className="profile-btn small"
@@ -522,11 +566,19 @@ function Profile() {
                         {expandedOrderId === order.id ? "Hide Details" : "View Details"}
                       </button>
                       <button
-                        className="profile-btn small secondary"
+                        className="profile-btn small"
                         onClick={() => navigate(orderStatusUrl(order))}
                       >
-                        {order.status === "DELIVERED" ? "Rate Order" : "Track Order"}
+                        <i className="bi bi-geo-alt" aria-hidden="true"></i> Track Order
                       </button>
+                      {order.status === "DELIVERED" && (
+                        <button
+                          className="profile-btn small secondary"
+                          onClick={() => navigate(orderStatusUrl(order))}
+                        >
+                          Rate Order
+                        </button>
+                      )}
                       {order.can_cancel && (
                         <button
                           className="profile-btn small secondary"
@@ -565,49 +617,35 @@ function Profile() {
                           ))
                         )}
 
-                        {/* what was paid and how, as saved when the order was placed */}
-                        {orderDetailsMap[order.id] && (() => {
-                          const b = orderBreakdown(orderDetailsMap[order.id]);
-                          return (
-                            <div className="profile-summary">
-                              <div className="profile-summary-row">
-                                <span>Items</span>
-                                <span>{formatRs(b.itemsTotal)}</span>
-                              </div>
-                              {b.coupon > 0 && (
-                                <div className="profile-summary-row saving">
-                                  <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
-                                  <span>- {formatRs(b.coupon)}</span>
-                                </div>
-                              )}
-                              {b.deliveryCharge != null && (
-                                <div className="profile-summary-row">
-                                  <span>Delivery</span>
-                                  <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
-                                </div>
-                              )}
-                              {b.adjustment !== 0 && (
-                                <div className="profile-summary-row">
-                                  <span>Delivery & adjustments</span>
-                                  <span>{b.adjustment < 0 ? "- " : ""}{formatRs(Math.abs(b.adjustment))}</span>
-                                </div>
-                              )}
-                              <div className="profile-summary-row total">
-                                <span>Paid</span>
-                                <span>{formatRs(b.total)}</span>
-                              </div>
-                            </div>
-                          );
-                        })()}
                       </div>
                     )}
                   </div>
                 ))}
+
+                {orders.length > visibleOrders && (
+                  <button
+                    type="button"
+                    className="profile-btn secondary profile-more"
+                    onClick={() => setVisibleOrders((n) => n + ORDERS_PAGE_SIZE)}
+                  >
+                    Show more orders ({orders.length - visibleOrders} more)
+                  </button>
+                )}
+                {orders.length > ORDERS_PAGE_SIZE && visibleOrders >= orders.length && (
+                  <button
+                    type="button"
+                    className="profile-btn secondary profile-more"
+                    onClick={() => setVisibleOrders(ORDERS_PAGE_SIZE)}
+                  >
+                    Show fewer
+                  </button>
+                )}
               </div>
             ) : (
               <p className="profile-muted">No orders yet.</p>
             )}
           </div>
+          )}
         </div>
       ) : null}
 

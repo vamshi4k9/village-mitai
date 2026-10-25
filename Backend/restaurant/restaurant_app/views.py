@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from restaurant import settings
 from .utils.email import send_order_confirmation_email
 from .utils.delivery import delivery_quote, delivery_window, pick_delivery_date
+from .utils.agents import apply_registration_commission, contact_filter, customer_contacts, normalize_phone
 from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Avg, Count, Sum, Case, When, Value, IntegerField, F
@@ -20,7 +21,7 @@ from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, Transaction , SiteConfig
+from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, ReviewImage, Transaction , SiteConfig
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -74,7 +75,8 @@ STAFF_ROLES = ("admin", "maker", "delivery")
 
 
 def find_invoice(ref):
-    """An order by its order number (VM2610240007) or, for older links, its id."""
+    """An order by its order number (VM7F3A9C21B4, or VM2610240007 on older
+    orders) or, for older links, its id."""
     ref = str(ref).strip()
     if ref.isdigit():
         return Invoice.objects.filter(id=int(ref)).first()
@@ -326,9 +328,33 @@ class BestsellerItemsAPIView(APIView):
         serializer = ItemSerializer(bestsellers, many=True)
         return Response(serializer.data)
 
+def claim_guest_cart(user, session_key):
+    """Move this browser's guest cart into the customer's account cart, adding
+    quantities together when the same item and weight is in both."""
+    if not session_key:
+        return
+    for line in Cart.objects.filter(session_key=session_key, user__isnull=True):
+        existing = (
+            Cart.objects.filter(user=user, item_id=line.item_id, weight=line.weight)
+            .exclude(id=line.id)
+            .first()
+        )
+        if existing:
+            existing.quantity += line.quantity
+            existing.save(update_fields=["quantity", "updated_at"])
+            line.delete()
+        else:
+            line.user = user
+            line.save(update_fields=["user", "updated_at"])
+
+
 class CartViewSet(ModelViewSet):
+    """Cart of a signed-in customer belongs to their account, so it is the
+    same on every device. Guests have a cart per browser (session key)."""
     serializer_class = CartSerializer
     queryset = Cart.objects.all()
+    authentication_classes = [LenientJWTAuthentication]
+    permission_classes = [AllowAny]
 
     def get_session_key(self):
         session_key = self.request.headers.get("x-session-key")
@@ -339,7 +365,11 @@ class CartViewSet(ModelViewSet):
 
     def get_queryset(self):
         session_key = self.get_session_key()
-        return super().get_queryset().filter(session_key=session_key)
+        user = self.request.user
+        if user.is_authenticated:
+            claim_guest_cart(user, session_key)
+            return super().get_queryset().filter(user=user)
+        return super().get_queryset().filter(session_key=session_key, user__isnull=True)
 
     def create(self, request, *args, **kwargs):
         session_key = self.get_session_key()
@@ -356,14 +386,18 @@ class CartViewSet(ModelViewSet):
             if not item or not item.sold_by_piece:
                 return Response({"error": "This item is not sold by the piece"}, status=400)
 
-        cart_item, created = Cart.objects.get_or_create(
-            session_key=session_key,
-            item_id=item_id,
-            weight=weight,
-            defaults={"quantity": quantity},
-        )
-
-        if not created:
+        lines = self.get_queryset()
+        cart_item = lines.filter(item_id=item_id, weight=weight).first()
+        created = cart_item is None
+        if created:
+            cart_item = Cart.objects.create(
+                session_key=session_key,
+                user=request.user if request.user.is_authenticated else None,
+                item_id=item_id,
+                weight=weight,
+                quantity=quantity,
+            )
+        else:
             cart_item.quantity += quantity
             cart_item.save()
 
@@ -372,9 +406,7 @@ class CartViewSet(ModelViewSet):
 
     @action(detail=False, methods=["delete"], url_path="clear")
     def clear_cart(self, request):
-        session_key = self.get_session_key()
-
-        deleted_count, _ = Cart.objects.filter(session_key=session_key).delete()
+        deleted_count, _ = self.get_queryset().delete()
 
         return Response(
             {
@@ -393,21 +425,71 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def google_user_from_access_token(access_token):
+    """The Google account behind an access token from the sign-in pop-up, in
+    the same shape as a verified ID token. None if Google does not confirm the
+    token was issued to this site (so a token made for another app is refused)."""
+    import requests
+
+    try:
+        info = requests.get(
+            "https://oauth2.googleapis.com/tokeninfo",
+            params={"access_token": access_token},
+            timeout=6,
+        )
+        if info.status_code != 200:
+            return None
+        info = info.json()
+        if info.get("aud") != settings.GOOGLE_CLIENT_ID:
+            return None
+
+        profile = requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=6,
+        )
+        if profile.status_code != 200:
+            return None
+        profile = profile.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+    # both answers must be about the same account
+    if not profile.get("sub") or profile.get("sub") != info.get("sub"):
+        return None
+    return {
+        "sub": profile["sub"],
+        "email": profile.get("email"),
+        "email_verified": profile.get("email_verified") in (True, "true"),
+        "given_name": profile.get("given_name", ""),
+        "family_name": profile.get("family_name", ""),
+        "picture": profile.get("picture"),
+    }
+
+
 class GoogleLoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
 
     def post(self, request):
         credential = request.data.get("credential")
-        if not credential:
-            return Response({"error": "Google credential is required"}, status=status.HTTP_400_BAD_REQUEST)
+        access_token = request.data.get("access_token")
 
-        try:
-            google_user = google_id_token.verify_oauth2_token(
-                credential, google_requests.Request(), settings.GOOGLE_CLIENT_ID
-            )
-        except ValueError:
-            return Response({"error": "Invalid Google credential"}, status=status.HTTP_401_UNAUTHORIZED)
+        if credential:
+            # Google's own sign-in button sends an ID token
+            try:
+                google_user = google_id_token.verify_oauth2_token(
+                    credential, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+                )
+            except ValueError:
+                return Response({"error": "Invalid Google credential"}, status=status.HTTP_401_UNAUTHORIZED)
+        elif access_token:
+            # our own themed button uses Google's pop-up and sends an access token
+            google_user = google_user_from_access_token(access_token)
+            if google_user is None:
+                return Response({"error": "Invalid Google credential"}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({"error": "Google credential is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         email = google_user.get("email")
         if not email or not google_user.get("email_verified"):
@@ -437,6 +519,7 @@ class GoogleLoginView(APIView):
             Address.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
             Invoice.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
             Transaction.objects.filter(session_key=session_key, user__isnull=True).update(user=user)
+            claim_guest_cart(user, session_key)
 
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -571,6 +654,22 @@ class CreateOrderView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # guest checkout is off for now (settings.GUEST_CHECKOUT_ENABLED). An
+        # online order is created after the money is taken, so a paid guest
+        # order is still placed; checkout asks guests to sign in before paying.
+        if (
+            not getattr(settings, "GUEST_CHECKOUT_ENABLED", True)
+            and not request.user.is_authenticated
+            and not data.get("razorpay_payment_id")
+        ):
+            return Response(
+                {
+                    "error": "Please sign in to place your order.",
+                    "message": "Please sign in to place your order.",
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         # checkout removes a coupon that does not fit the payment method, so
         # this only stops a cash order sent with an online-only coupon. Online
         # orders are created after payment, so they are logged, not refused.
@@ -679,6 +778,12 @@ class CreateOrderView(APIView):
 
         line_coupon = [Decimal("0.00")] * len(order_lines)
         line_free = [0] * len(order_lines)
+        if coupon and discount > 0 and coupon.price_basis == "mrp":
+            # an MRP coupon replaces the sale price on the lines it covers
+            for i in coupon_eligible_lines(coupon, order_lines):
+                line = order_lines[i]
+                line["unit_price"] = line["unit_mrp"]
+                line["price"] = line["original_price"]
         if coupon and discount > 0:
             try:
                 coupon_total, line_coupon, line_free = calculate_coupon(coupon, order_lines)
@@ -689,6 +794,16 @@ class CreateOrderView(APIView):
 
         items_mrp_total = sum((line["original_price"] for line in order_lines), Decimal("0"))
         items_total = sum((line["price"] for line in order_lines), Decimal("0"))
+
+        # agent commission: the coupon's agent, at their current rate, on what
+        # is paid for the items (no delivery or packing)
+        agent = coupon.agent if coupon and coupon.agent_id else None
+        commission_percent = commission_base = commission = None
+        if agent:
+            profile = UserProfile.objects.filter(user=agent).first()
+            commission_percent = profile.commission_percent if profile else Decimal("0")
+            commission_base = max(items_total - discount, Decimal("0"))
+            commission = (commission_base * commission_percent / Decimal("100")).quantize(Decimal("0.01"))
 
         # Create Invoice
         invoice = Invoice.objects.create(
@@ -709,11 +824,25 @@ class CreateOrderView(APIView):
             items_total=items_total,
             coupon_code=coupon.code if coupon else "",
             coupon_type=coupon.discount_type if coupon else "",
+            agent=agent,
+            agent_commission_percent=commission_percent,
+            agent_commission_base=commission_base,
+            agent_commission=commission,
             status="ORDERED",
             address=address,
             coupon=coupon,
             store_id=store_id
         )
+
+        # registration commission for the agent who registered this customer
+        # (matched by email or mobile, not by username or browser)
+        reg_emails, reg_phones = customer_contacts(request.user, address)
+        apply_registration_commission(invoice, reg_emails, reg_phones, invoice.order_date)
+        if invoice.registration_agent_id:
+            invoice.save(update_fields=[
+                "registration_agent", "registration_entry", "registration_commission_percent",
+                "registration_commission_base", "registration_commission", "agent_commission",
+            ])
 
         if razorpay_payment_id:
             invoice.razorpay_order_id = razorpay_order_id
@@ -886,7 +1015,7 @@ def admin_login(request):
                 'error': 'Invalid credentials'
             }, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Check if user is staff
+        # Staff status must be ticked on the account (Staff users admin page)
         if not user.is_staff:
             return Response({
                 'error': 'Access denied - Staff access required'
@@ -1009,22 +1138,7 @@ def calculate_coupon(coupon, lines):
     Raises CouponNotApplicable when the cart does not qualify.
     """
     price_key = "original_price" if coupon.price_basis == "mrp" else "price"
-
-    if coupon.apply_on == "order":
-        eligible = list(range(len(lines)))
-    elif coupon.apply_on == "category":
-        category_ids = set(coupon.categories.values_list("id", flat=True))
-        eligible = [i for i, line in enumerate(lines) if line.get("category_id") in category_ids]
-    elif coupon.apply_on == "item":
-        item_ids = set(coupon.items.values_list("id", flat=True))
-        eligible = [i for i, line in enumerate(lines) if line.get("id") in item_ids]
-    else:
-        eligible = []
-
-    # coupon limited to some weights (250 g, 1 kg, by piece...)
-    allowed_weights = coupon.allowed_weights()
-    if allowed_weights:
-        eligible = [i for i in eligible if cart_weight(lines[i].get("weight")) in allowed_weights]
+    eligible = coupon_eligible_lines(coupon, lines)
 
     if not eligible:
         raise CouponNotApplicable("Coupon not applicable to selected items")
@@ -1041,13 +1155,14 @@ def calculate_coupon(coupon, lines):
         buy, get = coupon.buy_quantity, coupon.get_quantity
         group_size = buy + get
 
-        # one entry per unit at its current selling price, costliest first
+        # one entry per unit at the price it is charged at (MRP for an MRP
+        # coupon, else the selling price), costliest first
         units = []
         for i in eligible:
             qty = int(lines[i]["qty"] or 0)
             if qty <= 0:
                 continue
-            unit_price = Decimal(str(lines[i]["price"])) / qty
+            unit_price = Decimal(str(lines[i][price_key])) / qty
             units.extend([(unit_price, i)] * qty)
         units.sort(key=lambda u: u[0], reverse=True)
 
@@ -1094,6 +1209,38 @@ def calculate_coupon(coupon, lines):
         line_discounts[biggest] += leftover
 
     return discount, line_discounts, [free.get(i, 0) for i in range(len(lines))]
+
+
+def coupon_eligible_lines(coupon, lines):
+    """Indexes of the cart lines the coupon applies to: by order, category or
+    item, and only the weights it allows."""
+    if coupon.apply_on == "order":
+        eligible = list(range(len(lines)))
+    elif coupon.apply_on == "category":
+        category_ids = set(coupon.categories.values_list("id", flat=True))
+        eligible = [i for i, line in enumerate(lines) if line.get("category_id") in category_ids]
+    elif coupon.apply_on == "item":
+        item_ids = set(coupon.items.values_list("id", flat=True))
+        eligible = [i for i, line in enumerate(lines) if line.get("id") in item_ids]
+    else:
+        eligible = []
+
+    # coupon limited to some weights (250 g, 1 kg, by piece...)
+    allowed_weights = coupon.allowed_weights()
+    if allowed_weights:
+        eligible = [i for i in eligible if cart_weight(lines[i].get("weight")) in allowed_weights]
+    return eligible
+
+
+def coupon_charged_totals(coupon, lines):
+    """What each line costs before the coupon comes off. An MRP coupon is
+    worked out on MRP and replaces the item's own sale price, so the lines it
+    covers are charged at MRP; every other line keeps its selling price."""
+    totals = [Decimal(str(line["price"])) for line in lines]
+    if coupon.price_basis == "mrp":
+        for i in coupon_eligible_lines(coupon, lines):
+            totals[i] = max(Decimal(str(lines[i]["original_price"])), totals[i])
+    return totals
 
 
 def unit_prices(item, weight):
@@ -1163,16 +1310,15 @@ def apply_coupon(request):
         except CouponNotApplicable as e:
             return Response({"error": str(e)}, status=400)
 
-        # ALWAYS current selling price
-        total_cart_value = sum(
-            Decimal(str(item["price"]))
-            for item in cart_items
-        )
+        # what each line costs before the coupon: the selling price, or MRP
+        # on the lines an MRP coupon covers
+        charged_totals = coupon_charged_totals(coupon, cart_items)
+        total_cart_value = sum(charged_totals, Decimal("0"))
         new_total = max(total_cart_value - discount, Decimal("0"))
 
         discounted_items = []
         for index, item in enumerate(cart_items):
-            current_total = Decimal(str(item["price"]))
+            current_total = charged_totals[index]
             qty = int(item["qty"] or 0)
             item_discount = line_discounts[index]
             discounted_total = max(current_total - item_discount, Decimal("0"))
@@ -1180,6 +1326,8 @@ def apply_coupon(request):
                 "id": item["id"],
                 "weight": item.get("weight"),
                 "qty": item["qty"],
+                # true when this line is charged at MRP (its sale price dropped)
+                "charged_at_mrp": current_total != Decimal(str(item["price"])),
                 "current_total": round(current_total, 2),
                 "original_total": round(Decimal(str(item["original_price"])), 2),
                 "discount": round(item_discount, 2),
@@ -1193,6 +1341,8 @@ def apply_coupon(request):
             "coupon_id": coupon.id,
             "price_basis": coupon.price_basis,
             "discount_type": coupon.discount_type,
+            # "normal", "free" or "charged" (no free delivery with this coupon)
+            "delivery_rule": coupon.delivery_rule,
             "free_delivery": coupon.free_delivery,
             "payment_mode": coupon.payment_mode,
             "discount": round(discount, 2),
@@ -1216,29 +1366,34 @@ def apply_coupon(request):
         
 
 @api_view(["POST"])
-# If you want only logged-in agents → use IsAuthenticated
-# @permission_classes([IsAuthenticated])
-@permission_classes([AllowAny])  # allow public also if needed
+@authentication_classes([LenientJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def agent_submit(request):
+    """A logged-in agent registers a customer; the entry is theirs."""
     data = request.data
+    profile = UserProfile.objects.filter(user=request.user).first()
+    if not profile or profile.role != "agent":
+        return Response({"error": "Agent login required"}, status=status.HTTP_403_FORBIDDEN)
+    agent = request.user
 
-    agent_id = data.get("agent_id")
-
-    if agent_id:
+    # the customer's orders are matched later by this email or mobile number
+    phone = normalize_phone(data.get("customer_phone"))
+    email = (data.get("customer_email") or "").strip().lower()
+    if len(phone) != 10:
+        return Response({"error": "Enter a valid 10 digit mobile number"}, status=status.HTTP_400_BAD_REQUEST)
+    if email:
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
         try:
-            agent = User.objects.get(id=agent_id)
-        except User.DoesNotExist:
-            agent = User.objects.get(id=1)   # fallback
-    else:
-        if request.user and request.user.is_authenticated:
-            agent = request.user
-        else:
-            agent = User.objects.get(id=1)   # default agent
+            validate_email(email)
+        except ValidationError:
+            return Response({"error": "Enter a valid email address"}, status=status.HTTP_400_BAD_REQUEST)
 
     entry = AgentCustomerEntry.objects.create(
         agent=agent,
         customer_name=data.get("customer_name"),
-        customer_phone=data.get("customer_phone"),
+        customer_phone=phone,
+        customer_email=email,
         area=data.get("area"),
         pincode=data.get("pincode"),
         notes=data.get("notes", "")
@@ -1251,19 +1406,26 @@ def agent_submit(request):
     )
     
 @api_view(["GET"])
-@permission_classes([AllowAny])
+@authentication_classes([LenientJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def agent_dashboard(request):
+    """Customers an agent registered, and orders and commission from the
+    agent's coupons. Agents see their own; admins can pass ?agent_id=."""
     try:
-        agent_id = request.GET.get("agent_id", 1)
         page_number = int(request.GET.get("page", 1))
-    except:
-        agent_id = 1
+    except (TypeError, ValueError):
         page_number = 1
 
-    try:
-        agent = User.objects.get(id=agent_id)
-    except User.DoesNotExist:
-        agent = User.objects.get(id=1)
+    profile = UserProfile.objects.filter(user=request.user).first()
+    role = profile.role if profile else None
+    if role == "agent":
+        agent = request.user
+    elif role == "admin" or request.user.is_superuser:
+        agent = User.objects.filter(id=request.GET.get("agent_id") or request.user.id).first()
+        if agent is None:
+            return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({"error": "Agent login required"}, status=status.HTTP_403_FORBIDDEN)
 
     # ✅ All customer entries for this agent
     entries_qs = AgentCustomerEntry.objects.filter(agent=agent).order_by("-created_at")
@@ -1278,15 +1440,15 @@ def agent_dashboard(request):
     total_sum_orders = 0
 
     for entry in page_obj:
-        phone = entry.customer_phone
-        # ✅ Get all addresses that match this phone number
-        addresses = Address.objects.filter(phone_number=phone)
-
-        # ✅ Collect all session_keys linked to this customer
-        session_keys = list(addresses.values_list("session_key", flat=True))
-
-        # ✅ Fetch all invoices of this customer across all session_keys
-        invoices = Invoice.objects.filter(session_key__in=session_keys).order_by("order_date")
+        # the customer's orders by email or mobile number, on any device or
+        # login: the account's email or phone, or the phone on the order's
+        # address
+        emails = {entry.customer_email} if entry.customer_email else set()
+        phones = {normalize_phone(entry.customer_phone)} - {""}
+        invoices = Invoice.objects.filter(
+            contact_filter(emails, phones, "user__email", "user__userprofile__phone")
+            | contact_filter(set(), phones, "user__email", "address__phone_number")
+        ).distinct()
 
         # ✅ Count orders BEFORE and AFTER registration
         orders_before = invoices.filter(order_date__lt=entry.created_at).count()
@@ -1302,6 +1464,7 @@ def agent_dashboard(request):
             "id": entry.id,
             "customer_name": entry.customer_name,
             "customer_phone": entry.customer_phone,
+            "customer_email": entry.customer_email,
             "area": entry.area,
             "pincode": entry.pincode,
             "created_at": entry.created_at.strftime("%Y-%m-%d %I:%M %p"),
@@ -1319,7 +1482,72 @@ def agent_dashboard(request):
         "total_orders": total_sum_orders,
     }
 
+    # orders placed with the agent's coupons; cancelled ones earn nothing
+    agent_profile = UserProfile.objects.filter(user=agent).first()
+    coupon_orders = Invoice.objects.filter(agent=agent).order_by("-order_date")
+    earning_orders = coupon_orders.exclude(status="CANCELLED")
+    totals = earning_orders.aggregate(
+        sales=Sum("agent_commission_base"),
+        commission=Sum("agent_commission"),
+    )
+    # orders from customers the agent registered (matched by email/mobile)
+    registration_orders = Invoice.objects.filter(registration_agent=agent).order_by("-order_date")
+    reg_earning = registration_orders.exclude(status="CANCELLED")
+    reg_totals = reg_earning.aggregate(
+        sales=Sum("registration_commission_base"),
+        commission=Sum("registration_commission"),
+    )
+    coupon_commission = totals["commission"] or Decimal("0")
+    registration_commission = reg_totals["commission"] or Decimal("0")
+    stats.update({
+        "coupon_orders": earning_orders.count(),
+        "coupon_sales": totals["sales"] or Decimal("0"),
+        "commission_earned": coupon_commission,
+        "commission_percent": agent_profile.commission_percent if agent_profile else Decimal("0"),
+        "registration_orders": reg_earning.count(),
+        "registration_sales": reg_totals["sales"] or Decimal("0"),
+        "registration_commission_earned": registration_commission,
+        "registration_commission_percent": agent_profile.registration_commission_percent if agent_profile else Decimal("0"),
+        "registration_commission_days": agent_profile.registration_commission_days if agent_profile else None,
+        "total_commission_earned": coupon_commission + registration_commission,
+    })
+    coupon_order_rows = [
+        {
+            "order_number": inv.order_number,
+            "order_date": inv.order_date.strftime("%Y-%m-%d %I:%M %p"),
+            "coupon_code": inv.coupon_code,
+            "status": inv.status,
+            "commission_base": inv.agent_commission_base,
+            "commission_percent": inv.agent_commission_percent,
+            "commission": Decimal("0") if inv.status == "CANCELLED" else inv.agent_commission,
+            # the same agent registered this customer and that commission was higher
+            "paid_as_registration": bool(
+                inv.registration_agent_id == agent.id and inv.registration_commission
+                and not inv.agent_commission
+            ),
+        }
+        for inv in coupon_orders[:50]
+    ]
+    registration_order_rows = [
+        {
+            "order_number": inv.order_number,
+            "order_date": inv.order_date.strftime("%Y-%m-%d %I:%M %p"),
+            "customer": inv.registration_entry.customer_name if inv.registration_entry else "",
+            "status": inv.status,
+            "commission_base": inv.registration_commission_base,
+            "commission_percent": inv.registration_commission_percent,
+            "commission": Decimal("0") if inv.status == "CANCELLED" else inv.registration_commission,
+            # the coupon commission on this order was higher, so that was paid
+            "paid_as_coupon": bool(inv.agent_id == agent.id and not inv.registration_commission),
+        }
+        for inv in registration_orders.select_related("registration_entry")[:50]
+    ]
+
     return Response({
+        "agent": {"id": agent.id, "name": agent.get_full_name() or agent.username},
+        "coupons": list(Coupon.objects.filter(agent=agent).values_list("code", flat=True)),
+        "coupon_orders": coupon_order_rows,
+        "registration_orders": registration_order_rows,
         "entries": final_entries,
         "stats": stats,
         "page": page_number,
@@ -1401,16 +1629,25 @@ class CreateReviewView(APIView):
         if invoice.status != "DELIVERED":
             return Response({"error": "Order not delivered"}, status=400)
 
-        obj, created = Review.objects.update_or_create(
-            item=item,
-            invoice=invoice,
-            defaults={
-                "user": request.user if request.user.is_authenticated else None,
-                "session_key": session_key,
-                "rating": rating,
-                "review": review_text
-            }
-        )
+        photos = request.FILES.getlist("images")
+        photo_error = validate_review_photos(photos)
+        if photo_error:
+            return Response({"error": photo_error}, status=400)
+
+        with transaction.atomic():
+            obj, created = Review.objects.update_or_create(
+                item=item,
+                invoice=invoice,
+                defaults={
+                    "user": request.user if request.user.is_authenticated else None,
+                    "session_key": session_key,
+                    "rating": rating,
+                    "review": review_text
+                }
+            )
+            room = ReviewImage.MAX_PER_REVIEW - obj.images.count()
+            for photo in photos[:max(room, 0)]:
+                ReviewImage.objects.create(review=obj, image=photo)
 
         return Response({
             "message": "Review saved",
@@ -1418,6 +1655,98 @@ class CreateReviewView(APIView):
         })
         
          
+REVIEW_PHOTO_MAX_BYTES = 5 * 1024 * 1024
+
+
+def validate_review_photos(photos):
+    """Returns an error message, or None when every photo is a real image
+    under the size limit."""
+    from PIL import Image, UnidentifiedImageError
+
+    if len(photos) > ReviewImage.MAX_PER_REVIEW:
+        return f"You can add up to {ReviewImage.MAX_PER_REVIEW} photos"
+    for photo in photos:
+        if photo.size > REVIEW_PHOTO_MAX_BYTES:
+            return "Each photo must be under 5 MB"
+        try:
+            Image.open(photo).verify()
+        except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
+            return "Only image files can be added"
+        finally:
+            photo.seek(0)
+    return None
+
+
+def reviewer_name(review):
+    """First name and last initial, e.g. "Priya S."; never the email."""
+    user = review.user
+    if user and user.first_name:
+        initial = f" {user.last_name[0]}." if user.last_name else ""
+        return f"{user.first_name}{initial}"
+    return "Verified buyer"
+
+
+class ItemReviewsView(APIView):
+    """Written reviews and review photos for the product page. Star-only
+    ratings (no text, no photo) are left out; they still count in the
+    average rating."""
+    permission_classes = [AllowAny]
+
+    def get(self, request, item_id):
+        reviews = (
+            Review.objects.filter(item_id=item_id)
+            .filter((Q(review__isnull=False) & ~Q(review="")) | Q(images__isnull=False))
+            .select_related("user")
+            .prefetch_related("images")
+            .distinct()
+            .order_by("-created_at")[:50]
+        )
+        summary = Review.objects.filter(item_id=item_id).aggregate(
+            avg_rating=Avg("rating"), total_reviews=Count("id")
+        )
+        return Response({
+            "avg_rating": round(summary["avg_rating"] or 0, 1),
+            "total_reviews": summary["total_reviews"],
+            "reviews": [
+                {
+                    "id": r.id,
+                    "name": reviewer_name(r),
+                    "rating": r.rating,
+                    "review": (r.review or "").strip(),
+                    "created_at": r.created_at,
+                    "images": [request.build_absolute_uri(img.image.url) for img in r.images.all()],
+                }
+                for r in reviews
+                # whitespace-only text with no photo counts as no review
+                if (r.review or "").strip() or r.images.all()
+            ],
+        })
+
+
+class SimilarItemsView(APIView):
+    """Items for the bottom of the product page: others from the same
+    category first, topped up with random items when the category is small."""
+    permission_classes = [AllowAny]
+    LIMIT = 8
+
+    def get(self, request, item_id):
+        item = get_object_or_404(Item, id=item_id)
+        annotated = Item.objects.exclude(id=item.id).annotate(
+            avg_rating=Avg("reviews__rating"),
+            total_reviews=Count("reviews", distinct=True),
+        )
+        same = list(ordered_items(annotated.filter(category_id=item.category_id))[:self.LIMIT])
+        extra = []
+        if len(same) < self.LIMIT:
+            extra = list(
+                annotated.exclude(category_id=item.category_id)
+                .filter(available=True)
+                .order_by("?")[:self.LIMIT - len(same)]
+            )
+        serializer = ItemSerializer(same + extra, many=True, context={"request": request})
+        return Response({"same_category": len(same) > 0, "items": serializer.data})
+
+
 class ReviewSummaryView(APIView):
     permission_classes = [AllowAny]
 
@@ -1439,8 +1768,9 @@ class OrderReviewStatus(APIView):
         return Response({
             r.item_id: {
                 "rating": r.rating,
-                "review": r.review
-            } for r in reviews
+                "review": r.review,
+                "images": [request.build_absolute_uri(img.image.url) for img in r.images.all()],
+            } for r in reviews.prefetch_related("images")
         })
         
 @api_view(['POST'])

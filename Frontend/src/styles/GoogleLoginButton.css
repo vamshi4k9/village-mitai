@@ -1,0 +1,46 @@
+/* Google sign-in in the site's brown theme (same look as the main buttons) */
+.google-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  min-height: 44px;
+  padding: 8px 16px;
+  background: #3F2305;
+  color: #f9f9f9;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.google-login-btn:hover:not(:disabled) {
+  background: #2d1804;
+  transform: translateY(-1px);
+}
+
+.google-login-btn:focus-visible {
+  outline: 2px solid #3F2305;
+  outline-offset: 2px;
+}
+
+.google-login-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* the Google "G" keeps its colours on a white chip, as Google asks */
+.google-login-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: #fff;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

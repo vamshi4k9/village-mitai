@@ -389,3 +389,26 @@ a.contact-card:hover {
     gap: 10px;
   }
 }
+
+/* ================= 404 ================= */
+.static-hero.not-found {
+  padding: 48px 24px 40px;
+}
+
+.not-found-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.static-btn.secondary {
+  background: #ebe5df;
+  color: #3F2305;
+}
+
+.static-btn.secondary:hover {
+  background: #e0d7ce;
+  color: #3F2305;
+}

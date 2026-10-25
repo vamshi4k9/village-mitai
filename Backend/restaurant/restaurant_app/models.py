@@ -1,3 +1,4 @@
+import secrets
 import uuid
 from django.db import IntegrityError, transaction
 from decimal import Decimal
@@ -78,12 +79,45 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
     phone = models.CharField(max_length=15, blank=True, null=True)  # Add this line
     google_id = models.CharField(max_length=64, unique=True, blank=True, null=True)
+    # agents only: % of what customers pay for the items on orders placed with
+    # the agent's coupons. Each order keeps the rate it was placed at.
+    commission_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    # agents only: % of what a customer the agent registered pays for the
+    # items, on orders placed after the registration (matched by the
+    # customer's email or mobile number)
+    registration_commission_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    # how many days after a registration its orders still earn commission;
+    # empty means no limit
+    registration_commission_days = models.PositiveIntegerField(blank=True, null=True)
     picture = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.user} - {self.role}"
+
+
+# roles of people who work for the shop; everyone else is a customer
+STAFF_ACCOUNT_ROLES = ("admin", "maker", "delivery", "agent")
+
+
+class StaffUser(User):
+    """Admin, maker, delivery and agent accounts. Same login table as
+    customers, shown and created separately in the admin."""
+
+    class Meta:
+        proxy = True
+        verbose_name = "Staff user"
+        verbose_name_plural = "Staff users"
+
+
+class Customer(User):
+    """People who shop on the site."""
+
+    class Meta:
+        proxy = True
+        verbose_name = "Customer"
+        verbose_name_plural = "Customers"
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -150,6 +184,15 @@ class Coupon(models.Model):
         ("item", "Item"),
     ]
     code = models.CharField(max_length=50, unique=True)
+    # agent who gets commission on orders placed with this coupon
+    agent = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="agent_coupons",
+        limit_choices_to={"userprofile__role": "agent"},
+    )
     discount_type = models.CharField(
         max_length=10,
         choices=DISCOUNT_CHOICES,
@@ -159,15 +202,32 @@ class Coupon(models.Model):
     # Buy X Get Y Free: in every group of buy + get units the cheapest
     # get units are free, so the customer pays for the costliest ones
     buy_quantity = models.PositiveIntegerField(
-        default=1,
-        help_text="Buy X Get Y Free only: units the customer pays for (e.g. 2 in Buy 2 Get 1)."
+        default=1
     )
     get_quantity = models.PositiveIntegerField(
-        default=1,
-        help_text="Buy X Get Y Free only: units given free (e.g. 1 in Buy 2 Get 1)."
+        default=1
     )
-    # waives the delivery charge; can be used alone (discount_value 0) or with a discount
-    free_delivery = models.BooleanField(default=False)
+    DELIVERY_RULE_CHOICES = [
+        ("normal", "Normal"),
+        ("free", "Always free"),
+        ("charged", "Always charged"),
+    ]
+    # how the coupon treats the delivery charge; "free" can be used alone
+    # (discount_value 0) or together with a discount
+    delivery_rule = models.CharField(
+        max_length=10,
+        choices=DELIVERY_RULE_CHOICES,
+        default="normal",
+        verbose_name="Delivery",
+    )
+
+    @property
+    def free_delivery(self):
+        return self.delivery_rule == "free"
+
+    @property
+    def charge_delivery(self):
+        return self.delivery_rule == "charged"
     PAYMENT_MODE_CHOICES = [
         ("any", "Any payment method"),
         ("online", "Online payment only"),
@@ -176,8 +236,7 @@ class Coupon(models.Model):
     payment_mode = models.CharField(
         max_length=10,
         choices=PAYMENT_MODE_CHOICES,
-        default="any",
-        help_text="Which payment methods this coupon can be used with."
+        default="any"
     )
     min_order_value = models.DecimalField(
         max_digits=10,
@@ -230,8 +289,7 @@ class Coupon(models.Model):
     weights = models.CharField(
         max_length=50,
         blank=True,
-        default="",
-        help_text="Leave all unticked to allow every weight."
+        default=""
     )
 
     def clean(self):
@@ -432,12 +490,49 @@ class Invoice(models.Model):
     # copied from the coupon so the order keeps them if the coupon is changed later
     coupon_code = models.CharField(max_length=50, blank=True, default="")
     coupon_type = models.CharField(max_length=10, blank=True, default="")
+    # agent commission, when the order used an agent's coupon. Worked out on
+    # what was paid for the items (items_total - coupon discount), without
+    # delivery and packing, at the agent's rate when the order was placed.
+    agent = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="agent_orders",
+    )
+    agent_commission_percent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    agent_commission_base = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    agent_commission = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    # registration commission: the agent who registered this customer (found
+    # by email or mobile), at their registration rate when the order was
+    # placed. When the same agent also gets coupon commission on the order,
+    # only the higher of the two is paid; the other is saved as 0.
+    registration_agent = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="registration_orders",
+    )
+    registration_entry = models.ForeignKey(
+        "AgentCustomerEntry",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
+    registration_commission_percent = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
+    registration_commission_base = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    registration_commission = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     # order number shown to customers and staff, e.g. VM2610240007: VM, the
     # order date (YYMMDD) and the order's number within that day
     order_number = models.CharField(max_length=20, unique=True, null=True, blank=True, editable=False)
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ORDERED')
+    # when the order was marked Delivered; set automatically on save. Empty on
+    # orders delivered before this was recorded.
+    delivered_at = models.DateTimeField(null=True, blank=True, editable=False)
     # secret part of the tracking link: order numbers are easy to guess, this is not
     tracking_token = models.CharField(max_length=32, null=True, unique=True, editable=False, default=generate_tracking_token)
 
@@ -468,20 +563,27 @@ class Invoice(models.Model):
 
     @classmethod
     def next_order_number(cls, day=None):
-        if day is None:
-            now = timezone.now()
-            day = (timezone.localtime(now) if timezone.is_aware(now) else now).date()
-        prefix = f"{cls.ORDER_NUMBER_PREFIX}{day:%y%m%d}"
-        last = (
-            cls.objects.filter(order_number__startswith=prefix)
-            .order_by("-order_number")
-            .values_list("order_number", flat=True)
-            .first()
-        )
-        sequence = int(last[len(prefix):]) + 1 if last else 1
-        return f"{prefix}{sequence:04d}"
+        """A random order number such as VM7F3A9C21B4: VM and 10 hex digits.
+        Unlike a date and a running count it tells nothing about the order or
+        how many orders there are, and cannot be guessed from another one.
+        (`day` is no longer used; kept so older callers still work.)"""
+        while True:
+            number = f"{cls.ORDER_NUMBER_PREFIX}{secrets.token_hex(5).upper()}"
+            if not cls.objects.filter(order_number=number).exists():
+                return number
 
     def save(self, *args, **kwargs):
+        # stamp the delivery time the first time the order is marked Delivered
+        # (from the dashboards, the admin or anywhere else); clear it if the
+        # status is moved back
+        if self.status == "DELIVERED":
+            if self.delivered_at is None:
+                self.delivered_at = timezone.now()
+        else:
+            self.delivered_at = None
+        if kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | {"delivered_at"}
+
         if self.order_number:
             return super().save(*args, **kwargs)
         # two orders placed at the same moment can pick the same number;
@@ -540,6 +642,8 @@ class AgentCustomerEntry(models.Model):
 
     customer_name = models.CharField(max_length=200)
     customer_phone = models.CharField(max_length=15)
+    # the customer's orders are found by this email or the phone number
+    customer_email = models.EmailField(blank=True, default="")
     area = models.CharField(max_length=200)
     pincode = models.CharField(max_length=10)
     notes = models.TextField(blank=True, null=True)
@@ -614,6 +718,21 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.item.name} - {self.rating}"
+
+
+class ReviewImage(models.Model):
+    """A photo a customer added to their review (up to 3 per review)."""
+    MAX_PER_REVIEW = 3
+
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="images")
+    image = models.ImageField(upload_to="reviews/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Photo for {self.review}"
     
 class MobileNumber(models.Model):
     mobile = models.CharField(max_length=16, unique=True)
@@ -629,7 +748,7 @@ class DeliveryFeeConfig(models.Model):
         default=499
     )
     schedule_days_ahead = models.PositiveIntegerField(
-        default=7,
+        default=30,
         help_text="How many days after the fastest delivery date customers can schedule a delivery for."
     )
 

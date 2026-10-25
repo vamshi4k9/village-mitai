@@ -1,0 +1,59 @@
+/* Ordered / coupon / delivered rows on the order status page and profile */
+.ofacts {
+  margin: 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.ofacts-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.ofacts dt {
+  flex: 0 0 120px;
+  font-weight: 500;
+  color: #7b7167;
+}
+
+.ofacts dt i {
+  margin-right: 2px;
+}
+
+.ofacts dd {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: #3F2305;
+  overflow-wrap: anywhere;
+}
+
+.ofacts-coupon {
+  display: inline-block;
+  padding: 0 8px;
+  background: #ede7e1;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.ofacts-saved {
+  font-weight: 600;
+  color: #1e6331;
+}
+
+.ofacts-muted {
+  color: #9a8f85;
+}
+
+@media (max-width: 576px) {
+  .ofacts dt {
+    flex-basis: 100px;
+  }
+}

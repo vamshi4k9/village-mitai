@@ -5,6 +5,7 @@ import "../styles/ProductCard.css";
 import { useNavigate } from "react-router-dom";
 import useAgentId from "./useAgentId";
 import { API_BASE_URL } from '../constants';
+import { cartConfig } from '../utils/cartApi';
 
 
 
@@ -31,7 +32,7 @@ const ProductCard = ({ item, smallImage = false }) => {
     try {
       const payload = { item: item.id, quantity: 1 };
       const config = {
-        headers: { 'X-Session-Key': getSessionKey() }
+        headers: (await cartConfig()).headers
       };
       const res = await axios.post(`${API_BASE_URL}/cart/`, payload, config);
       setCart([...cart, res.data]);

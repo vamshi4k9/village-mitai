@@ -1,7 +1,9 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-import { API_BASE_URL, SESSION_KEY} from '../constants'; 
+import { API_BASE_URL } from '../constants';
+import { cartConfig } from '../utils/cartApi';
+import { AUTH_CHANGED } from '../utils/auth';
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
@@ -15,13 +17,17 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        const cartRes = await axios.get(`${API_BASE_URL}/cart/`, SESSION_KEY);
+        const cartRes = await axios.get(`${API_BASE_URL}/cart/`, await cartConfig());
           setCart(cartRes.data);
       } catch (error) {
         console.error("Error fetching cart:", error);
       }
     };
     fetchCart();
+    // signing in shows the account's cart (from any device); signing out
+    // shows this browser's guest cart
+    window.addEventListener(AUTH_CHANGED, fetchCart);
+    return () => window.removeEventListener(AUTH_CHANGED, fetchCart);
   }, []);
 
 
@@ -44,7 +50,7 @@ useEffect(() => {
     try {
       const newQuantity = cartItem.quantity + 1;
 
-      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, SESSION_KEY);
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, await cartConfig());
       const updatedCart = cart.map(item => item.id === cartItem.id ? res.data : item);
       setCart(updatedCart);
     } catch (error) {
@@ -58,7 +64,7 @@ useEffect(() => {
     // going below one removes the line
     if (cartItem.quantity <= 1) {
       try {
-        await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, SESSION_KEY);
+        await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, await cartConfig());
         setCart(cart.filter(item => item.id !== cartItem.id));
       } catch (error) {
         console.error("Error deleting item:", error);
@@ -68,7 +74,7 @@ useEffect(() => {
     }
     try {
       const newQuantity = cartItem.quantity - 1;
-      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, SESSION_KEY);
+      const res = await axios.patch(`${API_BASE_URL}/cart/${cartItem.id}/`, { quantity: newQuantity }, await cartConfig());
       const updatedCart = cart.map(item => item.id === cartItem.id ? res.data : item);
       setCart(updatedCart);
     } catch (error) {
@@ -77,7 +83,7 @@ useEffect(() => {
   };
   const removeFromCart = async (cartItem) => {
     try {
-      await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, SESSION_KEY);
+      await axios.delete(`${API_BASE_URL}/cart/${cartItem.id}/`, await cartConfig());
       setCart(cart.filter(item => item.id !== cartItem.id));
     } catch (error) {
       console.error("Error removing item:", error);
