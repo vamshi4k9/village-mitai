@@ -19,6 +19,10 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # stop at the first failing step, so a failed migration never
+            # restarts the site with code the database is not ready for
+            set -e
+
             echo "📦 Pulling latest code"
             cd /opt/villagemitai/Backend
             git pull origin main
@@ -34,7 +38,9 @@ jobs:
             python manage.py makemigrations
 
             echo "📂 Running migrations"
-            python manage.py migrate
+            # like migrate, but skips changes already in the database (MySQL
+            # keeps half of a migration that failed part way)
+            python manage.py migrate_safe
 
             echo "🧹 Collecting static files"
             python manage.py collectstatic --noinput
