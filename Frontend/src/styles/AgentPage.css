@@ -16,3 +16,11 @@ input:focus, textarea:focus {
   outline: none;
   background: #fff;
 }
+
+
+/* note under the customer email field */
+.agent-field-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: #7b7167;
+}

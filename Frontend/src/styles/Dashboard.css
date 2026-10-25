@@ -247,6 +247,16 @@
     display: none;
   }
 
+  .dash-actions .dash-btn.dash-logout {
+    width: auto;
+    padding: 0 10px;
+    font-size: 0.85rem;
+  }
+
+  .dash-actions .dash-btn.dash-logout span {
+    display: inline;
+  }
+
   .dash-main {
     padding: 14px 12px 36px;
   }

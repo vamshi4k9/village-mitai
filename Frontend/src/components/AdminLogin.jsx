@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/FormPage.css';
 import { API_BASE_URL } from '../constants';
+import { saveStaffSession, clearStaffSession } from '../utils/staffAuth';
 
 function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -28,12 +29,8 @@ function AdminLogin() {
         role,
       });
 
-      // Store tokens and user info
-      localStorage.setItem('access_token', res.data.access);
-      localStorage.setItem('refresh_token', res.data.refresh);
-      localStorage.setItem('user_role', res.data.user.role);
-      localStorage.setItem('user_id', res.data.user.id);
-      localStorage.setItem('user_info', JSON.stringify(res.data.user));
+      // staff session, kept apart from the customer (Google) login
+      saveStaffSession(res.data);
 
       // Navigate based on role
       navigateBasedOnRole(res.data.user.role);
@@ -76,10 +73,12 @@ function AdminLogin() {
       case 'delivery':
         navigate('/delivery/dashboard');
         break;
+      case 'agent':
+        navigate('/agent-dashboard');
+        break;
       default:
-        setError('Unauthorized role. Access denied.');
-        localStorage.clear(); // Clear stored tokens and user info
-        navigate('/login'); // Redirect to login page
+        setError('This account is not a staff or agent account.');
+        clearStaffSession();
     }
   };
 
@@ -92,14 +91,16 @@ function AdminLogin() {
   return (
     <div className="fp-auth">
       <form className="fp-card" onSubmit={handleSubmit} noValidate>
-        <img
-          src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
-          alt="Village Mitai"
-          className="fp-logo"
-        />
+        <a href="/catalogue" aria-label="Catalogue of staff pages">
+          <img
+            src={`${process.env.PUBLIC_URL}/images/villageLogoLong.png`}
+            alt="Village Mitai"
+            className="fp-logo"
+          />
+        </a>
 
-        <h1 className="fp-title">Staff Login</h1>
-        <p className="fp-sub">For admin, maker and delivery accounts</p>
+        <h1 className="fp-title">Staff &amp; Agent Login</h1>
+        <p className="fp-sub">For admin, maker, delivery and agent accounts</p>
 
         {error && (
           <div className="fp-alert error" role="alert">
@@ -142,6 +143,10 @@ function AdminLogin() {
         >
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
+
+        <p className="fp-sub" style={{ marginTop: 16 }}>
+          <a href="/catalogue">Back to catalogue</a>
+        </p>
       </form>
     </div>
   );

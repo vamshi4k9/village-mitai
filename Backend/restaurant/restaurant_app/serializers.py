@@ -130,7 +130,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.save()
-        UserProfile.objects.create(user=user, role="maker", phone=phone)
+        # public sign-up is always a customer; staff are created in the admin
+        UserProfile.objects.create(user=user, role="user", phone=phone)
         return user
 
 
@@ -176,7 +177,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         fields = ["id", "order_number", "order_date", "payment_mode", "net_amount", "status", "tracking_token",
                   "can_cancel", "refund_status", "refund_amount", "delivery_date", "is_scheduled",
                   "discount", "delivery_charge", "packing_charge", "items_mrp_total",
-                  "item_discount", "items_total", "coupon_code", "coupon_type", "store_name"]
+                  "item_discount", "items_total", "coupon_code", "coupon_type", "store_name", "delivered_at"]
 
 
 class ItemDetailSerializer(serializers.ModelSerializer):
@@ -242,6 +243,7 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "item_discount",
             "items_total",
             "coupon_code",
+            "delivered_at",
             "coupon_type",
             "store",
         ]

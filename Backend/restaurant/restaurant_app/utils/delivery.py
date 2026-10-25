@@ -134,7 +134,7 @@ def delivery_window(items):
     earliest = date.today() + timedelta(days=max(days, 0))
 
     config = DeliveryFeeConfig.objects.first()
-    days_ahead = config.schedule_days_ahead if config else 7
+    days_ahead = config.schedule_days_ahead if config else 30
     return earliest, earliest + timedelta(days=days_ahead)
 
 

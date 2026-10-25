@@ -6,10 +6,10 @@ import { API_BASE_URL, API_BASE_URL_MEDIA, SESSION_TOKEN } from "../constants";
 import { getValidAccessToken } from "../utils/auth";
 import { CartContext } from "./CartContext";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
-import { formatDeliveryDate } from "../utils/deliveryDate";
-import { orderBreakdown, formatRs } from "../utils/orderTotals";
 import { Link } from "react-router-dom";
 import { orderLabel } from "../utils/orderNumber";
+import OrderFacts from "./OrderFacts";
+import OrderPriceSummary from "./OrderPriceSummary";
 
 
 const STEP_LABELS = {
@@ -18,11 +18,6 @@ const STEP_LABELS = {
   SHIPPING: "Shipped",
   OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Delivered",
-};
-
-const PAYMENT_LABELS = {
-  CASH: "Cash on Delivery",
-  UPI: "Paid Online",
 };
 
 const REFUND_LABELS = {
@@ -92,6 +87,7 @@ export default function OrderStatus() {
             formatted[itemId] = {
               rating: data[itemId].rating,
               review: data[itemId].review,
+              savedPhotos: data[itemId].images || [],
               submitted: true,
               loading: false
             };
@@ -128,13 +124,16 @@ export default function OrderStatus() {
     }));
 
     try {
-      await axios.post(`${API_BASE_URL}/create-review/`, {
-        item_id: itemId,
-        invoice_id: order.id,
-        rating: data.rating,
-        review: data.review || "",
-        token: trackingToken,
-      }, SESSION_TOKEN);
+      // sent as a form so the photos can go with it
+      const form = new FormData();
+      form.append("item_id", itemId);
+      form.append("invoice_id", order.id);
+      form.append("rating", data.rating);
+      form.append("review", data.review || "");
+      if (trackingToken) form.append("token", trackingToken);
+      (data.photos || []).forEach((p) => form.append("images", p.file));
+
+      await axios.post(`${API_BASE_URL}/create-review/`, form, SESSION_TOKEN);
 
       setReviews((prev) => ({
         ...prev,
@@ -142,6 +141,8 @@ export default function OrderStatus() {
           ...prev[itemId],
           loading: false,
           submitted: true,
+          error: "",
+          savedPhotos: (prev[itemId].photos || []).map((p) => p.url),
         },
       }));
 
@@ -153,9 +154,38 @@ export default function OrderStatus() {
         [itemId]: {
           ...prev[itemId],
           loading: false,
+          error: err.response?.data?.error || "Could not submit the review. Please try again.",
         },
       }));
     }
+  };
+
+  // photos picked for a review: up to 3 images, 5 MB each
+  const MAX_REVIEW_PHOTOS = 3;
+  const addReviewPhotos = (itemId, fileList) => {
+    const picked = Array.from(fileList || []);
+    setReviews((prev) => {
+      const current = prev[itemId]?.photos || [];
+      let error = "";
+      const ok = picked.filter((f) => {
+        if (!f.type.startsWith("image/")) { error = "Only image files can be added"; return false; }
+        if (f.size > 5 * 1024 * 1024) { error = "Each photo must be under 5 MB"; return false; }
+        return true;
+      });
+      const room = MAX_REVIEW_PHOTOS - current.length;
+      if (ok.length > room) error = `You can add up to ${MAX_REVIEW_PHOTOS} photos`;
+      const added = ok.slice(0, Math.max(room, 0)).map((file) => ({ file, url: URL.createObjectURL(file) }));
+      return { ...prev, [itemId]: { ...prev[itemId], photos: [...current, ...added], error } };
+    });
+  };
+
+  const removeReviewPhoto = (itemId, index) => {
+    setReviews((prev) => {
+      const photos = [...(prev[itemId]?.photos || [])];
+      const [gone] = photos.splice(index, 1);
+      if (gone) URL.revokeObjectURL(gone.url);
+      return { ...prev, [itemId]: { ...prev[itemId], photos, error: "" } };
+    });
   };
   const cancelOrder = async () => {
 
@@ -229,9 +259,10 @@ export default function OrderStatus() {
                 }              </span>
             </div>
 
-            <p className="order-date">
-              {new Date(order.order_date).toLocaleString()}
-            </p>
+            {/* when it was ordered, the coupon used, when it was delivered */}
+            <div className="order-date">
+              <OrderFacts order={order} />
+            </div>
 
             {/* two columns on a laptop: what was ordered, then where it is */}
             <div className="order-columns">
@@ -304,6 +335,53 @@ export default function OrderStatus() {
                         }
                       />
 
+                      {/* photos: picker before submitting, the saved ones after */}
+                      {(() => {
+                        const r = reviews[t.item.id] || {};
+                        const shown = r.submitted
+                          ? (r.savedPhotos || [])
+                          : (r.photos || []).map((p) => p.url);
+                        return (
+                          <div className="review-photos">
+                            {shown.map((src, i) => (
+                              <div className="review-photo" key={src}>
+                                <img src={src} alt={`Your review, ${i + 1} of ${shown.length}`} />
+                                {!r.submitted && (
+                                  <button
+                                    type="button"
+                                    className="review-photo-remove"
+                                    aria-label={`Remove photo ${i + 1}`}
+                                    onClick={() => removeReviewPhoto(t.item.id, i)}
+                                  >
+                                    <i className="bi bi-x" aria-hidden="true"></i>
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            {!r.submitted && shown.length < MAX_REVIEW_PHOTOS && (
+                              <label className="review-photo-add">
+                                <i className="bi bi-camera" aria-hidden="true"></i>
+                                <span>Add photo</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  hidden
+                                  onChange={(e) => {
+                                    addReviewPhotos(t.item.id, e.target.files);
+                                    e.target.value = "";
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {reviews[t.item.id]?.error && (
+                        <p className="review-error">{reviews[t.item.id].error}</p>
+                      )}
+
                       <div className="review-actions">
                         {reviews[t.item.id]?.submitted ? (
                           <span className="review-submitted"> Review Submitted !!</span>
@@ -330,50 +408,8 @@ export default function OrderStatus() {
             </div>
 
             <div className="order-summary">
-              {/* amounts as saved when the order was placed */}
-              {(() => {
-                const b = orderBreakdown(order);
-                return (
-                  <>
-                    <div className="order-summary-row">
-                      <span>Items</span>
-                      <span>{formatRs(b.itemsTotal)}</span>
-                    </div>
-                    {b.coupon > 0 && (
-                      <div className="order-summary-row saving">
-                        <span>Coupon{b.couponCode ? ` (${b.couponCode})` : ""}</span>
-                        <span>- {formatRs(b.coupon)}</span>
-                      </div>
-                    )}
-                    {b.deliveryCharge != null && (
-                      <div className="order-summary-row">
-                        <span>Delivery</span>
-                        <span>{b.deliveryCharge > 0 ? formatRs(b.deliveryCharge) : "FREE"}</span>
-                      </div>
-                    )}
-                    {b.adjustment !== 0 && (
-                      <div className="order-summary-row">
-                        <span>Delivery & adjustments</span>
-                        <span>{b.adjustment < 0 ? "- " : ""}{formatRs(Math.abs(b.adjustment))}</span>
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
-              <div className="order-summary-row">
-                <span>Payment</span>
-                <span>{PAYMENT_LABELS[order.payment_mode] || order.payment_mode}</span>
-              </div>
-              {order.delivery_date && (
-                <div className="order-summary-row">
-                  <span>{order.is_scheduled ? "Scheduled Delivery" : "Delivery By"}</span>
-                  <span>{formatDeliveryDate(order.delivery_date)}</span>
-                </div>
-              )}
-              <div className="order-summary-row total">
-                <span>Total</span>
-                <span>{formatRs(order.net_amount)}</span>
-              </div>
+              {/* same rows as the checkout summary, with the amounts saved on the order */}
+              <OrderPriceSummary order={order} title="Bill Details" />
             </div>
 
             {order.status === "CANCELLED" && (

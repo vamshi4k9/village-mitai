@@ -1,6 +1,6 @@
 /* Same look as the checkout page: light cards, soft brown borders, brown buttons */
 .profile-container {
-  padding: 0 20px 60px;
+  padding: 0 16px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -14,7 +14,12 @@
   max-width: 750px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+}
+
+/* tighter than the shared page title */
+.profile-container > .page-title {
+  margin: 14px 0 12px;
 }
 
 /* Sections are flat like on checkout; only the rows inside carry a border,
@@ -29,7 +34,7 @@
 .profile-card > .profile-form,
 .profile-address-form {
   background: #f9f9f9;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid #d8cfc4;
   border-radius: 6px;
 }
@@ -64,13 +69,13 @@
 .profile-account {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .profile-avatar {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
@@ -83,7 +88,7 @@
   justify-content: center;
   background: #3F2305;
   color: #f9f9f9;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
 }
 
@@ -105,7 +110,7 @@
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .profile-section-title {
@@ -168,7 +173,7 @@
 .profile-item,
 .profile-order {
   background: #f9f9f9;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid #d8cfc4;
   border-radius: 6px;
   transition: all 0.2s ease;
@@ -343,7 +348,11 @@
 
 @media (max-width: 576px) {
   .profile-container {
-    padding: 16px 12px 40px;
+    padding: 0 12px 24px;
+  }
+
+  .profile-container > .page-title {
+    margin: 10px 0 10px;
   }
 
   .profile-form-row {
@@ -355,7 +364,77 @@
     flex-direction: column;
   }
 
+  /* the account buttons stay compact on phones instead of a full-width row */
   .profile-account .profile-actions {
-    width: 100%;
+    width: auto;
   }
+}
+
+/* "Show more orders" under the order list */
+.profile-more {
+  align-self: center;
+  margin-top: 4px;
+}
+
+/* Orders / Addresses tabs under the account card */
+.profile-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #ebe5df;
+  border-radius: 8px;
+}
+
+.profile-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #5e4632;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.profile-tab:hover {
+  color: #3F2305;
+}
+
+.profile-tab.active {
+  background: #3F2305;
+  color: #f9f9f9;
+}
+
+.profile-tab-count {
+  min-width: 20px;
+  padding: 0 6px;
+  background: rgba(63, 35, 5, 0.12);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.profile-tab.active .profile-tab-count {
+  background: rgba(249, 249, 249, 0.2);
+}
+
+
+/* bill under each order, above the buttons */
+.profile-bill {
+  margin: 0 0 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e9e2da;
+  border-radius: 6px;
+}
+
+.profile-bill .ops-title {
+  font-size: 0.92rem;
 }

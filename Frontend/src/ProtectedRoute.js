@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
+import { getStaffRole } from './utils/staffAuth';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const userRole = localStorage.getItem('user_role');
-  console.log('User Role:', userRole, 'Allowed Roles:', allowedRoles);
+  const userRole = getStaffRole();
   if (!allowedRoles.includes(userRole)) {
     return <Navigate to="/admin-login" replace />;
   }

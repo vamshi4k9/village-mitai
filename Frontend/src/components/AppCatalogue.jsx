@@ -22,12 +22,9 @@ const CATALOGUE = [
     ],
   },
   {
-    title: "Sign In & Accounts",
+    title: "Staff & Agent Sign In",
     items: [
-      { name: "Admin Login", url: "/admin-login", icon: "bi-shield-lock" },
-      { name: "Login Page", url: "/login", icon: "bi-box-arrow-in-right" },
-      { name: "Register User", url: "/register", icon: "bi-person-add" },
-      { name: "Order Status", url: "/order_status", icon: "bi-geo" },
+      { name: "Staff & Agent Login", url: "/admin-login", icon: "bi-shield-lock" },
     ],
   },
   {

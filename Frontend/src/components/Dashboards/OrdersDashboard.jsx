@@ -4,6 +4,7 @@ import { API_BASE_URL } from "../../constants";
 import DashboardShell from "../DashboardShell";
 import TableView from "../TableView"; // Import the table view component
 import "../../styles/Ordering.css";
+import { getStaffToken } from "../../utils/staffAuth";
 
 const SUBTITLES = {
   Admin: "All orders, from preparation to delivery",
@@ -20,7 +21,7 @@ function OrdersDashboard({ userRole }) {
   const [error, setError] = useState("");
 
   const fetchInvoices = useCallback(async () => {
-    const token = localStorage.getItem("access_token");
+    const token = getStaffToken();
     if (!token) {
       setError("login");
       setLoading(false);
@@ -47,13 +48,6 @@ function OrdersDashboard({ userRole }) {
     fetchInvoices();
   }, [fetchInvoices]);
 
-  const handleSignOut = () => {
-    // the same keys the admin login stores
-    ["access_token", "refresh_token", "user_role", "user_id", "user_info"].forEach(
-      (key) => localStorage.removeItem(key)
-    );
-    window.location.href = "/admin-login";
-  };
 
   return (
     <DashboardShell
@@ -70,15 +64,6 @@ function OrdersDashboard({ userRole }) {
           >
             <i className="bi bi-arrow-clockwise" aria-hidden="true"></i>
             <span>Refresh</span>
-          </button>
-          <button
-            type="button"
-            className="dash-btn"
-            onClick={handleSignOut}
-            aria-label="Sign out"
-          >
-            <i className="bi bi-box-arrow-right" aria-hidden="true"></i>
-            <span>Sign Out</span>
           </button>
         </>
       }

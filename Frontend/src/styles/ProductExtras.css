@@ -1,0 +1,250 @@
+/* Reviews (pr-) and similar items (sim-) under the product details */
+
+/* ================= REVIEWS ================= */
+.pr-section,
+.sim-section {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #d8cfc4;
+  color: #3F2305;
+  text-align: left;
+}
+
+/* text-align is set because Ordering.css centres every h2 on the site */
+.pr-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: left;
+  color: #3F2305;
+}
+
+.pr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+
+.pr-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-avg {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pr-count {
+  font-size: 0.85rem;
+  color: #7b7167;
+}
+
+.pr-stars {
+  display: inline-flex;
+  gap: 2px;
+  color: #e0a526;
+  font-size: 0.85rem;
+}
+
+.pr-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #7b7167;
+}
+
+.pr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pr-card {
+  padding: 14px;
+  background: #f9f9f9;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+}
+
+.pr-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pr-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3F2305;
+  border-radius: 50%;
+  color: #f9f9f9;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pr-who {
+  min-width: 0;
+}
+
+.pr-name {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.pr-verified {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #1e6331;
+}
+
+.pr-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: #7b7167;
+}
+
+.pr-text {
+  margin: 10px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.pr-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pr-photo {
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  overflow: hidden;
+  background: #ede7e1;
+  border: 1px solid #d8cfc4;
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+
+.pr-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.pr-photo:hover img {
+  transform: scale(1.05);
+}
+
+.pr-more {
+  align-self: center;
+  padding: 8px 16px;
+  background: #ebe5df;
+  border: none;
+  border-radius: 6px;
+  color: #3F2305;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pr-more:hover {
+  background: #e0d7ce;
+}
+
+/* photo opened full size */
+.pr-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(20, 10, 2, 0.85);
+  cursor: zoom-out;
+}
+
+.pr-lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.pr-lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* ================= SIMILAR ITEMS ================= */
+/* one row that scrolls sideways */
+.sim-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sim-item {
+  flex: 0 0 210px;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 576px) {
+  .pr-section,
+  .sim-section {
+    margin-top: 24px;
+  }
+
+  .pr-card {
+    padding: 12px;
+  }
+
+  .pr-photo {
+    width: 68px;
+    height: 68px;
+  }
+
+  .sim-item {
+    flex-basis: 46%;
+  }
+}

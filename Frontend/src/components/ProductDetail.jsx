@@ -2,12 +2,15 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { CartContext } from "./CartContext";
-import ReviewSection from "./ProductPage/ReviewSection";
+import ProductReviews from "./ProductPage/ProductReviews";
+import SimilarItems from "./ProductPage/SimilarItems";
 
 import { API_BASE_URL } from '../constants';
 import { PIECE, isPiece, hasPieceOption } from '../utils/pricing';
 
 import '../styles/ProductDetail.css'
+import { VegMark, DeliveryIcon } from "./FoodIcons";
+import { cartConfig } from '../utils/cartApi';
 
 const ProductDetail = ({ productId }) => {
   const [refresh, setRefresh] = useState(false);
@@ -20,6 +23,9 @@ const ProductDetail = ({ productId }) => {
 
 
   useEffect(() => {
+    // opening another item (e.g. from Similar Items) starts at the top, fresh
+    window.scrollTo(0, 0);
+    setQuantity(1);
     axios.get(`${API_BASE_URL}/items/${id}/`)
       .then((response) => setProduct(response.data))
       .catch((error) => console.log("Error fetching product:", error));
@@ -142,7 +148,7 @@ const ProductDetail = ({ productId }) => {
     }
 
     const config = {
-      headers: { 'X-Session-Key': getSessionKey() }
+      headers: (await cartConfig()).headers
     };
     try {
       const cartItem = cart.find(
@@ -211,11 +217,9 @@ const ProductDetail = ({ productId }) => {
           <div className="pd-features">
             {product.veg !== null && (
               <div className="pd-feature">
-                <img
-                  src={`${process.env.PUBLIC_URL}/images/${product.veg ? 'veg-icon' : 'non-veg-icon'}.png`}
-                  alt=""
-                />
-                <span>{product.veg ? 'Vegetarian' : 'Non-Vegetarian'}</span>
+                <VegMark veg={product.veg} />
+                <span className="pd-long">{product.veg ? 'Vegetarian' : 'Non-Vegetarian'}</span>
+                <span className="pd-short">{product.veg ? 'Veg' : 'Non-Veg'}</span>
               </div>
             )}
 
@@ -225,7 +229,7 @@ const ProductDetail = ({ productId }) => {
             </div>
 
             <div className="pd-feature">
-              <img src={`${process.env.PUBLIC_URL}/images/Free_Express_Delivery.avif`} alt="" />
+              <DeliveryIcon className="pd-delivery-icon" />
               <span>
                 {product.delivery_time === 0
                   ? 'Instant Delivery'
@@ -326,6 +330,9 @@ const ProductDetail = ({ productId }) => {
           )}
         </div>
       </div>
+
+      <ProductReviews itemId={product.id} />
+      <SimilarItems itemId={product.id} />
     </div>
   );
 };

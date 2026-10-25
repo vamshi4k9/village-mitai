@@ -1,0 +1,73 @@
+/* Bill of a placed order: same rows and colours as the checkout summary */
+.ops {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: #3F2305;
+  text-align: left;
+}
+
+/* text-align is set because Ordering.css centres headings site-wide */
+.ops-title {
+  margin: 0 0 2px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  color: #3F2305;
+}
+
+.ops-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ops-row > span:last-child {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.ops-row.saving,
+.ops-free {
+  color: #1b5e20;
+}
+
+.ops-free {
+  font-weight: 600;
+}
+
+.ops-code {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 8px;
+  background: #e1f1e4;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #1e6331;
+}
+
+.ops-row.total {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #d8cfc4;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ops .ops-saved {
+  margin: 2px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #e1f1e4;
+  border-radius: 6px;
+  color: #1e6331;
+  font-size: 0.82rem;
+  font-weight: 600;
+}

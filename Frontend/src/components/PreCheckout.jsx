@@ -3,14 +3,16 @@ import { CartContext } from "./CartContext";
 import LocationPicker from "./LocationPicker.js";
 import axios from "axios";
 import "../styles/PreCheckout.css";
-import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN } from "../constants";
+import { API_BASE_URL, SESSION_KEY, SESSION_TOKEN, GUEST_CHECKOUT_ENABLED } from "../constants";
 import { getValidAccessToken } from "../utils/auth";
 import { isPiece, formatWeight, formatQuantity } from "../utils/pricing";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import PaymentResultModal from "./PaymentResultModal";
+import GoogleLoginButton from "./GoogleLoginButton";
 import { formatDeliveryDate, relativeDay, datesBetween, dateParts } from "../utils/deliveryDate";
 import { orderStatusUrl } from "../utils/orderNumber";
+import { cartConfig } from "../utils/cartApi";
 
 export default function PreCheckout() {
   const { cart, total, totalItems, setCart, triggerToast } = useContext(CartContext);
@@ -36,12 +38,22 @@ export default function PreCheckout() {
     setAddressErrors((prev) => ({ ...prev, [field]: "" }));
   };
   const [addresses, setAddresses] = useState([]);
+  // saved addresses show 3 at a time; "Show more" adds the next 3
+  const ADDRESS_PAGE_SIZE = 3;
+  const [visibleAddresses, setVisibleAddresses] = useState(ADDRESS_PAGE_SIZE);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMode, setPaymentMode] = useState("UPI");
   const [coupon, setCoupon] = useState("");
   const [discount, setDiscount] = useState(0);
+  // true once the server accepts the coupon. Some coupons take nothing off
+  // the items (free delivery, agent codes), so the discount alone can't say
+  // whether one is applied.
+  const [couponApplied, setCouponApplied] = useState(false);
   // set when the applied coupon waives the delivery charge
   const [couponFreeDelivery, setCouponFreeDelivery] = useState(false);
+  // set when the applied coupon keeps the delivery charge even above the
+  // free-delivery amount
+  const [couponChargeDelivery, setCouponChargeDelivery] = useState(false);
   const [newTotal, setNewTotal] = useState(total);
   const [message, setMessage] = useState("");
   // "any" / "online" / "cod": which payment methods the applied coupon allows
@@ -159,7 +171,7 @@ export default function PreCheckout() {
 
   const deleteCart = async () => {
     try {
-      await axios.delete(`${API_BASE_URL}/cart/clear/`, SESSION_KEY);
+      await axios.delete(`${API_BASE_URL}/cart/clear/`, await cartConfig());
       setCart([]);
     } catch (err) {
       console.error("Failed to clear cart", err);
@@ -169,15 +181,23 @@ export default function PreCheckout() {
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
 
   useEffect(() => {
-    if (discount > 0) {
+    if (couponApplied) {
       removeCoupon();
     }
   }, [cart.length, total]);
+
+  // guest checkout is off for now: someone not signed in sees a sign-in card
+  // instead of the checkout (their cart is kept). authVersion reloads the
+  // addresses once they sign in.
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [authVersion, setAuthVersion] = useState(0);
 
   useEffect(() => {
     const fetchAddresses = async () => {
       // also refreshes an expired token so the order gets linked to the account
       const token = await getValidAccessToken();
+      setNeedsLogin(!token && !GUEST_CHECKOUT_ENABLED);
 
       try {
         const res = await axios.get(
@@ -197,7 +217,7 @@ export default function PreCheckout() {
     };
 
     fetchAddresses();
-  }, []);
+  }, [authVersion]);
 
   const applyCoupon = async () => {
     try {
@@ -205,6 +225,7 @@ export default function PreCheckout() {
         setMessage("Select address before applying coupon");
         setDiscount(0);
         setCouponFreeDelivery(false);
+        setCouponChargeDelivery(false);
         return;
       }
       const address = addresses.find(
@@ -244,7 +265,8 @@ export default function PreCheckout() {
 
       setDiscount(response.data.discount);
       setNewTotal(response.data.new_total);
-      setCouponFreeDelivery(!!response.data.free_delivery);
+      setCouponFreeDelivery(response.data.delivery_rule === "free" || !!response.data.free_delivery);
+      setCouponChargeDelivery(response.data.delivery_rule === "charged");
       setCouponPaymentMode(response.data.payment_mode || "any");
 
       if (response.data.discounted_items) {
@@ -260,6 +282,7 @@ export default function PreCheckout() {
                   ...ci.item,
                   original_price: ci.item.price,
                   discounted_total: discItem.discounted_total,
+                  coupon_at_mrp: !!discItem.charged_at_mrp,
                 },
               };
             }
@@ -268,11 +291,14 @@ export default function PreCheckout() {
         );
       }
 
+      setCouponApplied(true);
       setMessage("Coupon applied successfully!");
     } catch (err) {
+      setCouponApplied(false);
       setMessage(err.response?.data?.error || "Failed to apply coupon");
       setDiscount(0);
       setCouponFreeDelivery(false);
+      setCouponChargeDelivery(false);
       setNewTotal(total);
     }
   };
@@ -286,13 +312,16 @@ export default function PreCheckout() {
           price: ci.item.original_price || ci.item.price,
           original_price: undefined,
           discounted_total: undefined,
+          coupon_at_mrp: undefined,
         },
       }))
     );
 
     setCoupon("");
+    setCouponApplied(false);
     setDiscount(0);
     setCouponFreeDelivery(false);
+    setCouponChargeDelivery(false);
     setCouponPaymentMode("any");
     setNewTotal(total);
     setMessage("Coupon removed.");
@@ -301,7 +330,7 @@ export default function PreCheckout() {
   // switching to a payment method the applied coupon does not allow takes
   // the coupon off and says why
   useEffect(() => {
-    if (discount <= 0 && !couponFreeDelivery) return;
+    if (!couponApplied) return;
     const isOnline = paymentMode === "UPI";
     if (
       (couponPaymentMode === "online" && !isOnline) ||
@@ -369,6 +398,13 @@ export default function PreCheckout() {
 
     const w = Number(weight);
 
+    // an MRP coupon covers this line: it is charged at MRP and the coupon
+    // comes off that, so the item's own sale price is not used
+    if (item.coupon_at_mrp) {
+      const mrp = w === 250 ? item.price_quarter : w === 500 ? item.price_half : item.price;
+      return { price: Number(mrp), discounted: 0 };
+    }
+
     if (w === 250) {
       return {
         price: Number(item.price_quarter),
@@ -391,6 +427,12 @@ export default function PreCheckout() {
 
 
   const handlePayment = async () => {
+    if (!GUEST_CHECKOUT_ENABLED && !(await getValidAccessToken())) {
+      setNeedsLogin(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     if (!selectedAddress) {
       // nothing saved yet: open the form so the address can be typed straight away
       if (addresses.length === 0) {
@@ -659,10 +701,13 @@ export default function PreCheckout() {
   // free delivery is judged on what is paid for the items, after the coupon
   const itemsAfterCoupon = discountedItemsTotal - discount;
 
-  const deliveryCharge =
-    couponFreeDelivery || itemsAfterCoupon >= freeDeliveryAmount
-      ? 0
-      : distanceCharge;
+  const deliveryCharge = couponFreeDelivery
+    ? 0
+    : couponChargeDelivery
+      ? distanceCharge
+      : itemsAfterCoupon >= freeDeliveryAmount
+        ? 0
+        : distanceCharge;
 
   const notDeliverable = deliveryQuote && !deliveryQuote.deliverable;
 
@@ -675,6 +720,14 @@ export default function PreCheckout() {
 
   const isCod = paymentMode === "Cash On Delivery";
 
+  // colour of the note in the coupon box: green when applied, plain for
+  // "Coupon removed.", red for anything that went wrong
+  const couponMessageType = couponApplied
+    ? "success"
+    : message === "Coupon removed."
+      ? "info"
+      : "error";
+
   return (
     <><div className="co-page">
       <h2 className="page-title">Checkout</h2>
@@ -684,6 +737,20 @@ export default function PreCheckout() {
           <i className="bi bi-cart"></i>
           <p>Your cart is empty</p>
           <button className="co-btn" onClick={() => navigate("/")}>Continue Shopping</button>
+        </div>
+      ) : needsLogin ? (
+        <div className="co-card co-empty">
+          <i className="bi bi-person-lock"></i>
+          <p>Please sign in to place your order. Your cart is saved.</p>
+          <GoogleLoginButton
+            onLogin={() => {
+              setLoginError("");
+              setNeedsLogin(false);
+              setAuthVersion((v) => v + 1);
+            }}
+            onError={setLoginError}
+          />
+          {loginError && <p className="co-error">{loginError}</p>}
         </div>
       ) : (
       <div className="co-layout">
@@ -769,9 +836,12 @@ export default function PreCheckout() {
 
             {addresses.length > 0 ? (
               <div className="address-list">
-                {addresses.map((addr, index) => (
+                {addresses
+                  // the selected address always stays in view, even past the limit
+                  .filter((addr, i) => i < visibleAddresses || addr.id === selectedAddress)
+                  .map((addr, index) => (
                   <label
-                    key={index}
+                    key={addr.id}
                     className={`address-card ${selectedAddress === addr.id ? "selected" : ""}`}
                   >
                     <input
@@ -794,6 +864,27 @@ export default function PreCheckout() {
                     </div>
                   </label>
                 ))}
+
+                {addresses.length > visibleAddresses && (
+                  <button
+                    type="button"
+                    className="co-more-btn"
+                    onClick={() => setVisibleAddresses((n) => n + ADDRESS_PAGE_SIZE)}
+                  >
+                    Show more addresses ({addresses.length - visibleAddresses} more)
+                    <i className="bi bi-chevron-down" aria-hidden="true"></i>
+                  </button>
+                )}
+                {addresses.length > ADDRESS_PAGE_SIZE && visibleAddresses >= addresses.length && (
+                  <button
+                    type="button"
+                    className="co-more-btn"
+                    onClick={() => setVisibleAddresses(ADDRESS_PAGE_SIZE)}
+                  >
+                    Show fewer
+                    <i className="bi bi-chevron-up" aria-hidden="true"></i>
+                  </button>
+                )}
               </div>
             ) : (
               !showAddAddressForm && (
@@ -972,40 +1063,40 @@ export default function PreCheckout() {
                       setMessage("");
                     }
                   }} className={
-                    discount > 0
+                    couponApplied
                       ? "coupon-success"
-                      : message
+                      : couponMessageType === "error"
                         ? "coupon-error"
                         : ""
                   }
-                  disabled={discount > 0}
+                  disabled={couponApplied}
                 />
 
                 {message && (
                   <span
                     className={`coupon-inline-message
-                      ${discount > 0 ? "success" : "error"}
+                      ${couponMessageType}
                       ${message?.length > 10 ? "long-text" : ""}
                     `}
                   >
                     {message}
                   </span>
                 )}
-                {discount > 0 && (
+                {couponApplied && (
                   <span className="remove-coupon" onClick={removeCoupon}>
                     ✕
                   </span>
                 )}
               </div>
 
-              {discount === 0 && (
+              {!couponApplied && (
                 <button className="co-btn" onClick={applyCoupon}>
                   Apply
                 </button>
               )}
             </div>
 
-            {(discount > 0 || couponFreeDelivery) && couponPaymentMode !== "any" && (
+            {couponApplied && couponPaymentMode !== "any" && (
               <p className="co-coupon-note">
                 <i className="bi bi-info-circle"></i>
                 {couponPaymentMode === "online"
@@ -1038,11 +1129,12 @@ export default function PreCheckout() {
                 <span>
                   Delivery Charges
                   {deliveryQuote?.distance_km != null && ` (${deliveryQuote.distance_km} km)`}
+                  {/* which store ships the order is not shown to customers
                   {deliveryQuote?.store_name && (
                     <small className="co-hint" style={{ display: "block", margin: 0 }}>
                       From {deliveryQuote.store_name}
                     </small>
-                  )}
+                  )} */}
                 </span>
 
                 {deliveryCharge === 0 ? (
@@ -1058,7 +1150,13 @@ export default function PreCheckout() {
                 )}
               </div>
 
-              {deliveryCharge > 0 && (
+              {deliveryCharge > 0 && couponChargeDelivery && (
+                <p className="co-hint">
+                  Free delivery is not available with coupon {coupon}.
+                </p>
+              )}
+
+              {deliveryCharge > 0 && !couponChargeDelivery && (
                 <p className="co-hint">
                   Add items worth Rs.
                   {Math.max(

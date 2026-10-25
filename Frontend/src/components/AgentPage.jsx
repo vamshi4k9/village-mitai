@@ -4,11 +4,13 @@ import DashboardShell from "./DashboardShell";
 import "../styles/FormPage.css";
 import "../styles/AgentPage.css";
 import { API_BASE_URL } from "../constants";
+import { getStaffToken, getStaffRole } from "../utils/staffAuth";
 
 export default function AgentPage() {
   const [form, setForm] = useState({
     customer_name: "",
     customer_phone: "",
+    customer_email: "",
     area: "",
     pincode: "",
     notes: "",
@@ -17,6 +19,8 @@ export default function AgentPage() {
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  // entries are credited to the logged-in agent, so the form needs that login
+  const isAgent = !!getStaffToken() && getStaffRole() === "agent";
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,13 +33,22 @@ export default function AgentPage() {
       setErrorMsg("Please fill all required fields.");
       return;
     }
+    // orders are matched to the customer by this mobile number or email
+    if (form.customer_phone.replace(/\D/g, "").slice(-10).length !== 10) {
+      setErrorMsg("Enter a valid 10 digit mobile number.");
+      return;
+    }
+    if (form.customer_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customer_email.trim())) {
+      setErrorMsg("Enter a valid email address.");
+      return;
+    }
 
     setLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
 
     try {
-      const token = localStorage.getItem("access_token");
+      const token = getStaffToken();
 
       await axios.post(
         `${API_BASE_URL}/agent-submit/`,
@@ -52,12 +65,18 @@ export default function AgentPage() {
       setForm({
         customer_name: "",
         customer_phone: "",
+        customer_email: "",
         area: "",
         pincode: "",
         notes: "",
       });
     } catch (error) {
-      setErrorMsg("Failed to submit details. Try again.");
+      const code = error.response?.status;
+      setErrorMsg(
+        code === 401 || code === 403
+          ? "Please log in with your agent account to register customers."
+          : error.response?.data?.error || "Failed to submit details. Try again."
+      );
     }
 
     setLoading(false);
@@ -74,6 +93,15 @@ export default function AgentPage() {
         </a>
       }
     >
+      {!isAgent ? (
+        <div className="dash-message">
+          <i className="bi bi-lock" aria-hidden="true"></i>
+          Please log in with your agent account to register customers.
+          <div>
+            <a href="/admin-login" className="dash-btn">Agent Login</a>
+          </div>
+        </div>
+      ) : (
       <form className="fp-form narrow" onSubmit={handleSubmit} noValidate>
         {errorMsg && (
           <div className="fp-alert error" role="alert">
@@ -122,6 +150,26 @@ export default function AgentPage() {
                 placeholder="Enter phone number"
               />
             </div>
+          </div>
+
+          <div className="fp-field">
+            <label htmlFor="agent-email" className="fp-label">
+              Email (the one they sign in with)
+            </label>
+            <input
+              id="agent-email"
+              className="fp-input"
+              type="email"
+              inputMode="email"
+              name="customer_email"
+              value={form.customer_email}
+              onChange={handleChange}
+              placeholder="Enter customer email"
+              autoComplete="off"
+            />
+            <p className="agent-field-hint">
+              Their orders are linked to you by this email or the mobile number above, whichever account they order from.
+            </p>
           </div>
 
           <div className="fp-row">
@@ -177,6 +225,7 @@ export default function AgentPage() {
           {loading ? "Submitting..." : "Submit Details"}
         </button>
       </form>
+      )}
     </DashboardShell>
   );
 }
