@@ -50,6 +50,9 @@ class Command(BaseCommand):
                     return None
                 raise
 
+        if not options["plan"]:
+            self.fix_shared_tracking_tokens()
+
         BaseDatabaseSchemaEditor.execute = execute
         try:
             call_command(
@@ -68,6 +71,49 @@ class Command(BaseCommand):
         if not options["plan"]:
             self.fill_missing_order_details()
 
+    def fix_shared_tracking_tokens(self, table="restaurant_app_invoice"):
+        """Give every order that shares its tracking token with another order
+        a token of its own. When the column was first added on the server,
+        existing orders all got the same value, which stops the column being
+        made unique (and lets one tracking link open other orders). Raw SQL,
+        because the table may not match the model yet."""
+        import uuid
+
+        with connection.cursor() as cursor:
+            tables = connection.introspection.table_names(cursor)
+            if table not in tables:
+                return
+            columns = [c.name for c in connection.introspection.get_table_description(cursor, table)]
+            if "tracking_token" not in columns:
+                return
+
+            qn = connection.ops.quote_name
+            cursor.execute(
+                f"SELECT {qn('tracking_token')} FROM {qn(table)} "
+                f"WHERE {qn('tracking_token')} IS NOT NULL "
+                f"GROUP BY {qn('tracking_token')} HAVING COUNT(*) > 1"
+            )
+            shared = [row[0] for row in cursor.fetchall()]
+            fixed = 0
+            for token in shared:
+                cursor.execute(
+                    f"SELECT {qn('id')} FROM {qn(table)} WHERE {qn('tracking_token')} = %s", [token]
+                )
+                # every order in the group gets a new token: the shared one
+                # may already have been sent to more than one customer
+                for (row_id,) in cursor.fetchall():
+                    cursor.execute(
+                        f"UPDATE {qn(table)} SET {qn('tracking_token')} = %s WHERE {qn('id')} = %s",
+                        [uuid.uuid4().hex, row_id],
+                    )
+                    fixed += 1
+
+        if fixed:
+            self.stdout.write(self.style.WARNING(
+                f"{fixed} order(s) shared a tracking token and got a new one "
+                "(their old tracking links no longer open them)."
+            ))
+
     def fill_missing_order_details(self):
         """Order numbers and stores for orders placed before those existed.
         Safe to run on every deploy: only empty values are filled."""
@@ -79,6 +125,12 @@ class Command(BaseCommand):
             invoice.order_number = Invoice.next_order_number()
             invoice.save(update_fields=["order_number"])
             numbered += 1
+
+        # orders without a tracking token cannot be opened from a tracking link
+        import uuid
+        for invoice in Invoice.objects.filter(tracking_token__isnull=True):
+            invoice.tracking_token = uuid.uuid4().hex
+            invoice.save(update_fields=["tracking_token"])
 
         stores = list(StoreLocation.objects.all()[:2])
         stored = 0
