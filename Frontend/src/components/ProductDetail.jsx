@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useContext } from "react";
+import { useEffect, useState, useContext, useRef } from "react";
 import axios from "axios";
 import { CartContext } from "./CartContext";
 import ProductReviews from "./ProductPage/ProductReviews";
@@ -20,12 +20,40 @@ const ProductDetail = ({ productId }) => {
   const [quantity, setQuantity] = useState(1); // Local quantity state
   const [descOpen, setDescOpen] = useState(true); // Toggle for description
   const [selectedWeight, setSelectedWeight] = useState(250); // default 250g
+  const [activeImage, setActiveImage] = useState(0); // photo shown in the gallery
+  const galleryRef = useRef(null);
+  const buyRef = useRef(null); // weight + quantity + add to cart section
+  const addBtnRef = useRef(null); // the Add to Cart button inside that section
+  const stickyRef = useRef(null); // pinned phone bar
+  const stickyBtnRef = useRef(null); // the button inside it
+  const [addBtnVisible, setAddBtnVisible] = useState(false);
+  const [justAdded, setJustAdded] = useState(false); // shows "Added ✓" on the button
+  const addedTimer = useRef(null);
+  useEffect(() => () => clearTimeout(addedTimer.current), []);
+
+  // the pinned phone button only shows until the real one reaches its spot
+  // at the bottom of the screen; then they swap, so only one is ever in view
+  useEffect(() => {
+    const btn = addBtnRef.current;
+    const bar = stickyRef.current;
+    if (!btn || !bar) return;
+    // distance from the screen bottom to the top of the pinned button
+    const dockLine = bar.offsetHeight - bar.firstElementChild.offsetTop - 2;
+    const observer = new IntersectionObserver(
+      ([entry]) => setAddBtnVisible(entry.isIntersecting),
+      { rootMargin: `0px 0px -${Math.max(dockLine, 0)}px 0px` }
+    );
+    observer.observe(btn);
+    return () => observer.disconnect();
+  }, [product]);
 
 
   useEffect(() => {
     // opening another item (e.g. from Similar Items) starts at the top, fresh
     window.scrollTo(0, 0);
     setQuantity(1);
+    setActiveImage(0);
+    if (galleryRef.current) galleryRef.current.scrollLeft = 0;
     axios.get(`${API_BASE_URL}/items/${id}/`)
       .then((response) => setProduct(response.data))
       .catch((error) => console.log("Error fetching product:", error));
@@ -168,23 +196,91 @@ const ProductDetail = ({ productId }) => {
         const res = await axios.post(`${API_BASE_URL}/cart/`, payload, config);
         setCart([...cart, res.data]);
       }
-      triggerToast(`${product.name} added to cart`);
+      // the button itself confirms the add instead of a pop-up message
+      setJustAdded(true);
+      clearTimeout(addedTimer.current);
+      addedTimer.current = setTimeout(() => setJustAdded(false), 1600);
     } catch (error) {
       console.log(error);
       alert("Couldn't add to cart");
     }
   };
 
+  // every photo of the item (main image first); older API responses only have `image`
+  const images = product.images?.length ? product.images : (product.image ? [product.image] : []);
+
+  // keep the dots / thumbnails in step with swiping
+  const handleGalleryScroll = (e) => {
+    const el = e.currentTarget;
+    const index = Math.round(el.scrollLeft / el.clientWidth);
+    if (index !== activeImage) setActiveImage(index);
+  };
+
+  const showImage = (index) => {
+    const el = galleryRef.current;
+    if (el) el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+    setActiveImage(index);
+  };
+
+  // phone button: smoothly scrolls until the real Add to Cart sits exactly where
+  // the pinned one is, with the weight / quantity options right above it
+  const handleStickyAdd = () => {
+    const real = addBtnRef.current;
+    const pinned = stickyBtnRef.current;
+    if (!real || !pinned) return;
+    const distance = real.getBoundingClientRect().top - pinned.getBoundingClientRect().top;
+    window.scrollTo({ top: window.scrollY + distance, behavior: "smooth" });
+  };
+
   const formatWeight = (grams) =>
     grams >= 1000 ? `${grams / 1000} KG` : `${grams} g`;
 
   return (
+    <>
     <div className={`pd-page ${isSoldOut ? "sold-out-page" : ""}`}>
       <div className="pd-layout">
         {/* Image */}
         <div className="pd-media">
-          <img src={product.image} alt={product.name} className="pd-image" />
-          {isSoldOut && <span className="pd-soldout">SOLD OUT</span>}
+          <div className="pd-gallery-wrap">
+            <div className="pd-gallery" ref={galleryRef} onScroll={handleGalleryScroll}>
+              {images.map((src, i) => (
+                <img
+                  key={i}
+                  src={src}
+                  alt={images.length > 1 ? `${product.name} – photo ${i + 1}` : product.name}
+                  className="pd-image"
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
+              ))}
+            </div>
+            {isSoldOut && <span className="pd-soldout">SOLD OUT</span>}
+            {images.length > 1 && (
+              <>
+                <button
+                  className="pd-gallery-arrow prev"
+                  onClick={() => showImage(Math.max(0, activeImage - 1))}
+                  disabled={activeImage === 0}
+                  aria-label="Previous photo"
+                >
+                  <i className="bi bi-chevron-left"></i>
+                </button>
+                <button
+                  className="pd-gallery-arrow next"
+                  onClick={() => showImage(Math.min(images.length - 1, activeImage + 1))}
+                  disabled={activeImage === images.length - 1}
+                  aria-label="Next photo"
+                >
+                  <i className="bi bi-chevron-right"></i>
+                </button>
+                <div className="pd-dots">
+                  {images.map((src, i) => (
+                    <span key={i} className={i === activeImage ? "active" : ""} />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
         </div>
 
         {/* Details */}
@@ -238,6 +334,7 @@ const ProductDetail = ({ productId }) => {
             </div>
           </div>
 
+          <div ref={buyRef} className="pd-buy">
           {/* Weight */}
           <div className="pd-option">
             <p className="pd-label">{hasPieceOption(product) ? "Weight / Pieces" : "Weight"}</p>
@@ -289,12 +386,19 @@ const ProductDetail = ({ productId }) => {
           </div>
 
           <button
-            className={`pd-add ${isSoldOut ? "disabled-btn" : ""}`}
+            ref={addBtnRef}
+            className={`pd-add ${isSoldOut ? "disabled-btn" : ""} ${justAdded ? "added" : ""}`}
             onClick={handleCart}
             disabled={isSoldOut}
+            aria-live="polite"
           >
-            {isSoldOut ? "Sold Out" : "Add to Cart"}
+            {isSoldOut ? "Sold Out" : justAdded ? (
+              <span className="pd-added" key="added">
+                <i className="bi bi-check-circle-fill"></i> Added
+              </span>
+            ) : "Add to Cart"}
           </button>
+          </div>
 
           {/* Description */}
           {product.description && (
@@ -334,6 +438,23 @@ const ProductDetail = ({ productId }) => {
       <ProductReviews itemId={product.id} />
       <SimilarItems itemId={product.id} />
     </div>
+
+      {/* phones only: pinned Add to Cart, swaps with the real one when it reaches this spot */}
+      <div
+        ref={stickyRef}
+        className={`pd-sticky ${addBtnVisible ? "" : "show"}`}
+        aria-hidden={addBtnVisible}
+      >
+        <button
+          ref={stickyBtnRef}
+          className={`pd-add ${isSoldOut ? "disabled-btn" : ""}`}
+          onClick={handleStickyAdd}
+          disabled={isSoldOut}
+        >
+          {isSoldOut ? "Sold Out" : "Add to Cart"}
+        </button>
+      </div>
+    </>
   );
 };
 

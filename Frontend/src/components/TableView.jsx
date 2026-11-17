@@ -7,6 +7,18 @@ import { formatDeliveryDate } from "../utils/deliveryDate";
 import { orderBreakdown, formatRs } from "../utils/orderTotals";
 import { orderLabel } from "../utils/orderNumber";
 import { getStaffToken } from "../utils/staffAuth";
+import DeliveryProofModal from "./DeliveryProofModal";
+
+// straight-line distance in metres between two points
+const distanceMetres = (lat1, lng1, lat2, lng2) => {
+  const rad = (d) => (d * Math.PI) / 180;
+  const a =
+    Math.sin(rad(lat2 - lat1) / 2) ** 2 +
+    Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(rad(lng2 - lng1) / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(a));
+};
+
+const formatDistance = (m) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`);
 
 // label and badge colour class for each order status
 const STATUS_META = {
@@ -31,6 +43,8 @@ function TableView({ invoices = [], userRole, setInvoices }) {
   const [activeTab, setActiveTab] = useState("preparation");
   // "" shows every store; staff at one store can pick theirs
   const [storeFilter, setStoreFilter] = useState("");
+  // order being closed with a delivery photo
+  const [proofInvoice, setProofInvoice] = useState(null);
 
   const storeNames = [
     ...new Set(invoices.map((i) => i.store?.name).filter(Boolean)),
@@ -43,6 +57,11 @@ function TableView({ invoices = [], userRole, setInvoices }) {
   };
 
   const updateInvoiceStatus = async (invoiceId, newStatus) => {
+    // an order can only be closed with a delivery photo
+    if (newStatus === "DELIVERED") {
+      setProofInvoice(invoices.find((inv) => inv.id === invoiceId) || null);
+      return;
+    }
     try {
       // staff only: the server checks the login
       const token = getStaffToken();
@@ -58,8 +77,13 @@ function TableView({ invoices = [], userRole, setInvoices }) {
       );
     } catch (error) {
       console.error("Error updating invoice status:", error);
-      alert("Failed to update status.");
+      alert(error.response?.data?.error || "Failed to update status.");
     }
+  };
+
+  const handleDelivered = (updated) => {
+    setInvoices((prev) => prev.map((inv) => (inv.id === updated.id ? updated : inv)));
+    setProofInvoice(null);
   };
 
   const preparationInvoices = invoices.filter(
@@ -200,7 +224,12 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                   }}
                 >
                   <div className="odash-id-block">
-                    <div className="odash-id">Order {orderLabel(invoice)}</div>
+                    <div className="odash-id">
+                      Order {orderLabel(invoice)}
+                      {invoice.order_type === "offline" && (
+                        <span className="odash-offline">Offline</span>
+                      )}
+                    </div>
                     <div className="odash-date">
                       {new Date(invoice.order_date).toLocaleString()}
                     </div>
@@ -210,7 +239,7 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                         {invoice.store.name}
                       </div>
                     )}
-                    {invoice.delivery_date && (
+                    {invoice.delivery_date && invoice.order_type !== "offline" && (
                       <div className="odash-deliver">
                         <i className="bi bi-calendar-check" aria-hidden="true"></i>
                         Deliver {formatDeliveryDate(invoice.delivery_date)}
@@ -358,6 +387,71 @@ function TableView({ invoices = [], userRole, setInvoices }) {
                       </div>
                     )}
 
+                    {/* delivery person: close the order from here */}
+                    {userRole === "Delivery" && invoice.status === "OUT_FOR_DELIVERY" && (
+                      <button
+                        type="button"
+                        className="dash-btn odash-deliver-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProofInvoice(invoice);
+                        }}
+                      >
+                        <i className="bi bi-camera" aria-hidden="true"></i>
+                        Mark Delivered (photo)
+                      </button>
+                    )}
+
+                    {/* how, where and when it was handed over */}
+                    {invoice.delivery_proof && (() => {
+                      const p = invoice.delivery_proof;
+                      const addr = invoice.address;
+                      const hasSpot = p.latitude != null && p.longitude != null;
+                      const away =
+                        hasSpot && addr?.latitude && addr?.longitude
+                          ? distanceMetres(p.latitude, p.longitude, addr.latitude, addr.longitude)
+                          : null;
+                      return (
+                        <div className="odash-proof">
+                          <div className="odash-proof-photos">
+                            {p.photos.map((src, i) => (
+                              <a key={src} href={src} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+                                <img src={src} alt={`Delivery of order ${orderLabel(invoice)}, photo ${i + 1}`} />
+                              </a>
+                            ))}
+                          </div>
+                          <div className="odash-proof-text">
+                            <strong>
+                              <i className="bi bi-patch-check-fill" aria-hidden="true"></i> Proof of delivery
+                            </strong>
+                            {p.delivered_at && (
+                              <span>{new Date(p.delivered_at).toLocaleString()}</span>
+                            )}
+                            {p.delivered_by && <span>By {p.delivered_by}</span>}
+                            {hasSpot ? (
+                              <span>
+                                <a
+                                  href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Delivered here (map)
+                                </a>
+                                {away != null && (
+                                  <em className={away > 300 ? "far" : ""}>
+                                    {" "}· {formatDistance(away)} from the customer's pin
+                                  </em>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="odash-proof-warn">Location not shared</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="odash-items">
                       {invoice.transactions.map((t, i) => (
                         <div key={i} className="odash-item">
@@ -468,6 +562,14 @@ function TableView({ invoices = [], userRole, setInvoices }) {
             );
           })}
         </div>
+      )}
+
+      {proofInvoice && (
+        <DeliveryProofModal
+          invoice={proofInvoice}
+          onClose={() => setProofInvoice(null)}
+          onDelivered={handleDelivered}
+        />
       )}
     </div>
   );

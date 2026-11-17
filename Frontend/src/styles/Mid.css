@@ -8,7 +8,7 @@
           
           .mid-title {
             font-size: 2rem;
-            color: #3f2305;
+            color: var(--brand);
           }
           
           .mid-description {
@@ -89,7 +89,7 @@
 .banner_up{
     text-align: center;
     margin-top: 60px;
-    color: rgb(34, 17, 0)
+    color: var(--brand)
     ;
  }
  .banner_up_1{
@@ -246,7 +246,7 @@
  
  .shop-btn:hover {
    background: white;
-   color: #3f2305;
+   color: var(--brand);
  }
  
  @media (max-width: 768px) {

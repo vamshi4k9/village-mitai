@@ -6,13 +6,27 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import Customer, StaffUser, STAFF_ACCOUNT_ROLES
 from .models import Category, DeliveryFeeConfig, Item, NotificationEmail, Order, OrderItem, Banner, Invoice, Transaction, Address , Cart, UserProfile, Coupon
-from .models import APIRequestLog, SiteConfig, StoreLocation, DeliveryCharge, Review, ReviewImage, AgentCustomerEntry
-from django.utils.html import format_html
+from .models import APIRequestLog, SiteConfig, StoreLocation, DeliveryCharge, Review, ReviewImage, AgentCustomerEntry, ItemImage
+from django.utils.html import format_html, format_html_join
 # Register your models here.
 admin.site.register(Category)
 
+class ItemImageInline(admin.TabularInline):
+    # extra photos shown after the main image on the product page
+    model = ItemImage
+    extra = 1
+    readonly_fields = ("preview",)
+    fields = ("image", "preview", "sort_order")
+
+    def preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="height:80px;border-radius:4px">', obj.image.url)
+        return "-"
+
+
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
+    inlines = [ItemImageInline]
     # sort_order, bestseller and available can be edited straight from the list
     list_display = ("name", "category", "sort_order", "bestseller", "available", "piece_weight", "piece_price")
     list_editable = ("sort_order", "bestseller", "available", "piece_weight", "piece_price")
@@ -27,10 +41,30 @@ admin.site.register(OrderItem)
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ("id", "order_number", "order_date", "store", "status", "payment_mode", "net_amount",
+    readonly_fields = ("delivered_at", "delivery_proof_preview", "delivered_location_link")
+    exclude = ("delivered_by",)
+    list_display = ("id", "order_number", "order_date", "order_type", "store", "status", "payment_mode", "net_amount",
                     "coupon_code", "agent", "agent_commission", "registration_agent", "registration_commission")
-    list_filter = ("store", "status", "payment_mode", "agent", "registration_agent")
+    list_filter = ("order_type", "store", "status", "payment_mode", "agent", "registration_agent")
     search_fields = ("order_number", "coupon_code")
+
+    @admin.display(description="Delivery photos")
+    def delivery_proof_preview(self, obj):
+        photos = list(obj.delivery_photos.all())
+        if not photos:
+            return "-"
+        by = obj.delivered_by
+        who = format_html("<p>By {}</p>", by.get_full_name() or by.username) if by else ""
+        return format_html("{}{}", who, format_html_join(
+            "", '<a href="{0}" target="_blank"><img src="{0}" style="height:140px;border-radius:6px;margin:0 6px 6px 0"></a>',
+            ((p.image.url,) for p in photos)))
+
+    @admin.display(description="Delivered at location")
+    def delivered_location_link(self, obj):
+        if obj.delivered_latitude is None:
+            return "Not shared"
+        return format_html('<a href="https://www.google.com/maps?q={},{}" target="_blank">Open in Google Maps</a>',
+                           obj.delivered_latitude, obj.delivered_longitude)
 
 
 @admin.register(Transaction)
@@ -81,8 +115,8 @@ class CouponAdminForm(forms.ModelForm):
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
     form = CouponAdminForm
-    list_display = ("code", "discount_type", "discount_value", "apply_on", "weights", "payment_mode", "delivery_rule", "agent", "is_active", "valid_to")
-    list_filter = ("is_active", "apply_on", "payment_mode", "delivery_rule", "agent")
+    list_display = ("code", "order_type", "discount_type", "discount_value", "apply_on", "weights", "payment_mode", "delivery_rule", "agent", "is_active", "valid_to")
+    list_filter = ("order_type", "is_active", "apply_on", "payment_mode", "delivery_rule", "agent")
     search_fields = ("code",)
     filter_horizontal = ("categories", "items")
 
@@ -123,10 +157,26 @@ def save_staff_profile(user, data):
             "registration_commission_days": data.get("registration_commission_days") or None,
         },
     )
+    profile = UserProfile.objects.get(user=user)
+    profile.stores.set(data.get("stores") or [])
 
 
 class StaffFieldsMixin(forms.Form):
     role = forms.ChoiceField(choices=STAFF_ROLE_CHOICES)
+    stores = forms.ModelMultipleChoiceField(
+        queryset=StoreLocation.objects.order_by("name"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Orders from these stores show on this person's dashboard. "
+                  "Admin: leave all unticked to see every store. "
+                  "Maker: usually one store. Delivery: one or more.",
+    )
+
+    def clean(self):
+        data = super().clean()
+        if data.get("role") in ("maker", "delivery") and not data.get("stores"):
+            self.add_error("stores", "Pick at least one store for a maker or delivery person.")
+        return data
     phone = forms.CharField(max_length=15, required=False)
     commission_percent = forms.DecimalField(
         max_digits=5, decimal_places=2, required=False, initial=0, label="Coupon commission %",
@@ -171,6 +221,7 @@ class StaffChangeForm(StaffFieldsMixin, UserChangeForm):
             self.initial["commission_percent"] = profile.commission_percent
             self.initial["registration_commission_percent"] = profile.registration_commission_percent
             self.initial["registration_commission_days"] = profile.registration_commission_days
+            self.initial["stores"] = list(profile.stores.values_list("id", flat=True))
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -185,22 +236,22 @@ class StaffUserAdmin(UserAdmin):
     form = StaffChangeForm
     add_form = StaffCreationForm
     add_fieldsets = (
-        (None, {"fields": ("username", "role", "commission_percent", "registration_commission_percent",
+        (None, {"fields": ("username", "role", "stores", "commission_percent", "registration_commission_percent",
                            "registration_commission_days", "phone", "first_name",
                            "last_name", "email", "is_staff", "password1", "password2")}),
     )
     fieldsets = (
         (None, {"fields": ("username", "password")}),
-        ("Details", {"fields": ("role", "commission_percent", "registration_commission_percent",
+        ("Details", {"fields": ("role", "stores", "commission_percent", "registration_commission_percent",
                            "registration_commission_days", "phone", "first_name", "last_name",
                                 "email", "is_staff", "is_active")}),
         ("Django admin access", {"classes": ("collapse",),
                                  "fields": ("is_superuser", "groups", "user_permissions")}),
         ("Activity", {"fields": ("last_login", "date_joined")}),
     )
-    list_display = ("username", "first_name", "last_name", "staff_role", "commission",
+    list_display = ("username", "first_name", "last_name", "staff_role", "staff_stores", "commission",
                     "staff_phone", "is_active", "last_login")
-    list_filter = ("userprofile__role", "is_active")
+    list_filter = ("userprofile__role", "userprofile__stores", "is_active")
     search_fields = ("username", "first_name", "last_name", "email", "userprofile__phone")
 
     def get_queryset(self, request):
@@ -210,6 +261,16 @@ class StaffUserAdmin(UserAdmin):
     def staff_role(self, obj):
         profile = getattr(obj, "userprofile", None)
         return profile.get_role_display() if profile else "-"
+
+    @admin.display(description="Stores")
+    def staff_stores(self, obj):
+        profile = getattr(obj, "userprofile", None)
+        if not profile:
+            return "-"
+        names = [st.name for st in profile.stores.all()]
+        if names:
+            return ", ".join(names)
+        return "All stores" if profile.role == "admin" or obj.is_superuser else "None"
 
     @admin.display(description="Commission % (coupon / registration)")
     def commission(self, obj):

@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #3F2305;
-  background: #f4f2f1;
+  color: var(--brand);
+  background: var(--bg);
   text-align: left;
 }
 
@@ -33,16 +33,16 @@
 .profile-login,
 .profile-card > .profile-form,
 .profile-address-form {
-  background: #f9f9f9;
+  background: var(--surface-2);
   padding: 12px;
-  border: 1px solid #d8cfc4;
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
 .profile-card p {
   margin: 3px 0;
   font-size: 0.9rem;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .profile-card p.profile-muted {
@@ -50,7 +50,7 @@
 }
 
 .profile-card p.profile-error {
-  color: #d32f2f;
+  color: var(--danger);
   margin: 0 0 10px;
 }
 
@@ -79,15 +79,15 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 1px solid #d8cfc4;
+  border: 1px solid var(--border);
 }
 
 .profile-avatar-initial {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3F2305;
-  color: #f9f9f9;
+  background: var(--btn-bg);
+  color: var(--surface-2);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -116,7 +116,7 @@
 .profile-section-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #3F2305;
+  color: var(--brand);
   margin: 0;
 }
 
@@ -134,8 +134,8 @@
 
 .profile-btn {
   padding: 10px 16px;
-  background-color: #3F2305;
-  color: #f9f9f9;
+  background-color: var(--btn-bg);
+  color: var(--surface-2);
   border: none;
   border-radius: 6px;
   font-weight: 500;
@@ -144,14 +144,14 @@
 }
 
 .profile-btn:hover {
-  background-color: #3a1e08;
+  background-color: var(--btn-hover);
 }
 
 /* secondary button: borderless light fill, like the secondary popup button
    on the order status page */
 .profile-btn.secondary {
   background-color: #ebe5df;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .profile-btn.secondary:hover {
@@ -172,16 +172,16 @@
 
 .profile-item,
 .profile-order {
-  background: #f9f9f9;
+  background: var(--surface-2);
   padding: 12px;
-  border: 1px solid #d8cfc4;
+  border: 1px solid var(--border);
   border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .profile-item:hover,
 .profile-order:hover {
-  border-color: #4b2a0d;
+  border-color: var(--brand);
   box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
 }
 
@@ -247,21 +247,21 @@
   padding: 10px;
   border: 1px solid #aaa;
   border-radius: 6px;
-  background: #f9f9f9;
-  color: #3F2305;
+  background: var(--surface-2);
+  color: var(--brand);
   box-sizing: border-box;
 }
 
 .profile-field input:focus {
   outline: none;
-  border-color: #3F2305;
+  border-color: var(--brand);
 }
 
 /* Order items */
 .profile-order .order-detail-section {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
   animation: profileFadeIn 0.3s ease-in-out;
 }
 
@@ -303,9 +303,9 @@
   gap: 4px;
   margin-left: 8px;
   padding: 1px 8px;
-  background: #e1f1e4;
+  background: var(--success-bg);
   border-radius: 20px;
-  color: #1e6331;
+  color: var(--success);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
@@ -315,7 +315,7 @@
 .profile-summary {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px dashed #d8cfc4;
+  border-top: 1px dashed var(--border);
 }
 
 .profile-summary-row {
@@ -324,12 +324,12 @@
   gap: 10px;
   padding: 2px 0;
   font-size: 0.88rem;
-  color: #5e4632;
+  color: var(--brand-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .profile-summary-row.saving {
-  color: #1e6331;
+  color: var(--success);
 }
 
 .profile-summary-row.total {
@@ -338,7 +338,7 @@
   border-top: 1px solid #e9e2da;
   font-size: 0.98rem;
   font-weight: 600;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 @keyframes profileFadeIn {
@@ -395,7 +395,7 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: #5e4632;
+  color: var(--brand-soft);
   font-size: 0.92rem;
   font-weight: 500;
   cursor: pointer;
@@ -403,12 +403,12 @@
 }
 
 .profile-tab:hover {
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .profile-tab.active {
-  background: #3F2305;
-  color: #f9f9f9;
+  background: var(--btn-bg);
+  color: var(--surface-2);
 }
 
 .profile-tab-count {

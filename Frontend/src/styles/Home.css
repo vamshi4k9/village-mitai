@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #4b2a0d;
+  background: var(--btn-bg);
   border-radius: 6px;
   color: #fff;
 }
@@ -91,13 +91,13 @@
 
 .home-category:hover .home-category-img {
   transform: translateY(-3px);
-  border-color: #4b2a0d;
+  border-color: var(--brand);
   box-shadow: 0 6px 14px rgba(63, 35, 5, 0.15);
 }
 
 .home-category p {
   margin: 8px 0 0;
-  color: #4b2a0d;
+  color: var(--brand);
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.3;

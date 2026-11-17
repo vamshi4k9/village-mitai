@@ -14,7 +14,7 @@
 .payment-modal-card {
   width: 100%;
   max-width: 380px;
-  background: #f4f2f1;
+  background: var(--bg);
   border-radius: 6px;
   padding: 28px 24px 22px;
   text-align: center;
@@ -41,7 +41,7 @@
 }
 
 .payment-modal-card.success::before {
-  background: linear-gradient(to right, #3F2305, #6b3d16);
+  background: linear-gradient(to right, var(--btn-bg), #6b3d16);
 }
 
 .payment-modal-card.failure::before {
@@ -64,7 +64,7 @@
 
 .payment-modal-icon.success {
   background: #ede7e1;
-  color: #3F2305;
+  color: var(--brand);
   border-color: #d7c5b5;
 }
 
@@ -78,7 +78,7 @@
 .payment-modal-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #3F2305;
+  color: var(--brand);
   margin-bottom: 10px;
   letter-spacing: -0.3px;
 }
@@ -86,7 +86,7 @@
 /* MESSAGE */
 .payment-modal-message {
   font-size: 0.96rem;
-  color: #5e4632;
+  color: var(--brand-soft);
   line-height: 1.6;
   margin-bottom: 22px;
 }
@@ -97,7 +97,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 18px;
-  color: #3F2305;
+  color: var(--brand);
   font-weight: 700;
   text-decoration: none;
   font-size: 0.95rem;
@@ -128,12 +128,12 @@
 
 /* SUCCESS BUTTON */
 .payment-modal-btn.success {
-  background: #3F2305;
-  color: #f9f9f9;
+  background: var(--btn-bg);
+  color: var(--surface-2);
 }
 
 .payment-modal-btn.success:hover {
-  background: #2d1804;
+  background: var(--btn-hover);
   transform: translateY(-1px);
 }
 

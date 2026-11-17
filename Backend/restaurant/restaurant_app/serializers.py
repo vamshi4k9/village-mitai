@@ -48,10 +48,21 @@ class ItemDetailSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     avg_rating = serializers.SerializerMethodField()
     total_reviews = serializers.SerializerMethodField()
+    # every photo of the item: the main image first, then the extra ones
+    images = serializers.SerializerMethodField()
 
     class Meta:
         model = Item
         fields = "__all__"  # or your fields
+
+    def get_images(self, obj):
+        request = self.context.get("request")
+
+        def url(f):
+            return request.build_absolute_uri(f.url) if request else f.url
+
+        files = ([obj.image] if obj.image else []) + [p.image for p in obj.extra_images.all() if p.image]
+        return [url(f) for f in files]
 
     def get_avg_rating(self, obj):
         if hasattr(obj, "avg_rating"):
@@ -174,7 +185,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ["id", "order_number", "order_date", "payment_mode", "net_amount", "status", "tracking_token",
+        fields = ["id", "order_number", "order_date", "order_type", "payment_mode", "net_amount", "status", "tracking_token",
                   "can_cancel", "refund_status", "refund_amount", "delivery_date", "is_scheduled",
                   "discount", "delivery_charge", "packing_charge", "items_mrp_total",
                   "item_discount", "items_total", "coupon_code", "coupon_type", "store_name", "delivered_at"]
@@ -217,6 +228,23 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     address = AddressSerializer(read_only=True)  
     # where the order is prepared and picked up from
     store = StoreSerializer(read_only=True)
+    # photos taken at the door, once the order is delivered
+    delivery_proof = serializers.SerializerMethodField()
+
+    def proof_photo_urls(self, obj):
+        # pass the request as context["proof_request"] for full links (kept
+        # apart from "request" so item images keep their usual relative links)
+        request = self.context.get("proof_request")
+        return [request.build_absolute_uri(p.image.url) if request else p.image.url
+                for p in obj.delivery_photos.all()]
+
+    def get_delivery_proof(self, obj):
+        if obj.status != "DELIVERED":
+            return None
+        photos = self.proof_photo_urls(obj)
+        if not photos:
+            return None
+        return {"photos": photos, "delivered_at": obj.delivered_at}
 
     class Meta:
         model = Invoice
@@ -224,6 +252,7 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "id",
             "order_number",
             "order_date",
+            "order_type",
             "payment_mode",
             "net_amount",
             "cgst",
@@ -246,7 +275,30 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             "delivered_at",
             "coupon_type",
             "store",
+            "delivery_proof",
         ]
+
+
+class StaffInvoiceSerializer(InvoiceDetailSerializer):
+    """Orders as the staff dashboards see them: everything the customer sees
+    plus who delivered it and where their phone was."""
+
+    class Meta(InvoiceDetailSerializer.Meta):
+        pass
+
+    def get_delivery_proof(self, obj):
+        photos = self.proof_photo_urls(obj)
+        if not photos:
+            return None
+        by = obj.delivered_by
+        return {
+            "photos": photos,
+            "delivered_at": obj.delivered_at,
+            "delivered_by": (by.get_full_name() or by.username) if by else None,
+            "latitude": obj.delivered_latitude,
+            "longitude": obj.delivered_longitude,
+            "accuracy": obj.delivered_location_accuracy,
+        }
 
 
 from .models import Rating, UserProfile

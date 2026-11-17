@@ -8,8 +8,8 @@
   max-width: 320px;
   min-height: 44px;
   padding: 8px 16px;
-  background: #3F2305;
-  color: #f9f9f9;
+  background: var(--btn-bg);
+  color: var(--surface-2);
   border: none;
   border-radius: 6px;
   font-size: 0.95rem;
@@ -19,12 +19,12 @@
 }
 
 .google-login-btn:hover:not(:disabled) {
-  background: #2d1804;
+  background: var(--btn-hover);
   transform: translateY(-1px);
 }
 
 .google-login-btn:focus-visible {
-  outline: 2px solid #3F2305;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 

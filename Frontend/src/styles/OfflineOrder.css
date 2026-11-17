@@ -25,7 +25,7 @@
 .oo-add-price {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 .oo-add .fp-btn {
@@ -36,10 +36,10 @@
 .oo-empty {
   margin: 0 0 14px;
   padding: 18px 12px;
-  border: 1px dashed #d8cfc4;
+  border: 1px dashed var(--border);
   border-radius: 6px;
   font-size: 0.88rem;
-  color: #7b7167;
+  color: var(--muted);
   text-align: center;
 }
 
@@ -79,7 +79,7 @@
 
 .oo-item-text span {
   font-size: 0.8rem;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 .oo-item-price {
@@ -99,19 +99,19 @@
   background: transparent;
   border: none;
   border-radius: 50%;
-  color: #7b7167;
+  color: var(--muted);
   font-size: 0.8rem;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
 .oo-remove:hover {
-  background: #fbf1f1;
-  color: #d32f2f;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .oo-remove:focus-visible {
-  outline: 2px solid #3F2305;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -134,17 +134,17 @@
 .oo-coupon-message {
   margin: 8px 0 0;
   font-size: 0.85rem;
-  color: #a12626;
+  color: var(--danger);
 }
 
 .oo-coupon-message.applied {
-  color: #1e6331;
+  color: var(--success);
 }
 
 .oo-summary {
   margin: 14px 0;
   padding-top: 12px;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
 }
 
 .oo-summary-row {
@@ -153,21 +153,21 @@
   gap: 10px;
   padding: 3px 0;
   font-size: 0.9rem;
-  color: #5e4632;
+  color: var(--brand-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .oo-summary-row.oo-discount {
-  color: #1e6331;
+  color: var(--success);
 }
 
 .oo-summary-row.final {
   margin-top: 6px;
   padding-top: 8px;
-  border-top: 1px dashed #d8cfc4;
+  border-top: 1px dashed var(--border);
   font-size: 1.1rem;
   font-weight: 600;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 @media (max-width: 860px) {

@@ -3,8 +3,8 @@
    brings its own top bar. Same colours and 6px corners as the storefront. */
 .dash-page {
   min-height: 100vh;
-  background: #f4f2f1;
-  color: #3F2305;
+  background: var(--bg);
+  color: var(--brand);
   text-align: left;
 }
 
@@ -48,7 +48,7 @@
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.3;
-  color: #3F2305;
+  color: var(--brand);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -57,7 +57,7 @@
 .dash-heading p {
   margin: 0;
   font-size: 0.78rem;
-  color: #7b7167;
+  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -77,10 +77,10 @@
   gap: 6px;
   min-height: 38px;
   padding: 8px 14px;
-  background: #3F2305;
+  background: var(--btn-bg);
   border: none;
   border-radius: 6px;
-  color: #f9f9f9;
+  color: var(--surface-2);
   font-size: 0.85rem;
   font-weight: 500;
   line-height: 1.2;
@@ -90,18 +90,18 @@
 }
 
 .dash-btn:hover:not(:disabled) {
-  background: #2d1804;
-  color: #f9f9f9;
+  background: var(--btn-hover);
+  color: var(--surface-2);
 }
 
 .dash-btn.secondary {
   background: #ebe5df;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .dash-btn.secondary:hover:not(:disabled) {
   background: #e0d7ce;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .dash-btn:disabled {
@@ -110,7 +110,7 @@
 }
 
 .dash-btn:focus-visible {
-  outline: 2px solid #3F2305;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -126,13 +126,13 @@
   font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.4;
-  color: #3F2305;
+  color: var(--brand);
   text-align: left;
 }
 
 .dash-panel {
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
@@ -148,8 +148,8 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
@@ -177,18 +177,18 @@
   margin: 2px 0 0;
   font-size: 0.8rem;
   line-height: 1.3;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 /* loading, empty and error messages */
 .dash-message {
   padding: 36px 16px;
-  background: #f9f9f9;
-  border: 1px dashed #d8cfc4;
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
   border-radius: 6px;
   text-align: center;
   font-size: 0.92rem;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 .dash-message i {
@@ -201,12 +201,12 @@
 .dash-message.error {
   border-style: solid;
   border-color: #e6c3c3;
-  background: #fbf1f1;
-  color: #a12626;
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .dash-message.error i {
-  color: #d32f2f;
+  color: var(--danger);
 }
 
 .dash-message .dash-btn {
@@ -281,4 +281,23 @@
   .dash-stat-value {
     font-size: 1.3rem;
   }
+}
+
+/* stores this login works for, under the page title */
+.dash-store-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  padding: 1px 8px;
+  max-width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--brand-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
