@@ -2,7 +2,7 @@
   position: relative;
   width: 300px;
   max-width: 100%;
-  color: #3F2305;
+  color: var(--brand);
   text-align: left;
 }
 
@@ -13,18 +13,18 @@
   margin: 0;
   padding: 0 10px;
   height: 38px;
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
 }
 
 .search-box-bar:focus-within {
-  border-color: #3F2305;
+  border-color: var(--brand);
 }
 
 .search-box-bar i {
   font-size: 16px;
-  color: #3F2305;
+  color: var(--brand);
   cursor: pointer;
 }
 
@@ -36,7 +36,7 @@
   border: none;
   outline: none;
   background: transparent;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 14px;
 }
 
@@ -44,7 +44,7 @@
   padding: 0 2px;
   background: none;
   border: none;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -58,8 +58,8 @@
   right: 0;
   max-height: 70vh;
   overflow-y: auto;
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
   z-index: 5;
@@ -70,7 +70,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-bottom: 1px solid #d8cfc4;
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 

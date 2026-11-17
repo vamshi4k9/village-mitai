@@ -16,12 +16,12 @@
 }
 
 .discount{
-  color:green;
+  color:var(--success);
 }
 
 .coupon-success{
   margin-top:8px;
-  color:green;
+  color:var(--success);
   font-size:14px;
 }
 .remove-btn{

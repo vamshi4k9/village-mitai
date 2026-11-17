@@ -7,6 +7,12 @@ export default function DashboardShell({ title, subtitle, actions, children }) {
   const loggedIn = !!getStaffToken();
   const user = getStaffUser();
   const name = user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || user.username : "";
+  // stores this login works for (sent at login; older sessions don't have it)
+  const storeTag = !loggedIn || !user
+    ? ""
+    : user.all_stores
+      ? "All stores"
+      : (user.stores || []).map((s) => s.name).join(", ");
 
   return (
     <div className="dash-page">
@@ -23,6 +29,11 @@ export default function DashboardShell({ title, subtitle, actions, children }) {
           <div className="dash-heading">
             <h1>{title}</h1>
             {subtitle && <p>{subtitle}</p>}
+            {storeTag && (
+              <span className="dash-store-tag" title="Orders from these stores are shown">
+                <i className="bi bi-shop" aria-hidden="true"></i> {storeTag}
+              </span>
+            )}
           </div>
 
           {(actions || loggedIn) && (

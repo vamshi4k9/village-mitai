@@ -36,6 +36,7 @@ export default function OrderStatus() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [proofViewer, setProofViewer] = useState(null); // index of the delivery photo shown full screen
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -454,6 +455,34 @@ export default function OrderStatus() {
             </>
             )}
 
+            {/* photos the delivery person took when handing the order over */}
+            {order.delivery_proof?.photos?.length > 0 && (
+              <div className="delivery-proof">
+                <h4 className="order-section-title">Delivery Photos</h4>
+                {order.delivery_proof.delivered_at && (
+                  <p className="delivery-proof-time">
+                    <i className="bi bi-patch-check-fill" aria-hidden="true"></i>
+                    Delivered on {new Date(order.delivery_proof.delivered_at).toLocaleString(undefined, {
+                      day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
+                    })}
+                  </p>
+                )}
+                <div className="delivery-proof-photos">
+                  {order.delivery_proof.photos.map((src, i) => (
+                    <button
+                      type="button"
+                      key={src}
+                      className="delivery-proof-thumb"
+                      onClick={() => setProofViewer(i)}
+                      aria-label={`Open delivery photo ${i + 1}`}
+                    >
+                      <img src={src} alt={`Your order at delivery, photo ${i + 1}`} loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {order.address && (
               <div className="address-info">
                 <h4 className="order-section-title">Delivery Address</h4>
@@ -477,6 +506,50 @@ export default function OrderStatus() {
             }
             </div>
             </div>
+            {/* full-screen delivery photo, swipe or use the arrows */}
+            {proofViewer !== null && order.delivery_proof?.photos?.[proofViewer] && (() => {
+              const photos = order.delivery_proof.photos;
+              const go = (step) => setProofViewer((proofViewer + step + photos.length) % photos.length);
+              return (
+                <div className="proof-viewer" onClick={() => setProofViewer(null)} role="dialog" aria-modal="true">
+                  <img
+                    src={photos[proofViewer]}
+                    alt={`Delivery photo ${proofViewer + 1} of ${photos.length}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => { e.currentTarget.dataset.x = e.touches[0].clientX; }}
+                    onTouchEnd={(e) => {
+                      const dx = e.changedTouches[0].clientX - Number(e.currentTarget.dataset.x);
+                      if (Math.abs(dx) > 40 && photos.length > 1) go(dx < 0 ? 1 : -1);
+                    }}
+                  />
+                  <button type="button" className="proof-viewer-close" aria-label="Close">
+                    <i className="bi bi-x-lg" aria-hidden="true"></i>
+                  </button>
+                  {photos.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="proof-viewer-nav prev"
+                        aria-label="Previous photo"
+                        onClick={(e) => { e.stopPropagation(); go(-1); }}
+                      >
+                        <i className="bi bi-chevron-left" aria-hidden="true"></i>
+                      </button>
+                      <button
+                        type="button"
+                        className="proof-viewer-nav next"
+                        aria-label="Next photo"
+                        onClick={(e) => { e.stopPropagation(); go(1); }}
+                      >
+                        <i className="bi bi-chevron-right" aria-hidden="true"></i>
+                      </button>
+                      <span className="proof-viewer-count">{proofViewer + 1} / {photos.length}</span>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
             {showCancelPopup && (
               <div className="popup-overlay">
                 <div className="popup-card">

@@ -3,7 +3,7 @@
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 20px 60px;
-  color: #3F2305;
+  color: var(--brand);
   text-align: left;
 }
 
@@ -29,8 +29,8 @@
 }
 
 .co-card {
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 16px;
 }
@@ -66,8 +66,8 @@
 /* ================= BUTTONS ================= */
 .co-btn {
   padding: 10px 16px;
-  background-color: #3F2305;
-  color: #f9f9f9;
+  background-color: var(--btn-bg);
+  color: var(--surface-2);
   border: none;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -78,7 +78,7 @@
 }
 
 .co-btn:hover {
-  background-color: #3a1e08;
+  background-color: var(--btn-hover);
 }
 
 .co-btn.small {
@@ -88,7 +88,7 @@
 
 .co-btn.secondary {
   background-color: #ebe5df;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .co-btn.secondary:hover {
@@ -114,7 +114,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px 0;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
 }
 
 .co-item:first-child {
@@ -178,11 +178,11 @@
 }
 
 .co-price-new.discounted {
-  color: #1b5e20;
+  color: var(--success);
 }
 
 .co-price-off {
-  color: #d32f2f;
+  color: var(--danger);
   font-size: 0.65rem;
   font-weight: 600;
 }
@@ -207,8 +207,8 @@
   gap: 10px;
   margin: 0;
   padding: 12px;
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -216,16 +216,16 @@
 
 .address-card:hover,
 .payment-option:hover {
-  border-color: #4b2a0d;
+  border-color: var(--brand);
   box-shadow: 0 4px 12px rgba(63, 35, 5, 0.08);
 }
 
 /* the box-shadow thickens the border without moving the content */
 .address-card.selected,
 .payment-option.selected {
-  border-color: #4b2a0d;
+  border-color: var(--brand);
   background: #f8f4f1;
-  box-shadow: 0 0 0 1px #4b2a0d;
+  box-shadow: 0 0 0 1px var(--brand);
 }
 
 .address-card input[type="radio"],
@@ -241,14 +241,14 @@
   width: 18px;
   height: 18px;
   margin-top: 2px;
-  border: 2px solid #d8cfc4;
+  border: 2px solid var(--border);
   border-radius: 50%;
   background: #fff;
 }
 
 .selected > .co-radio {
-  border-color: #4b2a0d;
-  background: #4b2a0d;
+  border-color: var(--brand);
+  background: var(--btn-bg);
   box-shadow: inset 0 0 0 3px #fff;
 }
 
@@ -292,7 +292,7 @@
 .add-address-form {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
 }
 
 .co-form-row {
@@ -318,14 +318,14 @@
   border: 1px solid #aaa;
   border-radius: 6px;
   background: #fff;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 14px;
   box-sizing: border-box;
 }
 
 .add-address-form .form-group input:focus {
   outline: none;
-  border-color: #3F2305;
+  border-color: var(--brand);
 }
 
 /* ================= COUPON ================= */
@@ -349,14 +349,14 @@
   border: 1px solid #aaa;
   border-radius: 6px;
   background: #fff;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 14px;
   box-sizing: border-box;
 }
 
 .coupon-input-wrapper input:focus {
   outline: none;
-  border-color: #3F2305;
+  border-color: var(--brand);
 }
 
 .coupon-box .co-btn {
@@ -379,13 +379,13 @@
 }
 
 .coupon-success {
-  border: 1px solid #2e7d32 !important;
+  border: 1px solid var(--success) !important;
   background: #edf7ed !important;
-  color: #1b5e20 !important;
+  color: var(--success) !important;
 }
 
 .coupon-error {
-  border: 1px solid #d32f2f !important;
+  border: 1px solid var(--danger) !important;
   background: #fdecec !important;
   color: #b71c1c !important;
 }
@@ -413,7 +413,7 @@
 
 .coupon-inline-message.success {
   margin-right: 20px;
-  color: #1b5e20;
+  color: var(--success);
 }
 
 .coupon-inline-message.error {
@@ -421,7 +421,7 @@
 }
 
 .coupon-inline-message.info {
-  color: #7b7167;
+  color: var(--muted);
 }
 
 /* ================= SUMMARY ================= */
@@ -440,7 +440,7 @@
 
 .co-summary-row.saving,
 .co-free {
-  color: #1b5e20;
+  color: var(--success);
 }
 
 .co-free {
@@ -456,7 +456,7 @@
 .co-summary-row.total {
   margin-top: 6px;
   padding-top: 12px;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
   font-size: 1.1rem;
   font-weight: 700;
 }
@@ -523,7 +523,7 @@
 /* message shown right under the field or heading that needs attention */
 .co-error {
   margin: 4px 0 0;
-  color: #d32f2f;
+  color: var(--danger);
   font-size: 0.8rem;
 }
 
@@ -533,7 +533,7 @@
 }
 
 .add-address-form .form-group input.invalid {
-  border-color: #d32f2f;
+  border-color: var(--danger);
 }
 
 .co-map {
@@ -541,7 +541,7 @@
 }
 
 .co-map.invalid {
-  box-shadow: 0 0 0 1px #d32f2f;
+  box-shadow: 0 0 0 1px var(--danger);
 }
 
 /* the fixed header must not cover a field that was scrolled to */
@@ -582,7 +582,7 @@
 }
 
 .co-delivery-option i {
-  color: #4b2a0d;
+  color: var(--brand);
 }
 
 .co-delivery-text {
@@ -599,7 +599,7 @@
 .co-delivery-sub {
   font-size: 0.8rem;
   font-weight: 400;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 .co-delivery-option:has(input:disabled) {
@@ -624,26 +624,26 @@
   align-items: center;
   gap: 2px;
   padding: 8px 4px;
-  background: #f9f9f9;
-  border: 1px solid #d8cfc4;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #3F2305;
+  color: var(--brand);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .co-date-chip:hover {
-  border-color: #4b2a0d;
+  border-color: var(--brand);
 }
 
 .co-date-chip.selected {
-  background: #3F2305;
-  border-color: #3F2305;
-  color: #f9f9f9;
+  background: var(--btn-bg);
+  border-color: var(--btn-bg);
+  color: var(--surface-2);
 }
 
 .co-date-chip:focus-visible {
-  outline: 2px solid #3F2305;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -669,7 +669,7 @@
 .co-coupon-note {
   margin: 6px 0 0;
   font-size: 0.78rem;
-  color: #7b7167;
+  color: var(--muted);
 }
 
 
@@ -683,7 +683,7 @@
   background: #ebe5df;
   border: none;
   border-radius: 6px;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;

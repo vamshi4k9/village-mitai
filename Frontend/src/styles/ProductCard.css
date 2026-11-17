@@ -16,7 +16,7 @@
 }
 
 .bestseller-card:hover {
-  border-color: #d8cfc4;
+  border-color: var(--border);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(63, 35, 5, 0.1);
 }
@@ -49,7 +49,7 @@
   justify-content: space-between;
   gap: 4px;
   padding: 10px 2px 2px;
-  color: #3f2305;
+  color: var(--brand);
 }
 
 .bestseller-info p {
@@ -77,7 +77,7 @@
 }
 
 .card-normal-price {
-  color: #3f2305;
+  color: var(--brand);
   font-size: 0.95rem;
   font-weight: 600;
 }
@@ -89,13 +89,13 @@
 }
 
 .card-discounted-price {
-  color: green; /* green */
+  color: var(--success); /* green */
   font-weight: 600;
   font-size: 0.95rem;
 }
 
 .card-discount-percent {
-  color: #d32f2f; /* red */
+  color: var(--danger); /* red */
   font-size: 0.65rem;
   font-weight: 600;
 }
@@ -123,24 +123,24 @@
 .rating-badge {
   top: 5px;
   right: 5px;
-  color: #3f2305;
+  color: var(--brand);
 }
 
 .rating-badge.high {
-  background: #e8f5e9;
-  color: #1b5e20;
+  background: var(--success-bg);
+  color: var(--success);
 }
 
 .bestseller-badge {
   top: 5px;
   left: 5px;
-  color: #3f2305;
+  color: var(--brand);
 }
 
 .instant-delivery-badge {
   bottom: 5px;
   left: 5px;
-  color: #2e7d32;
+  color: var(--success);
 }
 
 /* Greyed out card */

@@ -1,7 +1,41 @@
-body {
-  margin: 0;
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+/* ================= THEME =================
+   Every color on the site comes from here; change one value to restyle everything. */
+:root {
+  /* brand */
+  --brand: #3F2305;        /* text and headings */
+  --brand-soft: #5E4632;   /* secondary text */
+  --muted: #7B7167;        /* hints, small print */
+  --btn-bg: #5A2E0C;       /* primary buttons and filled chips */
+  --btn-hover: #46230A;
+
+  /* surfaces */
+  --bg: #FBF7F2;           /* warm cream page background */
+  --surface: #FFFFFF;      /* cards sit on the cream */
+  --surface-2: #FAF6F1;    /* chips, option buttons, soft panels */
+  --border: #D8CFC4;
+
+  /* status */
+  --success: #2F7D4F;      /* prices, success */
+  --success-bg: #E6F2EA;
+  --danger: #D14343;       /* errors, % OFF */
+  --danger-bg: #FBECEC;
+
+  /* type */
+  --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
     'Helvetica Neue', sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  /* image loading placeholder */
+  --skeleton: #EEE7DF;
+  --skeleton-shine: #F8F3EE;
+}
+
+/* "html body" outranks Bootstrap's body rule, which loads after this file */
+html body {
+  margin: 0;
+  background-color: var(--bg);
+  color: var(--brand);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -9,4 +43,80 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* ================= HEADINGS: serif display font ================= */
+h1, h2, h3,
+.page-title,
+.pd-name,
+.card-name {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* ================= BUTTON PRESS FEEDBACK ================= */
+/* :where() keeps this at zero specificity, so buttons that already use
+   transform (arrows, toggles) keep their own behaviour */
+:where(button, .btn, [role="button"]) {
+  transition: transform 0.12s ease;
+}
+
+:where(button, .btn, [role="button"]):active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ================= PAGE FADE-IN ================= */
+/* opacity only: a transform here would break fixed elements inside pages */
+@keyframes vm-page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.page-content > * {
+  animation: vm-page-in 0.35s ease-out;
+}
+
+/* ================= IMAGE LOADING PLACEHOLDERS ================= */
+/* product photos show a soft shimmer until they load; src/index.js marks
+   each image with .is-loaded when it is ready, which stops the shimmer */
+@keyframes vm-shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+.bestseller-img,
+.pd-image,
+.carousel-img,
+.collection-img,
+.category-banner-img,
+.home-category-img img,
+.cartd-item-img {
+  background-color: var(--skeleton);
+  background-image: linear-gradient(
+    100deg,
+    var(--skeleton) 30%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton) 70%
+  );
+  background-size: 200% 100%;
+  animation: vm-shimmer 1.3s ease-in-out infinite;
+}
+
+img.is-loaded {
+  background: none;
+  animation: none;
+}
+
+/* ================= REDUCED MOTION ================= */
+@media (prefers-reduced-motion: reduce) {
+  .page-content > *,
+  .bestseller-img,
+  .pd-image,
+  .carousel-img,
+  .collection-img,
+  .category-banner-img,
+  .home-category-img img,
+  .cartd-item-img {
+    animation: none;
+  }
 }

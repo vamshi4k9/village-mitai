@@ -3,7 +3,7 @@
 /* Not scoped to this page: this has been overriding the shared .section-title
    in App.css on every page. Kept as it was so those pages do not change. */
 .section-title {
-  color: #3F2305;
+  color: var(--brand);
   font-size: 1.1rem;
   margin: 12px 0 8px;
   font-weight: 700;
@@ -30,8 +30,8 @@
 .agent-table th {
   padding: 12px 14px;
   background: #ede7e1;
-  border-bottom: 1px solid #d8cfc4;
-  color: #3F2305;
+  border-bottom: 1px solid var(--border);
+  color: var(--brand);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -44,7 +44,7 @@
   padding: 12px 14px;
   border-bottom: 1px solid #e9e2da;
   font-size: 0.9rem;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .agent-table tbody tr:last-child td {
@@ -76,7 +76,7 @@
 .agent-pagination span {
   font-size: 0.88rem;
   font-weight: 500;
-  color: #5e4632;
+  color: var(--brand-soft);
 }
 
 /* -------- Mobile: each row becomes a card, using the same markup -------- */
@@ -104,8 +104,8 @@
     display: block;
     margin-bottom: 10px;
     padding: 12px 14px;
-    background: #f9f9f9;
-    border: 1px solid #d8cfc4;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
     border-radius: 6px;
   }
 
@@ -114,7 +114,7 @@
   }
 
   .agent-table tbody tr:hover {
-    background: #f9f9f9;
+    background: var(--surface-2);
   }
 
   /* label on the left, value on the right */
@@ -133,7 +133,7 @@
     content: attr(data-label);
     flex-shrink: 0;
     font-size: 0.8rem;
-    color: #7b7167;
+    color: var(--muted);
     text-align: left;
   }
 
@@ -165,9 +165,9 @@
   gap: 4px 12px;
   margin-bottom: 14px;
   padding: 14px 16px;
-  background: #3F2305;
+  background: var(--btn-bg);
   border-radius: 8px;
-  color: #f4f2f1;
+  color: var(--bg);
 }
 
 .agent-total-label {
@@ -184,14 +184,14 @@
 .agent-total-split {
   flex-basis: 100%;
   font-size: 0.8rem;
-  color: #d8cfc4;
+  color: var(--border);
 }
 
 /* how registration commission works, under its heading */
 .agent-rule {
   margin: -4px 0 12px;
   font-size: 0.85rem;
-  color: #7b7167;
+  color: var(--muted);
   text-align: left;
 }
 
@@ -200,5 +200,5 @@
   display: block;
   font-size: 0.7rem;
   font-weight: 500;
-  color: #7b7167;
+  color: var(--muted);
 }

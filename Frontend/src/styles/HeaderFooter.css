@@ -70,15 +70,15 @@
   background: none;
   border: none;
   border-radius: 6px;
-  color: #3F2305;
+  color: var(--brand);
   text-decoration: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .site-nav-btn:hover {
-  background-color: #f4f2f1;
-  color: #3F2305;
+  background-color: var(--bg);
+  color: var(--brand);
 }
 
 .site-nav-btn i {
@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #3F2305;
+  background-color: var(--btn-bg);
   border-radius: 9px;
   color: white;
   font-size: 0.6rem;
@@ -176,7 +176,7 @@
   display: flex;
   align-items: center;
   padding: 0 14px;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 0.9rem;
   font-weight: 500;
   text-decoration: none;
@@ -199,7 +199,7 @@
   right: 14px;
   bottom: 0;
   height: 2px;
-  background-color: #3F2305;
+  background-color: var(--btn-bg);
   border-radius: 2px 2px 0 0;
 }
 
@@ -258,7 +258,7 @@
 
 .mobile-sidebar-title {
   margin: 8px 8px 6px;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 1px;
@@ -273,7 +273,7 @@
   min-height: 48px;
   padding: 6px 8px;
   border-radius: 6px;
-  color: #3F2305;
+  color: var(--brand);
   font-size: 0.95rem;
   font-weight: 500;
   text-decoration: none;
@@ -281,8 +281,8 @@
 }
 
 .mobile-sidebar-link:hover {
-  background-color: #f4f2f1;
-  color: #3F2305;
+  background-color: var(--bg);
+  color: var(--brand);
 }
 
 .mobile-sidebar-link.active {
@@ -298,7 +298,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background-color: #f4f2f1;
+  background-color: var(--bg);
   object-fit: cover;
   font-size: 18px;
 }
@@ -367,14 +367,14 @@
   top: 10px;
   right: 15px;
   cursor: pointer;
-  color :#3f2305;
+  color :var(--brand);
   line-height: 1;
 }
 
 /* ================= FOOTER ================= */
 .site-footer {
   margin-top: 32px;
-  background-color: #3F2305;
+  background-color: var(--btn-bg);
   color: #dfd7bf;
   font-family: inherit;
   font-size: 0.9rem;

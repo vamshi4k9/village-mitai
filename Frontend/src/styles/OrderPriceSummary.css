@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 8px;
   font-size: 0.9rem;
-  color: #3F2305;
+  color: var(--brand);
   text-align: left;
 }
 
@@ -14,7 +14,7 @@
   font-size: 1rem;
   font-weight: 600;
   text-align: left;
-  color: #3F2305;
+  color: var(--brand);
 }
 
 .ops-row {
@@ -32,7 +32,7 @@
 
 .ops-row.saving,
 .ops-free {
-  color: #1b5e20;
+  color: var(--success);
 }
 
 .ops-free {
@@ -43,18 +43,18 @@
   display: inline-block;
   margin-left: 6px;
   padding: 0 8px;
-  background: #e1f1e4;
+  background: var(--success-bg);
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.3px;
-  color: #1e6331;
+  color: var(--success);
 }
 
 .ops-row.total {
   margin-top: 4px;
   padding-top: 10px;
-  border-top: 1px solid #d8cfc4;
+  border-top: 1px solid var(--border);
   font-size: 1.05rem;
   font-weight: 700;
 }
@@ -65,9 +65,9 @@
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  background: #e1f1e4;
+  background: var(--success-bg);
   border-radius: 6px;
-  color: #1e6331;
+  color: var(--success);
   font-size: 0.82rem;
   font-weight: 600;
 }

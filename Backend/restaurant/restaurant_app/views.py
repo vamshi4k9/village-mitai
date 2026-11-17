@@ -14,14 +14,14 @@ from restaurant import settings
 from .utils.email import send_order_confirmation_email
 from .utils.delivery import delivery_quote, delivery_window, pick_delivery_date
 from .utils.agents import apply_registration_commission, contact_filter, customer_contacts, normalize_phone
-from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer
+from .serializers import AgentCustomerEntrySerializer, BannerSerializer, CategorySerializer, FieldMarketingFormSerializer, ItemSerializer, CartSerializer, OfflineOrderSerializer, RatingSerializer, RegisterSerializer, UserProfileSerializer, AddressSerializer , InvoiceListSerializer, TransactionDetailSerializer, InvoiceDetailSerializer, StaffInvoiceSerializer
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Avg, Count, Sum, Case, When, Value, IntegerField, F
 from rest_framework import generics
 from rest_framework.decorators import action
 
 
-from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, Order, OrderItem, Address, Invoice, Review, ReviewImage, Transaction , SiteConfig
+from .models import AgentCustomerEntry, Banner, Category, Coupon, DeliveryFeeConfig, FieldMarketingForm, Item, Cart, MobileNumber, OfflineOrder, OfflineOrderItem, Order, OrderItem, Address, Invoice, Review, ReviewImage, Transaction , SiteConfig
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 
@@ -50,7 +50,7 @@ from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.contrib.auth import authenticate
-from .models import UserProfile, PIECE
+from .models import UserProfile, PIECE, StoreLocation, DeliveryPhoto
 from .serializers import UserSerializer
 
 
@@ -83,11 +83,36 @@ def find_invoice(ref):
     return Invoice.objects.filter(order_number=ref.upper()).first()
 
 
+ALL_STORES = "all"
+
+
+def staff_store_scope(user):
+    """Which orders a staff member works on:
+    - None: not order staff (customers, agents)
+    - ALL_STORES: every order (superusers, and admins with no store ticked)
+    - a set of store ids: only orders from those stores"""
+    if not user or not user.is_authenticated:
+        return None
+    if user.is_superuser:
+        return ALL_STORES
+    profile = UserProfile.objects.filter(user=user).first()
+    if not profile or profile.role not in STAFF_ROLES:
+        return None
+    store_ids = set(profile.stores.values_list("id", flat=True))
+    if profile.role == "admin" and not store_ids:
+        return ALL_STORES
+    return store_ids
+
+
+def staff_can_see_invoice(user, invoice):
+    scope = staff_store_scope(user)
+    if scope is None:
+        return False
+    return scope == ALL_STORES or invoice.store_id in scope
+
+
 def is_staff_request(request):
-    user = request.user
-    return user.is_authenticated and (
-        user.is_staff or UserProfile.objects.filter(user=user, role__in=STAFF_ROLES).exists()
-    )
+    return staff_store_scope(request.user) is not None
 
 
 def can_access_invoice(request, invoice):
@@ -98,9 +123,10 @@ def can_access_invoice(request, invoice):
     """
     user = request.user
     if user.is_authenticated:
-        if invoice.user_id == user.id or user.is_staff:
+        if invoice.user_id == user.id:
             return True
-        if UserProfile.objects.filter(user=user, role__in=STAFF_ROLES).exists():
+        # staff only see orders from their own stores
+        if staff_can_see_invoice(user, invoice):
             return True
 
     token = request.query_params.get("token") or request.data.get("token")
@@ -299,7 +325,7 @@ class ItemViewSet(ModelViewSet):
     serializer_class = ItemSerializer
 
     def get_queryset(self):
-        return ordered_items(Item.objects.annotate(
+        return ordered_items(Item.objects.prefetch_related("extra_images").annotate(
             avg_rating=Avg("reviews__rating"),
             total_reviews=Count("reviews", distinct=True)
         ))
@@ -308,7 +334,7 @@ class ItemsByCategoryAPIView(APIView):
     def get(self, request, category_name):
         category = get_object_or_404(Category, name=category_name)
 
-        items = ordered_items(Item.objects.filter(category=category).annotate(
+        items = ordered_items(Item.objects.filter(category=category).prefetch_related("extra_images").annotate(
             avg_rating=Avg("reviews__rating"),
             total_reviews=Count("reviews", distinct=True)
         ))
@@ -324,7 +350,7 @@ class ItemsByCategoryAPIView(APIView):
 
 class BestsellerItemsAPIView(APIView):
     def get(self, request):
-        bestsellers = ordered_items(Item.objects.filter(bestseller=True))
+        bestsellers = ordered_items(Item.objects.filter(bestseller=True).prefetch_related("extra_images"))
         serializer = ItemSerializer(bestsellers, many=True)
         return Response(serializer.data)
 
@@ -642,8 +668,17 @@ class CreateOrderView(APIView):
         if coupon_code:
             coupon = Coupon.objects.filter(
                 code=coupon_code,
-                is_active=True
+                is_active=True,
+                order_type="online",
             ).first()
+            # offline coupons only work on the offline order page. A cash
+            # order is refused; a paid one is placed without the coupon
+            # (the money is already taken), and logged.
+            if coupon is None and Coupon.objects.filter(code=coupon_code, order_type="offline").exists():
+                if data.get("payment_mode") == "CASH":
+                    message = f"Coupon {coupon_code} can only be used on offline orders"
+                    return Response({"error": message, "message": message}, status=status.HTTP_400_BAD_REQUEST)
+                print(f"Offline coupon {coupon_code} sent with paid online order")
 
         cart_items = data.get("cart_items", [])
         address_id = data.get("address_id")
@@ -807,6 +842,7 @@ class CreateOrderView(APIView):
 
         # Create Invoice
         invoice = Invoice.objects.create(
+            order_type="online",
             user=request.user if request.user.is_authenticated else None,
             session_key=session_key,
             payment_mode=payment_mode,
@@ -954,7 +990,7 @@ class InvoiceDetailView(APIView):
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
         sync_refund_status(invoice)
-        serializer = InvoiceDetailSerializer(invoice)
+        serializer = InvoiceDetailSerializer(invoice, context={"proof_request": request})
         return Response(serializer.data)
     
     def patch(self, request, invoice_id):
@@ -963,18 +999,91 @@ class InvoiceDetailView(APIView):
             return Response({"error": "Staff login required"}, status=status.HTTP_403_FORBIDDEN)
 
         invoice = find_invoice(invoice_id)
-        if invoice is None:
+        if invoice is None or not staff_can_see_invoice(request.user, invoice):
             return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
 
         new_status = request.data.get('status')
         valid_statuses = {value for value, _ in Invoice.STATUS_CHOICES}
         if new_status not in valid_statuses:
             return Response({"error": "A valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+        # closing an order goes through DeliverOrderView, with a photo
+        if new_status == "DELIVERED" and invoice.status != "DELIVERED":
+            return Response({"error": "Upload a delivery photo to mark this order delivered"},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         invoice.status = new_status
         invoice.save()
 
-        serializer = InvoiceDetailSerializer(invoice)
+        serializer = StaffInvoiceSerializer(invoice, context={"proof_request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+DELIVERY_PHOTO_MAX_BYTES = 10 * 1024 * 1024
+
+
+def read_coordinate(value, limit):
+    """A latitude / longitude from the form, or None when missing or out of range."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if -limit <= number <= limit else None
+
+
+class DeliverOrderView(APIView):
+    """Closes an order: the delivery person sends a photo taken at the door,
+    and their phone's location. Saves who delivered it and when."""
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, invoice_id):
+        from PIL import Image, UnidentifiedImageError
+
+        invoice = find_invoice(invoice_id)
+        if invoice is None or not staff_can_see_invoice(request.user, invoice):
+            return Response({"error": "Invoice not found"}, status=status.HTTP_404_NOT_FOUND)
+        if invoice.status == "CANCELLED":
+            return Response({"error": "This order was cancelled"}, status=status.HTTP_400_BAD_REQUEST)
+
+        photos = request.FILES.getlist("photos")
+        if not photos:
+            return Response({"error": "At least one delivery photo is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if len(photos) > DeliveryPhoto.MAX_PER_ORDER:
+            return Response({"error": f"You can add up to {DeliveryPhoto.MAX_PER_ORDER} photos"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        for photo in photos:
+            if photo.size > DELIVERY_PHOTO_MAX_BYTES:
+                return Response({"error": "Each photo must be under 10 MB"}, status=status.HTTP_400_BAD_REQUEST)
+            try:
+                Image.open(photo).verify()
+            except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
+                return Response({"error": "Only image files can be added"}, status=status.HTTP_400_BAD_REQUEST)
+            finally:
+                photo.seek(0)
+
+        latitude = read_coordinate(request.data.get("latitude"), 90)
+        longitude = read_coordinate(request.data.get("longitude"), 180)
+        if latitude is None or longitude is None:
+            latitude = longitude = None
+        accuracy = read_coordinate(request.data.get("accuracy"), 1000000)
+
+        with transaction.atomic():
+            # closing it again (e.g. after it was moved back) replaces the old proof
+            for old in invoice.delivery_photos.all():
+                old.image.delete(save=False)
+                old.delete()
+            for photo in photos:
+                DeliveryPhoto.objects.create(invoice=invoice, image=photo)
+
+            invoice.delivered_at = None  # stamped fresh by Invoice.save()
+            invoice.status = "DELIVERED"
+            invoice.delivered_by = request.user
+            invoice.delivered_latitude = latitude
+            invoice.delivered_longitude = longitude
+            invoice.delivered_location_accuracy = accuracy if latitude is not None else None
+            invoice.save()
+
+        serializer = StaffInvoiceSerializer(invoice, context={"proof_request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class SubmitRatingView(generics.CreateAPIView):
@@ -986,9 +1095,21 @@ class SubmitRatingView(generics.CreateAPIView):
         serializer.save(user=self.request.user)
 
 @api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_all_transactions_and_invoices(request):
-    invoices = Invoice.objects.select_related('store', 'address', 'coupon').prefetch_related('transactions', 'transactions__item').all().order_by("-order_date")   
-    serializer = InvoiceDetailSerializer(invoices, many=True)
+    """Orders for the admin, maker and delivery dashboards, limited to the
+    stores on the staff member's account."""
+    scope = staff_store_scope(request.user)
+    if scope is None:
+        return Response({"error": "Staff login required"}, status=status.HTTP_403_FORBIDDEN)
+
+    invoices = (Invoice.objects.select_related('store', 'address', 'coupon', 'delivered_by')
+                .prefetch_related('transactions', 'transactions__item', 'delivery_photos')
+                .order_by("-order_date"))
+    if scope != ALL_STORES:
+        invoices = invoices.filter(store_id__in=scope)
+    serializer = StaffInvoiceSerializer(invoices, many=True, context={"proof_request": request})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
@@ -1048,6 +1169,12 @@ def admin_login(request):
         access_token['role'] = user_role
         access_token['user_id'] = user.id
 
+        scope = staff_store_scope(user)
+        if scope == ALL_STORES:
+            stores = StoreLocation.objects.all()
+        else:
+            stores = StoreLocation.objects.filter(id__in=scope or [])
+
         return Response({
             'access': str(access_token),
             'refresh': str(refresh),
@@ -1057,7 +1184,9 @@ def admin_login(request):
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'role': user_role
+                'role': user_role,
+                'all_stores': scope == ALL_STORES,
+                'stores': [{'id': st.id, 'name': st.name} for st in stores.order_by('name')],
             },
             'message': f'Successfully logged in as {user_role}'
         }, status=status.HTTP_200_OK)
@@ -1120,6 +1249,10 @@ def cart_weight(weight):
     weight = str(weight or "").strip().lower()
     if weight == PIECE:
         return PIECE
+    if weight == "sample":
+        # Rs.20 tasting sample on the offline order page; never matches a
+        # coupon limited to some weights
+        return "sample"
     return weight if weight in ("250", "500") else "1000"
 
 
@@ -1266,7 +1399,8 @@ def apply_coupon(request):
     code = request.data.get("code")
     cart_items = request.data.get("cart_items", [])
     try:
-        coupon = Coupon.objects.get(code=code)
+        # offline coupons only work on the offline order page
+        coupon = Coupon.objects.get(code=code, order_type="online")
 
         phone_number = None
         if cart_items:
@@ -1545,7 +1679,10 @@ def agent_dashboard(request):
 
     return Response({
         "agent": {"id": agent.id, "name": agent.get_full_name() or agent.username},
-        "coupons": list(Coupon.objects.filter(agent=agent).values_list("code", flat=True)),
+        "coupons": [
+            f"{code} (offline)" if order_type == "offline" else code
+            for code, order_type in Coupon.objects.filter(agent=agent).values_list("code", "order_type")
+        ],
         "coupon_orders": coupon_order_rows,
         "registration_orders": registration_order_rows,
         "entries": final_entries,
@@ -1554,48 +1691,251 @@ def agent_dashboard(request):
         "page_count": paginator.num_pages
     }, status=status.HTTP_200_OK)
     
+# ---- offline orders ------------------------------------------------------
+# Orders taken in person on the offline order page. Each one is saved as an
+# Invoice with order_type "offline" (plus its Transactions), so it shows up
+# with every other order. Only offline coupons can be used, and no email is sent.
+
+# weights as the offline page sends them -> as saved on online orders
+OFFLINE_WEIGHTS = {"250gm": "250", "500gm": "500", "1kg": "1000"}
+OFFLINE_PAYMENT_MODES = {"CASH", "UPI", "CARD"}
+
+
+def offline_order_lines(items):
+    """Bill lines from the offline page, same item at the same weight and
+    price grouped into one line. Raises ValueError on a bad line."""
+    grouped = {}
+    for entry in items or []:
+        item_id = entry.get("item_id") or entry.get("item")
+        item = Item.objects.filter(id=item_id).first() if item_id else None
+        if item is None:
+            raise ValueError("Unknown item in the bill")
+        raw_weight = str(entry.get("weight") or "").strip()
+        if raw_weight.lower() == "sample":
+            weight = "Sample"
+        else:
+            weight = OFFLINE_WEIGHTS.get(raw_weight.lower(), raw_weight)
+        unit_price = Decimal(str(entry.get("price") or 0))
+        if unit_price < 0:
+            raise ValueError("Price cannot be negative")
+        key = (item.id, weight, unit_price)
+        if key in grouped:
+            grouped[key]["qty"] += 1
+            continue
+        if weight == "Sample":
+            unit_mrp = unit_price
+        else:
+            unit_mrp, _ = unit_prices(item, weight)
+            unit_mrp = max(unit_mrp, unit_price)
+        grouped[key] = {
+            "item": item,
+            "id": item.id,
+            "category_id": item.category_id,
+            "weight": weight,
+            "name": entry.get("name") or item.name,
+            "qty": 1,
+            "unit_price": unit_price,
+            "unit_mrp": unit_mrp,
+        }
+    lines = list(grouped.values())
+    for line in lines:
+        line["price"] = line["unit_price"] * line["qty"]
+        line["original_price"] = line["unit_mrp"] * line["qty"]
+    return lines
+
+
+def offline_coupon_discount(code, phone, payment_mode, lines):
+    """(coupon, discount, line_discounts, free_units) for an offline coupon.
+    An MRP coupon moves the lines it covers to MRP (changes `lines`).
+    Raises CouponNotApplicable with the reason when it cannot be used."""
+    coupon = Coupon.objects.filter(code__iexact=(code or "").strip(), order_type="offline").first()
+    if coupon is None:
+        raise CouponNotApplicable("Invalid coupon")
+    if not coupon.is_valid():
+        raise CouponNotApplicable("Coupon expired or inactive")
+    if payment_mode and not coupon.allows_payment(payment_mode):
+        raise CouponNotApplicable(coupon.payment_mode_message())
+    if not lines:
+        raise CouponNotApplicable("Add items to the bill first")
+
+    phones = {normalize_phone(phone)} - {""}
+    if not phones:
+        raise CouponNotApplicable("Enter phone number first")
+    # this customer's earlier orders: offline ones by the phone they gave,
+    # online ones by the delivery address phone
+    customer_invoices = Invoice.objects.filter(
+        contact_filter(set(), phones, "offline_order__phone", "offline_order__phone")
+        | contact_filter(set(), phones, "address__phone_number", "address__phone_number")
+    ).exclude(status="CANCELLED")
+    if customer_invoices.filter(coupon=coupon).exists():
+        raise CouponNotApplicable("Coupon already used")
+    if coupon.is_new_customer_only and customer_invoices.exists():
+        raise CouponNotApplicable("Coupon valid only for new customers")
+
+    if coupon.price_basis == "mrp":
+        for i in coupon_eligible_lines(coupon, lines):
+            lines[i]["unit_price"] = lines[i]["unit_mrp"]
+            lines[i]["price"] = lines[i]["original_price"]
+    discount, line_discounts, free_units = calculate_coupon(coupon, lines)
+    return coupon, discount, line_discounts, free_units
+
+
+def offline_payment_mode(data):
+    mode = str(data.get("payment_mode") or "CASH").upper()
+    return mode if mode in OFFLINE_PAYMENT_MODES else None
+
+
 @api_view(["POST"])
 def create_offline_order(request):
+    data = request.data
+    customer_name = (data.get("customer_name") or "").strip()
+    phone = (data.get("phone") or "").strip()
+    coupon_code = (data.get("coupon") or "").strip()
+    payment_mode = offline_payment_mode(data)
 
-    serializer = OfflineOrderSerializer(data=request.data)
+    if not customer_name or not phone:
+        return Response({"error": "Customer name and phone are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if payment_mode is None:
+        return Response({"error": "Invalid payment mode"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        lines = offline_order_lines(data.get("items"))
+    except (ValueError, ArithmeticError) as e:
+        return Response({"error": str(e) or "Invalid items"}, status=status.HTTP_400_BAD_REQUEST)
+    if not lines:
+        return Response({"error": "Add at least one item"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if serializer.is_valid():
+    coupon = None
+    discount = Decimal("0")
+    line_coupon = [Decimal("0.00")] * len(lines)
+    line_free = [0] * len(lines)
+    if coupon_code:
+        try:
+            coupon, discount, line_coupon, line_free = offline_coupon_discount(
+                coupon_code, phone, payment_mode, lines
+            )
+        except CouponNotApplicable as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = serializer.save()
+    items_mrp_total = sum((line["original_price"] for line in lines), Decimal("0"))
+    items_total = sum((line["price"] for line in lines), Decimal("0"))
+    net_amount = max(items_total - discount, Decimal("0"))
 
-        return Response(
-            {
-                "message": "Order created",
-                "order_id": order.id
-            },
-            status=status.HTTP_201_CREATED
+    # agent commission when the coupon belongs to an agent
+    agent = coupon.agent if coupon and coupon.agent_id else None
+    commission_percent = commission_base = commission = None
+    if agent:
+        profile = UserProfile.objects.filter(user=agent).first()
+        commission_percent = profile.commission_percent if profile else Decimal("0")
+        commission_base = net_amount
+        commission = (commission_base * commission_percent / Decimal("100")).quantize(Decimal("0.01"))
+
+    with transaction.atomic():
+        invoice = Invoice.objects.create(
+            order_type="offline",
+            user=None,
+            session_key="",
+            payment_mode=payment_mode,
+            delivery_time=0,
+            delivery_date=date.today(),
+            net_amount=net_amount,
+            cgst=Decimal("0"),
+            sgst=Decimal("0"),
+            discount=discount,
+            delivery_charge=Decimal("0"),
+            packing_charge=Decimal("0"),
+            items_mrp_total=items_mrp_total,
+            item_discount=items_mrp_total - items_total,
+            items_total=items_total,
+            coupon=coupon,
+            coupon_code=coupon.code if coupon else "",
+            coupon_type=coupon.discount_type if coupon else "",
+            agent=agent,
+            agent_commission_percent=commission_percent,
+            agent_commission_base=commission_base,
+            agent_commission=commission,
+            # handed over at the counter
+            status="DELIVERED",
         )
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        apply_registration_commission(invoice, set(), {normalize_phone(phone)} - {""}, invoice.order_date)
+        if invoice.registration_agent_id:
+            invoice.save(update_fields=[
+                "registration_agent", "registration_entry", "registration_commission_percent",
+                "registration_commission_base", "registration_commission", "agent_commission",
+            ])
+
+        for index, line in enumerate(lines):
+            Transaction.objects.create(
+                session_key="",
+                item=line["item"],
+                invoice=invoice,
+                item_amount=line["unit_price"],
+                mrp_price=line["unit_mrp"],
+                quantity=line["qty"],
+                weight=line["weight"],
+                discounted=max(line["unit_mrp"] - line["unit_price"], Decimal("0")),
+                coupon_discount=line_coupon[index],
+                free_quantity=line_free[index],
+                final_amount=max(line["price"] - line_coupon[index], Decimal("0")),
+            )
+
+        # the customer's name and phone are kept on the offline order record
+        # (phone saved as its last 10 digits so later coupon checks find it)
+        order = OfflineOrder.objects.create(
+            customer_name=customer_name,
+            phone=normalize_phone(phone) or phone,
+            coupon=coupon.code if coupon else None,
+            discount=discount,
+            total_amount=items_total,
+            final_amount=net_amount,
+            invoice=invoice,
+        )
+        for line in lines:
+            for _ in range(line["qty"]):
+                OfflineOrderItem.objects.create(
+                    order=order, item=line["item"], name=line["name"],
+                    weight=line["weight"], price=line["unit_price"],
+                )
+
+    # no confirmation email for offline orders
+    return Response(
+        {
+            "message": "Order created",
+            "order_id": order.id,
+            "invoice_id": invoice.id,
+            "order_number": invoice.order_number,
+            "order_type": invoice.order_type,
+            "discount": discount,
+            "net_amount": net_amount,
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
 
 @api_view(["POST"])
 def validate_coupon(request):
+    """Checks an offline coupon against the offline order page's bill."""
+    data = request.data
+    payment_mode = offline_payment_mode(data)
+    try:
+        lines = offline_order_lines(data.get("items"))
+        coupon, discount, line_discounts, free_units = offline_coupon_discount(
+            data.get("coupon"), data.get("phone"), payment_mode, lines
+        )
+    except (ValueError, ArithmeticError) as e:
+        return Response({"valid": False, "message": str(e) or "Invalid items"})
+    except CouponNotApplicable as e:
+        return Response({"valid": False, "message": str(e)})
 
-    phone = request.data.get("phone")
-    coupon = request.data.get("coupon")
-
-    if coupon != "VAT20":
-        return Response({
-            "valid": False,
-            "message": "Invalid coupon"
-        })
-
-    order_exists = OfflineOrder.objects.filter(phone=phone).exists()
-
-    if order_exists:
-        return Response({
-            "valid": False,
-            "message": "Coupon only for new customers"
-        })
-
+    items_total = sum((line["price"] for line in lines), Decimal("0"))
     return Response({
         "valid": True,
-        "discount": 20
+        "code": coupon.code,
+        "discount_type": coupon.discount_type,
+        "discount": discount,
+        "total": items_total,
+        "final_total": max(items_total - discount, Decimal("0")),
+        "message": f"{coupon.code} applied (Rs.{discount} off)",
     })
 
 class CreateReviewView(APIView):

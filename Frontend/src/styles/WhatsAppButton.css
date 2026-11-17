@@ -30,7 +30,7 @@
 }
 
 .whatsapp-fab:focus-visible {
-  outline: 2px solid #3F2305;
+  outline: 2px solid var(--brand);
   outline-offset: 3px;
 }
 

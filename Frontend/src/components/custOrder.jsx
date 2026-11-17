@@ -29,21 +29,25 @@ const OfflineOrder = () => {
     const [showModal, setShowModal] = useState(false);
     const [orderId, setOrderId] = useState(null);
     const [couponMessage, setCouponMessage] = useState("");
+    // code of the coupon the server accepted for this bill
+    const [appliedCoupon, setAppliedCoupon] = useState("");
+    const [paymentMode, setPaymentMode] = useState("CASH");
+    const [orderNumber, setOrderNumber] = useState("");
+    const [submitError, setSubmitError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         fetchItems();
     }, []);
 
+    // the discount depends on the bill and payment method: check the
+    // applied coupon again whenever they change
     useEffect(() => {
-
-        if (couponApplied) {
-
-            const disc = Number((getTotal() * 0.2).toFixed(2));
-            setDiscount(disc);
-
+        if (appliedCoupon) {
+            applyCoupon(appliedCoupon);
         }
-
-    }, [orders]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orders, paymentMode]);
 
     const fetchItems = async () => {
         try {
@@ -54,20 +58,22 @@ const OfflineOrder = () => {
         }
     };
 
-    useEffect(() => {
+    const clearCoupon = (message = "") => {
+        setCouponApplied(false);
+        setAppliedCoupon("");
+        setDiscount(0);
+        setCouponMessage(message);
+    };
 
-        const total = getTotal();
-
-        if (coupon === "VAT20") {
-            applyCoupon(coupon, total);
-        }
-
-    }, [orders]);
     const handleCustomerChange = (e) => {
         setCustomer({
             ...customer,
             [e.target.name]: e.target.value
         });
+        // coupon limits are per customer, so a new phone needs a new check
+        if (e.target.name === "phone" && appliedCoupon) {
+            clearCoupon("Phone changed, apply the coupon again");
+        }
     };
 
     const calculatePrice = (item, weight) => {
@@ -159,10 +165,22 @@ const OfflineOrder = () => {
         return orders.reduce((sum, item) => sum + item.price, 0);
     };
 
-    const applyCoupon = async () => {
+    // only offline coupons work here; the server works out the discount
+    const applyCoupon = async (code = coupon) => {
+
+        code = (code || "").trim();
+        if (!code) {
+            clearCoupon("Enter a coupon code");
+            return;
+        }
 
         if (!customer.phone) {
             setCouponMessage("Enter phone number first");
+            return;
+        }
+
+        if (orders.length === 0) {
+            clearCoupon("Add items to the bill first");
             return;
         }
 
@@ -172,44 +190,53 @@ const OfflineOrder = () => {
                 `${API_BASE_URL}/validate-coupon/`,
                 {
                     phone: customer.phone,
-                    coupon: coupon
+                    coupon: code,
+                    payment_mode: paymentMode,
+                    items: orders
                 }
             );
 
             if (res.data.valid) {
 
-                const disc = getTotal() * (res.data.discount / 100);
-
-                setDiscount(disc);
+                setDiscount(Number(res.data.discount) || 0);
                 setCouponApplied(true);
-                setCouponMessage("VAT20 applied (20% OFF)");
+                setAppliedCoupon(res.data.code || code);
+                setCouponMessage(res.data.message);
 
             } else {
 
-                setCouponApplied(false);
-                setDiscount(0);
-                setCouponMessage(res.data.message);
+                clearCoupon(res.data.message);
 
             }
 
         } catch {
-            setCouponMessage("Coupon validation failed");
+            clearCoupon("Coupon validation failed");
         }
     };
 
-    const finalTotal = getTotal() - discount;
-
     const submitOrder = async () => {
+
+        setSubmitError("");
+
+        if (!customer.name || !customer.phone) {
+            setSubmitError("Enter customer name and phone number");
+            return;
+        }
+
+        if (orders.length === 0) {
+            setSubmitError("Add at least one item");
+            return;
+        }
 
         const payload = {
             customer_name: customer.name,
             phone: customer.phone,
-            coupon: coupon,
-            discount: Number(discount.toFixed(2)),
-            total_amount: getTotal(),
-            final_amount: getTotal() - discount,
+            coupon: appliedCoupon,
+            payment_mode: paymentMode,
             items: orders
         };
+
+        setSubmitting(true);
 
         try {
 
@@ -219,6 +246,7 @@ const OfflineOrder = () => {
             );
 
             setOrderId(res.data.order_id);
+            setOrderNumber(res.data.order_number || "");
             setShowModal(true);
 
             // FULL RESET
@@ -236,12 +264,17 @@ const OfflineOrder = () => {
 
             setOrders([]);
             setCoupon("");
-            setDiscount(0);
-            setCouponApplied(false);
+            clearCoupon();
+            setPaymentMode("CASH");
 
         } catch (err) {
 
             console.error(err);
+            setSubmitError(err.response?.data?.error || "Could not place the order");
+
+        } finally {
+
+            setSubmitting(false);
 
         }
 
@@ -395,7 +428,7 @@ const OfflineOrder = () => {
                         <button
                             type="button"
                             className="fp-btn secondary"
-                            onClick={() => applyCoupon(coupon, getTotal())}
+                            onClick={() => applyCoupon(coupon)}
                         >
                             Apply
                         </button>
@@ -416,7 +449,7 @@ const OfflineOrder = () => {
 
                         {couponApplied && (
                             <div className="oo-summary-row oo-discount">
-                                <span>Coupon VAT20</span>
+                                <span>Coupon {appliedCoupon}</span>
                                 <span>-Rs.{discount.toFixed(2)}</span>
                             </div>
                         )}
@@ -429,12 +462,31 @@ const OfflineOrder = () => {
                     </div>
 
                     <div className="fp-field">
+                        <label htmlFor="oo-payment" className="fp-label">Payment</label>
+                        <select
+                            id="oo-payment"
+                            className="fp-input"
+                            value={paymentMode}
+                            onChange={(e) => setPaymentMode(e.target.value)}
+                        >
+                            <option value="CASH">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="CARD">Card</option>
+                        </select>
+                    </div>
+
+                    {submitError && (
+                        <p className="oo-coupon-message" role="alert">{submitError}</p>
+                    )}
+
+                    <div className="fp-field">
                         <button
                             type="button"
                             className="fp-btn"
                             onClick={submitOrder}
+                            disabled={submitting}
                         >
-                            Place Order
+                            {submitting ? "Placing..." : "Place Order"}
                         </button>
                     </div>
                 </div>
@@ -445,7 +497,7 @@ const OfflineOrder = () => {
                 open={showModal}
                 status="success"
                 title="Order Created Successfully"
-                message={`Order ID: #${orderId}`}
+                message={orderNumber ? `Order ${orderNumber} (offline)` : `Order ID: #${orderId}`}
                 onClose={() => setShowModal(false)}
             />
 

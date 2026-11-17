@@ -38,7 +38,9 @@ function OrdersDashboard({ userRole }) {
       setInvoices(response.data);
     } catch (error) {
       console.error("Failed to fetch invoices", error);
-      setError("failed");
+      // expired or non-staff login: ask to log in again
+      const code = error.response?.status;
+      setError(code === 401 || code === 403 ? "login" : "failed");
     }
 
     setLoading(false);

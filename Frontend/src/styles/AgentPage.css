@@ -6,13 +6,13 @@
    pages do not change. Move them into the pages that need them before
    deleting this file. */
 label {
-  color: #3F2305;
+  color: var(--brand);
   font-size: 0.9rem;
   font-weight: 600;
 }
 
 input:focus, textarea:focus {
-  border-color: #3F2305;
+  border-color: var(--brand);
   outline: none;
   background: #fff;
 }
@@ -22,5 +22,5 @@ input:focus, textarea:focus {
 .agent-field-hint {
   margin: 6px 0 0;
   font-size: 0.78rem;
-  color: #7b7167;
+  color: var(--muted);
 }

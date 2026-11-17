@@ -89,6 +89,9 @@ class UserProfile(models.Model):
     # how many days after a registration its orders still earn commission;
     # empty means no limit
     registration_commission_days = models.PositiveIntegerField(blank=True, null=True)
+    # staff only: stores whose orders this person sees and works on.
+    # An admin with none ticked sees every store.
+    stores = models.ManyToManyField("StoreLocation", blank=True, related_name="staff")
     picture = models.URLField(max_length=500, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -171,6 +174,20 @@ class Item(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ItemImage(models.Model):
+    """An extra photo for an item. The item's main image shows first, then these."""
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="extra_images")
+    image = models.ImageField(upload_to="items/")
+    sort_order = models.PositiveIntegerField(default=0, help_text="Lower numbers show first.")
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return f"Photo for {self.item}"
+
     
 class Coupon(models.Model):
     DISCOUNT_CHOICES = [
@@ -184,6 +201,18 @@ class Coupon(models.Model):
         ("item", "Item"),
     ]
     code = models.CharField(max_length=50, unique=True)
+    ORDER_TYPE_CHOICES = [
+        ("online", "Online"),
+        ("offline", "Offline"),
+    ]
+    # online coupons work at website checkout, offline ones only on the
+    # offline (in person) order page
+    order_type = models.CharField(
+        max_length=10,
+        choices=ORDER_TYPE_CHOICES,
+        default="online",
+        db_index=True,
+    )
     # agent who gets commission on orders placed with this coupon
     agent = models.ForeignKey(
         User,
@@ -436,7 +465,14 @@ class Invoice(models.Model):
         ("CANCELLED", "Cancelled"),
     ]
 
+    ORDER_TYPE_CHOICES = [
+        ("online", "Online"),
+        ("offline", "Offline"),
+    ]
+
     order_date = models.DateTimeField(auto_now_add=True)
+    # online: placed on the website; offline: taken in person on the offline order page
+    order_type = models.CharField(max_length=10, choices=ORDER_TYPE_CHOICES, default="online", db_index=True)
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_CHOICES)
     delivery_time = models.IntegerField()
     # day the customer gets the order: the fastest possible day, or a later
@@ -533,6 +569,16 @@ class Invoice(models.Model):
     # when the order was marked Delivered; set automatically on save. Empty on
     # orders delivered before this was recorded.
     delivered_at = models.DateTimeField(null=True, blank=True, editable=False)
+    # proof of delivery, sent from the dashboard when the order is closed:
+    # photos at the door (DeliveryPhoto), who delivered it and where their phone was
+    delivered_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="deliveries"
+    )
+    delivered_latitude = models.FloatField(null=True, blank=True)
+    delivered_longitude = models.FloatField(null=True, blank=True)
+    delivered_location_accuracy = models.FloatField(
+        null=True, blank=True, help_text="How precise the phone's location was, in metres."
+    )
     # secret part of the tracking link: order numbers are easy to guess, this is not
     tracking_token = models.CharField(max_length=32, null=True, unique=True, editable=False, default=generate_tracking_token)
 
@@ -665,6 +711,15 @@ class OfflineOrder(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     final_amount = models.DecimalField(max_digits=10, decimal_places=2)
 
+    # the invoice made for this order (order_type "offline")
+    invoice = models.OneToOneField(
+        "Invoice",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="offline_order",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -718,6 +773,22 @@ class Review(models.Model):
 
     def __str__(self):
         return f"{self.item.name} - {self.rating}"
+
+
+class DeliveryPhoto(models.Model):
+    """A photo the delivery person took when handing over an order. The
+    customer sees these on their order page; staff see them on the dashboard."""
+    MAX_PER_ORDER = 5
+
+    invoice = models.ForeignKey("Invoice", on_delete=models.CASCADE, related_name="delivery_photos")
+    image = models.ImageField(upload_to="delivery_proofs/%Y/%m/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Delivery photo for {self.invoice}"
 
 
 class ReviewImage(models.Model):

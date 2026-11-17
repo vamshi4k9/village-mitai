@@ -2,22 +2,22 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #f4f2f1;
+  background: var(--bg);
   padding: 40px 20px;
   min-height: 60vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: inherit;
 }
 
 .reviews-section h3 {
   font-size: 1.8rem;
-  color: #3F2305;
+  color: var(--brand);
   margin-bottom: 30px;
   text-align: center;
 }
 
 .review-box {
   background: #ffffff;
-  border: 1px solid #3F2305;
+  border: 1px solid var(--brand);
   border-radius: 8px;
   padding: 24px 20px;
   width: 100%;
@@ -29,12 +29,12 @@
 }
 
 .review-box strong {
-  color: #3F2305;
+  color: var(--brand);
   font-size: 1.1rem;
 }
 
 .review-box p {
-  color: #3F2305;
+  color: var(--brand);
   font-size: 1rem;
   margin: 4px 0;
   word-break: break-word;
@@ -42,13 +42,13 @@
 
 .review-box hr {
   border: none;
-  border-bottom: 1px solid #d8cfc4;
+  border-bottom: 1px solid var(--border);
   margin: 12px 0 0 0;
 }
 
 .submit-review {
   background: #fff;
-  border: 1px solid #3F2305;
+  border: 1px solid var(--brand);
   border-radius: 8px;
   padding: 30px 20px;
   max-width: 400px;
@@ -62,12 +62,12 @@
 
 .submit-review h4 {
   font-size: 1.2rem;
-  color: #3F2305;
+  color: var(--brand);
   margin-bottom: 18px;
 }
 
 .submit-review label {
-  color: #3F2305;
+  color: var(--brand);
   font-size: 1rem;
   margin-bottom: 10px;
   width: 100%;
@@ -77,10 +77,10 @@
 .submit-review select {
   margin-left: 10px;
   padding: 6px 10px;
-  border: 1px solid #3F2305;
+  border: 1px solid var(--brand);
   border-radius: 5px;
-  background: #f9f9f9;
-  color: #3F2305;
+  background: var(--surface-2);
+  color: var(--brand);
   font-size: 1rem;
 }
 
@@ -90,25 +90,25 @@
   padding: 10px;
   margin-top: 10px;
   margin-bottom: 18px;
-  border: 1px solid #3F2305;
+  border: 1px solid var(--brand);
   border-radius: 5px;
   font-size: 1rem;
-  color: #3F2305;
-  background: #f9f9f9;
+  color: var(--brand);
+  background: var(--surface-2);
   resize: vertical;
 }
 
 .submit-review textarea:focus,
 .submit-review select:focus {
   outline: none;
-  border-color: #3F2305;
+  border-color: var(--brand);
   background: #fff;
 }
 
 .submit-review button {
   width: 100%;
   padding: 12px;
-  background-color: #3F2305;
+  background-color: var(--btn-bg);
   color:white;
   font-size: 1rem;
   border: none;
@@ -119,13 +119,13 @@
 }
 
 .submit-review button:hover {
-  background-color: #3a1e08;
+  background-color: var(--btn-hover);
 }
 
 .reviews-section p {
-  color: #d32f2f;
+  color: var(--danger);
   background: #fff0f0;
-  border: 1px solid #d32f2f;
+  border: 1px solid var(--danger);
   border-radius: 4px;
   padding: 10px 20px;
   font-size: 1rem;

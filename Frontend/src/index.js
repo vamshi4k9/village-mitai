@@ -8,6 +8,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import reportWebVitals from './reportWebVitals';
 
+// mark images as loaded (or failed) so their loading shimmer stops (see index.css)
+const markImage = (e) => {
+  if (e.target.tagName === 'IMG') e.target.classList.add('is-loaded');
+};
+document.addEventListener('load', markImage, true);
+document.addEventListener('error', markImage, true);
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

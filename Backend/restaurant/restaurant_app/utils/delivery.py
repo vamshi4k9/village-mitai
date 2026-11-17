@@ -12,8 +12,14 @@ from restaurant_app.models import DeliveryCharge, DeliveryFeeConfig, StoreLocati
 DEFAULT_DELIVERY_CHARGE = Decimal("40")
 
 
+# roads are never straight: from the Marathahalli store the Mapbox road
+# distance to 10 places across Bangalore was 1.15x-2.2x the straight line,
+# typically about 1.3x. Used only when Mapbox cannot be reached.
+ROAD_FACTOR = 1.3
+
+
 def straight_line_km(lat1, lng1, lat2, lng2):
-    """Great-circle distance; only used when Mapbox cannot be reached."""
+    """Great-circle (as the crow flies) distance in km."""
     lat1, lng1, lat2, lng2 = map(math.radians, [lat1, lng1, lat2, lng2])
     a = (
         math.sin((lat2 - lat1) / 2) ** 2
@@ -26,7 +32,8 @@ def road_distance_km(lat1, lng1, lat2, lng2):
     """Driving distance from the Mapbox Directions API, in km, along the
     fastest route in current traffic (the one a rider would actually take).
 
-    Returns (distance, source) where source is "mapbox" or "straight_line".
+    Returns (distance, source) where source is "mapbox", or "estimated" when
+    Mapbox could not be reached (straight line x ROAD_FACTOR).
     Results are cached for an hour: the same address is checked on every visit
     to checkout and again when the order is placed, and the traffic route
     can change through the day.
@@ -52,7 +59,8 @@ def road_distance_km(lat1, lng1, lat2, lng2):
     except Exception as e:
         print(f"Mapbox distance lookup failed: {e}")
 
-    return straight_line_km(lat1, lng1, lat2, lng2), "straight_line"
+    # estimated road distance, so the charge is not far below the real one
+    return straight_line_km(lat1, lng1, lat2, lng2) * ROAD_FACTOR, "estimated"
 
 
 def charge_for_distance(distance_km):

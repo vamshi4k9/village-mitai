@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import BannerListView, CategoryViewSet, CreateReviewView, DeliveryConfigAPIView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, ItemReviewsView, SimilarItemsView, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, cancel_order, create_offline_order, save_mobile,upload_image, search_items ,admin_login, agent_submit, validate_coupon, get_site_config, delivery_quote_view, delivery_dates_view
+from .views import BannerListView, CategoryViewSet, CreateReviewView, DeliverOrderView, DeliveryConfigAPIView, FieldMarketingFormCreateView, InvoiceDetailView, ItemViewSet, ItemsByCategoryAPIView, CartViewSet, BestsellerItemsAPIView, OrderReviewStatus, ItemReviewsView, SimilarItemsView, PastOrdersView, ReviewSummaryView, SubmitRatingView, agent_dashboard, apply_coupon, cancel_order, create_offline_order, save_mobile,upload_image, search_items ,admin_login, agent_submit, validate_coupon, get_site_config, delivery_quote_view, delivery_dates_view
 from rest_framework.routers import DefaultRouter
 from .views import SendOTPView, VerifyOTPView, RegisterView, ProfileView, GoogleLoginView, AddressView, AddressDetailView, CreateOrderView, get_user_orders, get_total_order_value, get_order_details, get_all_transactions_and_invoices, create_order, verify_payment
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/orders/total/', get_total_order_value, name='total-order-value'),
     path('api/orders/<int:invoice_id>/', get_order_details, name='order-details'),
     path('api/past-orders/', PastOrdersView.as_view(), name='past-orders'),
+    path('api/order-detail/<int:invoice_id>/deliver/', DeliverOrderView.as_view(), name='deliver-order'),
     path('api/order-detail/<int:invoice_id>/', InvoiceDetailView.as_view(), name='invoice-detail'),
     path('api/order-detail/<str:invoice_id>/', InvoiceDetailView.as_view(), name='invoice-detail-by-number'),
     path('api/submit-rating/', SubmitRatingView.as_view(), name='submit-rating'),
